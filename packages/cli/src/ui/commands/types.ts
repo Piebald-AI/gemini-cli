@@ -65,6 +65,7 @@ export interface CommandContext {
     /** Toggles a special display mode. */
     toggleCorgiMode: () => void;
     toggleVimEnabled: () => Promise<boolean>;
+    setGeminiMdFileCount: (count: number) => void;
   };
   // Session-specific data
   session: {
@@ -104,7 +105,7 @@ export interface MessageActionReturn {
  */
 export interface OpenDialogActionReturn {
   type: 'dialog';
-  dialog: 'help' | 'auth' | 'theme' | 'editor' | 'privacy' | 'sessionBrowser';
+  dialog: 'auth' | 'theme' | 'editor' | 'privacy' | 'sessionBrowser';
 }
 
 /**

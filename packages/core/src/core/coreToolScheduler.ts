@@ -226,6 +226,7 @@ interface CoreToolSchedulerOptions {
   getPreferredEditor: () => EditorType | undefined;
   config: Config;
   chatRecordingService?: ChatRecordingService;
+  onEditorClose: () => void;
 }
 
 export class CoreToolScheduler {
@@ -237,6 +238,7 @@ export class CoreToolScheduler {
   private getPreferredEditor: () => EditorType | undefined;
   private config: Config;
   private chatRecordingService?: ChatRecordingService;
+  private onEditorClose: () => void;
 
   constructor(options: CoreToolSchedulerOptions) {
     this.config = options.config;
@@ -246,6 +248,7 @@ export class CoreToolScheduler {
     this.onToolCallsUpdate = options.onToolCallsUpdate;
     this.getPreferredEditor = options.getPreferredEditor;
     this.chatRecordingService = options.chatRecordingService;
+    this.onEditorClose = options.onEditorClose;
   }
 
   private setStatusInternal(
@@ -577,6 +580,7 @@ export class CoreToolScheduler {
           modifyContext as ModifyContext<typeof waitingToolCall.request.args>,
           editorType,
           signal,
+          this.onEditorClose,
         );
         this.setArgsInternal(callId, updatedParams);
         this.setStatusInternal(callId, 'awaiting_approval', {

@@ -39,7 +39,7 @@ Slash commands provide meta-level control over the CLI itself.
       - **Usage:** `/directory add <path1>,<path2>`
       - **Note:** Disabled in restrictive sandbox profiles. If you're using that, use `--include-directories` when starting the session instead.
     - **`show`**:
-      - **Description:** Display all directories added by `/direcotry add` and `--include-directories`.
+      - **Description:** Display all directories added by `/directory add` and `--include-directories`.
       - **Usage:** `/directory show`
 
 - **`/editor`**
@@ -246,7 +246,7 @@ Please generate a Conventional Commit message based on the following git diff:
 
 ```diff
 !{git diff --staged}
-````
+```
 
 """
 
@@ -267,7 +267,7 @@ First, ensure the user commands directory exists, then create a `refactor` subdi
 ```bash
 mkdir -p ~/.gemini/commands/refactor
 touch ~/.gemini/commands/refactor/pure.toml
-````
+```
 
 **2. Add the content to the file:**
 

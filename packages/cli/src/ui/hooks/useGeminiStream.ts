@@ -83,7 +83,6 @@ export const useGeminiStream = (
   geminiClient: GeminiClient,
   history: HistoryItem[],
   addItem: UseHistoryManagerReturn['addItem'],
-  setShowHelp: React.Dispatch<React.SetStateAction<boolean>>,
   config: Config,
   onDebugMessage: (message: string) => void,
   handleSlashCommand: (
@@ -96,6 +95,7 @@ export const useGeminiStream = (
   modelSwitchedFromQuotaError: boolean,
   setModelSwitchedFromQuotaError: React.Dispatch<React.SetStateAction<boolean>>,
   chatRecordingService: ChatRecordingService,
+  onEditorClose: () => void,
 ) => {
   const [initError, setInitError] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -137,6 +137,7 @@ export const useGeminiStream = (
       setPendingHistoryItem,
       getPreferredEditor,
       chatRecordingService,
+      onEditorClose,
     );
 
   const pendingToolCallGroupDisplay = useMemo(
@@ -618,7 +619,6 @@ export const useGeminiStream = (
         return;
 
       const userMessageTimestamp = Date.now();
-      setShowHelp(false);
 
       // Reset quota error flag when starting a new query (not a continuation)
       if (!options?.isContinuation) {
@@ -701,7 +701,6 @@ export const useGeminiStream = (
     },
     [
       streamingState,
-      setShowHelp,
       setModelSwitchedFromQuotaError,
       prepareQueryForGemini,
       processGeminiStreamEvents,

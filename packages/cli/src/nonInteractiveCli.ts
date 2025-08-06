@@ -21,6 +21,7 @@ import { Content, Part, FunctionCall } from '@google/genai';
 
 import { parseAndFormatApiError } from './ui/utils/errorParsing.js';
 import { convertSessionToHistoryFormats } from './ui/hooks/useSessionBrowser.js';
+import { ConsolePatcher } from './ui/utils/ConsolePatcher.js';
 
 export async function runNonInteractive(
   config: Config,
@@ -28,35 +29,43 @@ export async function runNonInteractive(
   prompt_id: string,
   resumedSessionData?: ResumedSessionData,
 ): Promise<void> {
-  await config.initialize();
-  // Handle EPIPE errors when the output is piped to a command that closes early.
-  process.stdout.on('error', (err: NodeJS.ErrnoException) => {
-    if (err.code === 'EPIPE') {
-      // Exit gracefully if the pipe is closed.
-      process.exit(0);
-    }
+  const consolePatcher = new ConsolePatcher({
+    stderr: true,
+    debugMode: config.getDebugMode(),
   });
 
-  // Initialize session recording service
-  const chatRecordingService = new ChatRecordingService(config);
-  chatRecordingService.initialize(resumedSessionData);
-  chatRecordingService.recordMessage({ type: 'user', content: input });
-
-  const geminiClient = config.getGeminiClient();
-  const toolRegistry: ToolRegistry = await config.getToolRegistry();
-
-  // Initialize chat.  Resume if resume data is passed.
-  if (resumedSessionData) {
-    await geminiClient.resumeChat(
-      convertSessionToHistoryFormats(resumedSessionData.conversation.messages)
-        .clientHistory,
-    );
-  }
-
-  const abortController = new AbortController();
-  let currentMessages: Content[] = [{ role: 'user', parts: [{ text: input }] }];
-  let turnCount = 0;
   try {
+    await config.initialize();
+    consolePatcher.patch();
+    // Handle EPIPE errors when the output is piped to a command that closes early.
+    process.stdout.on('error', (err: NodeJS.ErrnoException) => {
+      if (err.code === 'EPIPE') {
+        // Exit gracefully if the pipe is closed.
+        process.exit(0);
+      }
+    });
+
+    // Initialize session recording service
+    const chatRecordingService = new ChatRecordingService(config);
+    chatRecordingService.initialize(resumedSessionData);
+    chatRecordingService.recordMessage({ type: 'user', content: input });
+
+    const geminiClient = config.getGeminiClient();
+    const toolRegistry: ToolRegistry = await config.getToolRegistry();
+
+    // Initialize chat.  Resume if resume data is passed.
+    if (resumedSessionData) {
+      await geminiClient.resumeChat(
+        convertSessionToHistoryFormats(resumedSessionData.conversation.messages)
+          .clientHistory,
+      );
+    }
+
+    const abortController = new AbortController();
+    let currentMessages: Content[] = [
+      { role: 'user', parts: [{ text: input }] },
+    ];
+    let turnCount = 0;
     while (true) {
       turnCount++;
       if (
@@ -195,6 +204,7 @@ export async function runNonInteractive(
     );
     process.exit(1);
   } finally {
+    consolePatcher.cleanup();
     if (isTelemetrySdkInitialized()) {
       await shutdownTelemetry();
     }

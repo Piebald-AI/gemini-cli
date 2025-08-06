@@ -72,6 +72,7 @@ export function useReactToolScheduler(
   >,
   getPreferredEditor: () => EditorType | undefined,
   chatRecordingService: ChatRecordingService,
+  onEditorClose: () => void,
 ): [TrackedToolCall[], ScheduleFn, MarkToolsAsSubmittedFn] {
   const [toolCallsForDisplay, setToolCallsForDisplay] = useState<
     TrackedToolCall[]
@@ -143,6 +144,7 @@ export function useReactToolScheduler(
         getPreferredEditor,
         config,
         chatRecordingService,
+        onEditorClose,
       }),
     [
       config,
@@ -151,6 +153,7 @@ export function useReactToolScheduler(
       toolCallsUpdateHandler,
       getPreferredEditor,
       chatRecordingService,
+      onEditorClose,
     ],
   );
 
