@@ -11,12 +11,8 @@ import {
   EVENT_TOOL_CALL,
 } from './constants.js';
 
-import {
-  ApiErrorEvent,
-  ApiResponseEvent,
-  ToolCallEvent,
-  ToolCallDecision,
-} from './types.js';
+import { ToolCallDecision } from './tool-call-decision.js';
+import { ApiErrorEvent, ApiResponseEvent, ToolCallEvent } from './types.js';
 import { ChatRecordingService } from '../services/chatRecordingService.js';
 
 export type UiEvent =
