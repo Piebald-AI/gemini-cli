@@ -852,7 +852,7 @@ export class CoreToolScheduler {
           // Get UI data from tool registry
           const toolInstance = toolRegistry.getTool(c.request.name);
           const displayName = toolInstance?.displayName || c.request.name;
-          const description = toolInstance?.getDescription(c.request.args) || '';
+          const description = toolInstance?.description || '';
           const renderOutputAsMarkdown = toolInstance?.isOutputMarkdown || false;
           const resultDisplayRaw = 'response' in c ? c.response?.resultDisplay : undefined;
           const resultDisplay = typeof resultDisplayRaw === 'string' ? resultDisplayRaw : undefined;
