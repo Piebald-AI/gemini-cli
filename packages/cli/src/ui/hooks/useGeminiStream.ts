@@ -96,6 +96,7 @@ export const useGeminiStream = (
   setModelSwitchedFromQuotaError: React.Dispatch<React.SetStateAction<boolean>>,
   chatRecordingService: ChatRecordingService,
   onEditorClose: () => void,
+  onCancelSubmit: () => void,
 ) => {
   const [initError, setInitError] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -203,6 +204,7 @@ export const useGeminiStream = (
         Date.now(),
       );
       setPendingHistoryItem(null);
+      onCancelSubmit();
       setIsResponding(false);
     }
   });

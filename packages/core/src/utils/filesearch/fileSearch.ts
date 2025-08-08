@@ -11,6 +11,7 @@ import picomatch from 'picomatch';
 import { Ignore } from './ignore.js';
 import { ResultCache } from './result-cache.js';
 import * as cache from './crawlCache.js';
+import { Fzf, FzfResultItem } from 'fzf';
 
 export type FileSearchOptions = {
   projectRoot: string;
@@ -19,6 +20,7 @@ export type FileSearchOptions = {
   useGeminiignore: boolean;
   cache: boolean;
   cacheTtl: number;
+  maxDepth?: number;
 };
 
 export class AbortError extends Error {
@@ -74,6 +76,18 @@ export async function filter(
   });
 
   return results;
+}
+
+/**
+ * Filters a list of paths based on a given pattern using fzf.
+ * @param allPaths The list of all paths to filter.
+ * @param pattern The fzf pattern to filter by.
+ * @returns The filtered and sorted list of paths.
+ */
+function filterByFzf(allPaths: string[], pattern: string) {
+  return new Fzf(allPaths)
+    .find(pattern)
+    .map((entry: FzfResultItem) => entry.item);
 }
 
 export type SearchOptions = {
@@ -136,7 +150,9 @@ export class FileSearch {
       filteredCandidates = candidates;
     } else {
       // Apply the user's picomatch pattern filter
-      filteredCandidates = await filter(candidates, pattern, options.signal);
+      filteredCandidates = pattern.includes('*')
+        ? await filter(candidates, pattern, options.signal)
+        : filterByFzf(this.allFiles, pattern);
       this.resultCache!.set(pattern, filteredCandidates);
     }
 
@@ -215,6 +231,7 @@ export class FileSearch {
       const cacheKey = cache.getCacheKey(
         this.absoluteDir,
         this.ignore.getFingerprint(),
+        this.options.maxDepth,
       );
       const cachedResults = cache.read(cacheKey);
 
@@ -230,6 +247,7 @@ export class FileSearch {
       const cacheKey = cache.getCacheKey(
         this.absoluteDir,
         this.ignore.getFingerprint(),
+        this.options.maxDepth,
       );
       cache.write(cacheKey, this.allFiles, this.options.cacheTtl * 1000);
     }
@@ -256,6 +274,10 @@ export class FileSearch {
         const relativePath = path.relative(this.absoluteDir, dirPath);
         return dirFilter(`${relativePath}/`);
       });
+
+    if (this.options.maxDepth !== undefined) {
+      api.withMaxDepth(this.options.maxDepth);
+    }
 
     return api.crawl(this.absoluteDir).withPromise();
   }

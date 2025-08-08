@@ -33,6 +33,7 @@ export interface ToolCallStats {
     [ToolCallDecision.ACCEPT]: number;
     [ToolCallDecision.REJECT]: number;
     [ToolCallDecision.MODIFY]: number;
+    [ToolCallDecision.AUTO_ACCEPT]: number;
   };
 }
 
@@ -63,6 +64,7 @@ export interface SessionMetrics {
       [ToolCallDecision.ACCEPT]: number;
       [ToolCallDecision.REJECT]: number;
       [ToolCallDecision.MODIFY]: number;
+      [ToolCallDecision.AUTO_ACCEPT]: number;
     };
     byName: Record<string, ToolCallStats>;
   };
@@ -95,6 +97,7 @@ const createInitialMetrics = (): SessionMetrics => ({
       [ToolCallDecision.ACCEPT]: 0,
       [ToolCallDecision.REJECT]: 0,
       [ToolCallDecision.MODIFY]: 0,
+      [ToolCallDecision.AUTO_ACCEPT]: 0,
     },
     byName: {},
   },
@@ -205,6 +208,7 @@ export class UiTelemetryService extends EventEmitter {
           [ToolCallDecision.ACCEPT]: 0,
           [ToolCallDecision.REJECT]: 0,
           [ToolCallDecision.MODIFY]: 0,
+          [ToolCallDecision.AUTO_ACCEPT]: 0,
         },
       };
     }
