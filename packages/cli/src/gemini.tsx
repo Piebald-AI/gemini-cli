@@ -45,6 +45,7 @@ import { checkForUpdates } from './ui/utils/updateCheck.js';
 import { handleAutoUpdate } from './utils/handleAutoUpdate.js';
 import { appEvents, AppEvent } from './utils/events.js';
 import { formatRelativeTime, SessionSelector } from './utils/sessionUtils.js';
+import { SettingsContext } from './ui/contexts/SettingsContext.js';
 
 export function validateDnsResolutionOrder(
   order: string | undefined,
@@ -378,13 +379,15 @@ export async function main() {
     setWindowTitle(basename(workspaceRoot), settings);
     const instance = render(
       <React.StrictMode>
-        <AppWrapper
-          config={config}
-          settings={settings}
-          startupWarnings={startupWarnings}
-          version={version}
-          resumedSessionData={resumedSessionData}
-        />
+        <SettingsContext.Provider value={settings}>
+          <AppWrapper
+            config={config}
+            settings={settings}
+            startupWarnings={startupWarnings}
+            version={version}
+            resumedSessionData={resumedSessionData}
+          />
+        </SettingsContext.Provider>
       </React.StrictMode>,
       { exitOnCtrlC: false },
     );
