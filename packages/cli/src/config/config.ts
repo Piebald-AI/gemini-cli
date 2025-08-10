@@ -73,7 +73,6 @@ export interface CliArgs {
   listSessions: boolean | undefined;
   deleteSession: string | undefined;
   includeDirectories: string[] | undefined;
-  loadMemoryFromIncludeDirectories: boolean | undefined;
 }
 
 export async function parseArguments(): Promise<CliArgs> {
@@ -250,12 +249,6 @@ export async function parseArguments(): Promise<CliArgs> {
           coerce: (dirs: string[]) =>
             // Handle comma-separated values
             dirs.flatMap((dir) => dir.split(',').map((d) => d.trim())),
-        })
-        .option('load-memory-from-include-directories', {
-          type: 'boolean',
-          description:
-            'If true, when refreshing memory, GEMINI.md files should be loaded from all directories that are added. If false, GEMINI.md files should only be loaded from the primary working directory.',
-          default: false,
         })
         .check((argv) => {
           if (argv.prompt && argv.promptInteractive) {
@@ -460,9 +453,7 @@ export async function loadCliConfig(
     targetDir: process.cwd(),
     includeDirectories,
     loadMemoryFromIncludeDirectories:
-      argv.loadMemoryFromIncludeDirectories ||
-      settings.loadMemoryFromIncludeDirectories ||
-      false,
+      settings.loadMemoryFromIncludeDirectories || false,
     debugMode,
     question,
     fullContext: argv.allFiles || argv.all_files || false,
