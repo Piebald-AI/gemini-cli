@@ -35,6 +35,9 @@ import {
   AuthType,
   getOauthClient,
   ResumedSessionData,
+  logIdeConnection,
+  IdeConnectionEvent,
+  IdeConnectionType,
 } from '@google/gemini-cli-core';
 import { validateAuthMethod } from './config/auth.js';
 import { setMaxSizedBoxDebugging } from './ui/components/shared/MaxSizedBox.js';
@@ -279,7 +282,7 @@ export async function main() {
 
   await config.initialize();
 
-  // Add session cleanup after config initialization
+  // Cleanup sessions after config initialization
   try {
     await cleanupExpiredSessions(config, settings.merged);
   } catch (error) {
@@ -287,6 +290,11 @@ export async function main() {
     if (config.getDebugMode()) {
       console.debug('Session cleanup failed:', error);
     }
+  }
+
+  if (config.getIdeMode() && config.getIdeModeFeature()) {
+    await config.getIdeClient().connect();
+    logIdeConnection(config, new IdeConnectionEvent(IdeConnectionType.START));
   }
 
   // Load custom themes from settings
