@@ -86,6 +86,7 @@ import { useTextBuffer } from './components/shared/text-buffer.js';
 import { useVimMode, VimModeProvider } from './contexts/VimModeContext.js';
 import { useVim } from './hooks/vim.js';
 import { useKeypress, Key } from './hooks/useKeypress.js';
+import { useKittyKeyboardProtocol } from './hooks/useKittyKeyboardProtocol.js';
 import { keyMatchers, Command } from './keyMatchers.js';
 import * as fs from 'fs';
 import { UpdateNotification } from './components/UpdateNotification.js';
@@ -154,7 +155,6 @@ const App = ({
     registerCleanup(() => config.getIdeClient().disconnect());
   }, [config]);
   const shouldShowIdePrompt =
-    config.getIdeModeFeature() &&
     currentIDE &&
     !config.getIdeMode() &&
     !settings.merged.hasSeenIdeIntegrationNudge &&
@@ -657,14 +657,18 @@ const App = ({
 
   const handleIdePromptComplete = useCallback(
     (result: IdeIntegrationNudgeResult) => {
-      if (result === 'yes') {
-        handleSlashCommand('/ide install');
+      if (result.userSelection === 'yes') {
+        if (result.isExtensionPreInstalled) {
+          handleSlashCommand('/ide enable');
+        } else {
+          handleSlashCommand('/ide install');
+        }
         settings.setValue(
           SettingScope.User,
           'hasSeenIdeIntegrationNudge',
           true,
         );
-      } else if (result === 'dismiss') {
+      } else if (result.userSelection === 'dismiss') {
         settings.setValue(
           SettingScope.User,
           'hasSeenIdeIntegrationNudge',
@@ -683,6 +687,7 @@ const App = ({
   const { elapsedTime, currentLoadingPhrase } =
     useLoadingIndicator(streamingState);
   const showAutoAcceptIndicator = useAutoAcceptIndicator({ config });
+  const kittyProtocolStatus = useKittyKeyboardProtocol();
 
   const handleExit = useCallback(
     (
@@ -775,7 +780,11 @@ const App = ({
     ],
   );
 
-  useKeypress(handleGlobalKeypress, { isActive: true });
+  useKeypress(handleGlobalKeypress, {
+    isActive: true,
+    kittyProtocolEnabled: kittyProtocolStatus.enabled,
+    config,
+  });
 
   useEffect(() => {
     if (config) {
@@ -1023,9 +1032,9 @@ const App = ({
             </Box>
           )}
 
-          {shouldShowIdePrompt ? (
+          {shouldShowIdePrompt && currentIDE ? (
             <IdeIntegrationNudge
-              ideName={config.getIdeClient().getDetectedIdeDisplayName()}
+              ide={currentIDE}
               onComplete={handleIdePromptComplete}
             />
           ) : isFolderTrustDialogOpen ? (

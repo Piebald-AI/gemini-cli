@@ -41,9 +41,10 @@ import {
 } from '@google/gemini-cli-core';
 import { validateAuthMethod } from './config/auth.js';
 import { setMaxSizedBoxDebugging } from './ui/components/shared/MaxSizedBox.js';
-import { runAcpPeer } from './acp/acpPeer.js';
+import { runZedIntegration } from './zed-integration/zedIntegration.js';
 import { cleanupExpiredSessions } from './utils/sessionCleanup.js';
 import { validateNonInteractiveAuth } from './validateNonInterActiveAuth.js';
+import { detectAndEnableKittyProtocol } from './ui/utils/kittyProtocolDetector.js';
 import { checkForUpdates } from './ui/utils/updateCheck.js';
 import { handleAutoUpdate } from './utils/handleAutoUpdate.js';
 import { appEvents, AppEvent } from './utils/events.js';
@@ -292,7 +293,7 @@ export async function main() {
     }
   }
 
-  if (config.getIdeMode() && config.getIdeModeFeature()) {
+  if (config.getIdeMode()) {
     await config.getIdeClient().connect();
     logIdeConnection(config, new IdeConnectionEvent(IdeConnectionType.START));
   }
@@ -351,8 +352,8 @@ export async function main() {
     await getOauthClient(settings.merged.selectedAuthType, config);
   }
 
-  if (config.getExperimentalAcp()) {
-    return runAcpPeer(config, settings);
+  if (config.getExperimentalZedIntegration()) {
+    return runZedIntegration(config, settings, extensions, argv);
   }
 
   let input = config.getQuestion();
@@ -384,6 +385,8 @@ export async function main() {
   // Render UI, passing necessary config values. Check that there is no command line question.
   if (config.isInteractive()) {
     const version = await getCliVersion();
+    // Detect and enable Kitty keyboard protocol once at startup
+    await detectAndEnableKittyProtocol();
     setWindowTitle(basename(workspaceRoot), settings);
     const instance = render(
       <React.StrictMode>

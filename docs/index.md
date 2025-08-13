@@ -19,6 +19,7 @@ This documentation is organized into the following sections:
   - **[Chat Recording](./chat-recording.md):** Automatic conversation saving, session browser, and history management.
   - **[Checkpointing](./checkpointing.md):** Documentation for the checkpointing feature.
   - **[Extensions](./extension.md):** How to extend the CLI with new functionality.
+  - **[IDE Integration](./ide-integration.md):** Connect the CLI to your editor.
   - **[Telemetry](./telemetry.md):** Overview of telemetry in the CLI.
 - **Core Details:** Documentation for `packages/core`.
   - **[Core Introduction](./core/index.md):** Overview of the core component.
