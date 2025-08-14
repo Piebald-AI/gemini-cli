@@ -276,8 +276,10 @@ const App = ({
   const { isSettingsDialogOpen, openSettingsDialog, closeSettingsDialog } =
     useSettingsCommand();
 
-  const { isFolderTrustDialogOpen, handleFolderTrustSelect } =
-    useFolderTrust(settings);
+  const { isFolderTrustDialogOpen, handleFolderTrustSelect } = useFolderTrust(
+    settings,
+    config,
+  );
 
   const {
     isAuthDialogOpen,
