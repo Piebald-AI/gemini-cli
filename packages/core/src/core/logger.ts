@@ -22,6 +22,42 @@ export interface LogEntry {
   message: string;
 }
 
+// This regex matches any character that is NOT a letter (a-z, A-Z),
+// a number (0-9), a hyphen (-), an underscore (_), or a dot (.).
+
+/**
+ * Encodes a string to be safe for use as a filename.
+ *
+ * It replaces any characters that are not alphanumeric or one of `_`, `-`, `.`
+ * with a URL-like percent-encoding (`%` followed by the 2-digit hex code).
+ *
+ * @param str The input string to encode.
+ * @returns The encoded, filename-safe string.
+ */
+export function encodeTagName(str: string): string {
+  return encodeURIComponent(str);
+}
+
+/**
+ * Decodes a string that was encoded with the `encode` function.
+ *
+ * It finds any percent-encoded characters and converts them back to their
+ * original representation.
+ *
+ * @param str The encoded string to decode.
+ * @returns The decoded, original string.
+ */
+export function decodeTagName(str: string): string {
+  try {
+    return decodeURIComponent(str);
+  } catch (_e) {
+    // Fallback for old, potentially malformed encoding
+    return str.replace(/%([0-9A-F]{2})/g, (_, hex) =>
+      String.fromCharCode(parseInt(hex, 16)),
+    );
+  }
+}
+
 export class Logger {
   private geminiDir: string | undefined;
   private logFilePath: string | undefined;

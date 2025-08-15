@@ -1209,17 +1209,18 @@ describe('InputPrompt', () => {
       props.buffer.setText('some text');
 
       const { stdin, unmount } = render(<InputPrompt {...props} />);
-      await wait();
 
       stdin.write('\x1B');
-      await wait();
 
-      expect(onEscapePromptChange).toHaveBeenCalledWith(true);
+      await waitFor(() => {
+        expect(onEscapePromptChange).toHaveBeenCalledWith(true);
+      });
 
       stdin.write('a');
-      await wait();
 
-      expect(onEscapePromptChange).toHaveBeenCalledWith(false);
+      await waitFor(() => {
+        expect(onEscapePromptChange).toHaveBeenCalledWith(false);
+      });
       unmount();
     });
 

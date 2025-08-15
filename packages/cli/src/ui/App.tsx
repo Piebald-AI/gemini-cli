@@ -195,6 +195,9 @@ const App = ({
   const [editorError, setEditorError] = useState<string | null>(null);
   const [footerHeight, setFooterHeight] = useState<number>(0);
   const [corgiMode, setCorgiMode] = useState(false);
+  const [isTrustedFolderState, setIsTrustedFolder] = useState(
+    config.isTrustedFolder(),
+  );
   const [currentModel, setCurrentModel] = useState(config.getModel());
   const [shellModeActive, setShellModeActive] = useState(false);
   const [showErrorDetails, setShowErrorDetails] = useState<boolean>(false);
@@ -278,7 +281,7 @@ const App = ({
 
   const { isFolderTrustDialogOpen, handleFolderTrustSelect } = useFolderTrust(
     settings,
-    config,
+    setIsTrustedFolder,
   );
 
   const {
@@ -1288,6 +1291,7 @@ const App = ({
             promptTokenCount={sessionStats.lastPromptTokenCount}
             nightly={nightly}
             vimMode={vimModeEnabled ? vimMode : undefined}
+            isTrustedFolder={isTrustedFolderState}
           />
         </Box>
       </Box>
