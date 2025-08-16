@@ -603,6 +603,14 @@ export class CoreToolScheduler {
         const { request: reqInfo, invocation } = toolCall;
 
         try {
+          if (signal.aborted) {
+            this.setStatusInternal(
+              reqInfo.callId,
+              'cancelled',
+              'Tool call cancelled by user.',
+            );
+            continue;
+          }
           if (this.config.getApprovalMode() === ApprovalMode.YOLO) {
             this.setToolCallOutcome(
               reqInfo.callId,
@@ -832,14 +840,8 @@ export class CoreToolScheduler {
               }
             : undefined;
 
-        const terminalSize = this.getTerminalSize();
         invocation
-          .execute(
-            signal,
-            liveOutputCallback,
-            terminalSize.columns,
-            terminalSize.rows,
-          )
+          .execute(signal, liveOutputCallback)
           .then(async (toolResult: ToolResult) => {
             if (signal.aborted) {
               this.setStatusInternal(

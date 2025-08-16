@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { render } from 'ink-testing-library';
+import { renderWithProviders } from '../../test-utils/render.js';
 import { waitFor } from '@testing-library/react';
 import { InputPrompt, InputPromptProps } from './InputPrompt.js';
 import type { TextBuffer } from './shared/text-buffer.js';
@@ -189,7 +189,7 @@ describe('InputPrompt', () => {
 
   it('should call shellHistory.getPreviousCommand on up arrow in shell mode', async () => {
     props.shellModeActive = true;
-    const { stdin, unmount } = render(<InputPrompt {...props} />);
+    const { stdin, unmount } = renderWithProviders(<InputPrompt {...props} />);
     await wait();
 
     stdin.write('\u001B[A');
@@ -201,7 +201,7 @@ describe('InputPrompt', () => {
 
   it('should call shellHistory.getNextCommand on down arrow in shell mode', async () => {
     props.shellModeActive = true;
-    const { stdin, unmount } = render(<InputPrompt {...props} />);
+    const { stdin, unmount } = renderWithProviders(<InputPrompt {...props} />);
     await wait();
 
     stdin.write('\u001B[B');
@@ -216,7 +216,7 @@ describe('InputPrompt', () => {
     vi.mocked(mockShellHistory.getPreviousCommand).mockReturnValue(
       'previous command',
     );
-    const { stdin, unmount } = render(<InputPrompt {...props} />);
+    const { stdin, unmount } = renderWithProviders(<InputPrompt {...props} />);
     await wait();
 
     stdin.write('\u001B[A');
@@ -230,7 +230,7 @@ describe('InputPrompt', () => {
   it('should call shellHistory.addCommandToHistory on submit in shell mode', async () => {
     props.shellModeActive = true;
     props.buffer.setText('ls -l');
-    const { stdin, unmount } = render(<InputPrompt {...props} />);
+    const { stdin, unmount } = renderWithProviders(<InputPrompt {...props} />);
     await wait();
 
     stdin.write('\r');
@@ -243,7 +243,7 @@ describe('InputPrompt', () => {
 
   it('should NOT call shell history methods when not in shell mode', async () => {
     props.buffer.setText('some text');
-    const { stdin, unmount } = render(<InputPrompt {...props} />);
+    const { stdin, unmount } = renderWithProviders(<InputPrompt {...props} />);
     await wait();
 
     stdin.write('\u001B[A'); // Up arrow
@@ -275,7 +275,7 @@ describe('InputPrompt', () => {
 
     props.buffer.setText('/mem');
 
-    const { stdin, unmount } = render(<InputPrompt {...props} />);
+    const { stdin, unmount } = renderWithProviders(<InputPrompt {...props} />);
     await wait();
 
     // Test up arrow
@@ -301,7 +301,7 @@ describe('InputPrompt', () => {
     });
     props.buffer.setText('/mem');
 
-    const { stdin, unmount } = render(<InputPrompt {...props} />);
+    const { stdin, unmount } = renderWithProviders(<InputPrompt {...props} />);
     await wait();
 
     // Test down arrow
@@ -323,7 +323,7 @@ describe('InputPrompt', () => {
     });
     props.buffer.setText('some text');
 
-    const { stdin, unmount } = render(<InputPrompt {...props} />);
+    const { stdin, unmount } = renderWithProviders(<InputPrompt {...props} />);
     await wait();
 
     stdin.write('\u001B[A'); // Up arrow
@@ -355,7 +355,9 @@ describe('InputPrompt', () => {
         '/test/.gemini-clipboard/clipboard-123.png',
       );
 
-      const { stdin, unmount } = render(<InputPrompt {...props} />);
+      const { stdin, unmount } = renderWithProviders(
+        <InputPrompt {...props} />,
+      );
       await wait();
 
       // Send Ctrl+V
@@ -376,7 +378,9 @@ describe('InputPrompt', () => {
     it('should not insert anything when clipboard has no image', async () => {
       vi.mocked(clipboardUtils.clipboardHasImage).mockResolvedValue(false);
 
-      const { stdin, unmount } = render(<InputPrompt {...props} />);
+      const { stdin, unmount } = renderWithProviders(
+        <InputPrompt {...props} />,
+      );
       await wait();
 
       stdin.write('\x16'); // Ctrl+V
@@ -392,7 +396,9 @@ describe('InputPrompt', () => {
       vi.mocked(clipboardUtils.clipboardHasImage).mockResolvedValue(true);
       vi.mocked(clipboardUtils.saveClipboardImage).mockResolvedValue(null);
 
-      const { stdin, unmount } = render(<InputPrompt {...props} />);
+      const { stdin, unmount } = renderWithProviders(
+        <InputPrompt {...props} />,
+      );
       await wait();
 
       stdin.write('\x16'); // Ctrl+V
@@ -418,7 +424,9 @@ describe('InputPrompt', () => {
       mockBuffer.lines = ['Hello world'];
       mockBuffer.replaceRangeByOffset = vi.fn();
 
-      const { stdin, unmount } = render(<InputPrompt {...props} />);
+      const { stdin, unmount } = renderWithProviders(
+        <InputPrompt {...props} />,
+      );
       await wait();
 
       stdin.write('\x16'); // Ctrl+V
@@ -446,7 +454,9 @@ describe('InputPrompt', () => {
         new Error('Clipboard error'),
       );
 
-      const { stdin, unmount } = render(<InputPrompt {...props} />);
+      const { stdin, unmount } = renderWithProviders(
+        <InputPrompt {...props} />,
+      );
       await wait();
 
       stdin.write('\x16'); // Ctrl+V
@@ -473,7 +483,7 @@ describe('InputPrompt', () => {
     });
     props.buffer.setText('/mem');
 
-    const { stdin, unmount } = render(<InputPrompt {...props} />);
+    const { stdin, unmount } = renderWithProviders(<InputPrompt {...props} />);
     await wait();
 
     stdin.write('\t'); // Press Tab
@@ -496,7 +506,7 @@ describe('InputPrompt', () => {
     });
     props.buffer.setText('/memory ');
 
-    const { stdin, unmount } = render(<InputPrompt {...props} />);
+    const { stdin, unmount } = renderWithProviders(<InputPrompt {...props} />);
     await wait();
 
     stdin.write('\t'); // Press Tab
@@ -520,7 +530,7 @@ describe('InputPrompt', () => {
     // The user has backspaced, so the query is now just '/memory'
     props.buffer.setText('/memory');
 
-    const { stdin, unmount } = render(<InputPrompt {...props} />);
+    const { stdin, unmount } = renderWithProviders(<InputPrompt {...props} />);
     await wait();
 
     stdin.write('\t'); // Press Tab
@@ -541,7 +551,7 @@ describe('InputPrompt', () => {
     });
     props.buffer.setText('/chat resume fi-');
 
-    const { stdin, unmount } = render(<InputPrompt {...props} />);
+    const { stdin, unmount } = renderWithProviders(<InputPrompt {...props} />);
     await wait();
 
     stdin.write('\t'); // Press Tab
@@ -560,7 +570,7 @@ describe('InputPrompt', () => {
     });
     props.buffer.setText('/mem');
 
-    const { stdin, unmount } = render(<InputPrompt {...props} />);
+    const { stdin, unmount } = renderWithProviders(<InputPrompt {...props} />);
     await wait();
 
     stdin.write('\r');
@@ -591,7 +601,7 @@ describe('InputPrompt', () => {
     });
     props.buffer.setText('/?');
 
-    const { stdin, unmount } = render(<InputPrompt {...props} />);
+    const { stdin, unmount } = renderWithProviders(<InputPrompt {...props} />);
     await wait();
 
     stdin.write('\t'); // Press Tab for autocomplete
@@ -604,7 +614,7 @@ describe('InputPrompt', () => {
   it('should not submit on Enter when the buffer is empty or only contains whitespace', async () => {
     props.buffer.setText('   '); // Set buffer to whitespace
 
-    const { stdin, unmount } = render(<InputPrompt {...props} />);
+    const { stdin, unmount } = renderWithProviders(<InputPrompt {...props} />);
     await wait();
 
     stdin.write('\r'); // Press Enter
@@ -622,7 +632,7 @@ describe('InputPrompt', () => {
     });
     props.buffer.setText('/clear');
 
-    const { stdin, unmount } = render(<InputPrompt {...props} />);
+    const { stdin, unmount } = renderWithProviders(<InputPrompt {...props} />);
     await wait();
 
     stdin.write('\r');
@@ -640,7 +650,7 @@ describe('InputPrompt', () => {
     });
     props.buffer.setText('/clear');
 
-    const { stdin, unmount } = render(<InputPrompt {...props} />);
+    const { stdin, unmount } = renderWithProviders(<InputPrompt {...props} />);
     await wait();
 
     stdin.write('\r');
@@ -659,7 +669,7 @@ describe('InputPrompt', () => {
     });
     props.buffer.setText('@src/components/');
 
-    const { stdin, unmount } = render(<InputPrompt {...props} />);
+    const { stdin, unmount } = renderWithProviders(<InputPrompt {...props} />);
     await wait();
 
     stdin.write('\r');
@@ -676,7 +686,7 @@ describe('InputPrompt', () => {
     mockBuffer.cursor = [0, 11];
     mockBuffer.lines = ['first line\\'];
 
-    const { stdin, unmount } = render(<InputPrompt {...props} />);
+    const { stdin, unmount } = renderWithProviders(<InputPrompt {...props} />);
     await wait();
 
     stdin.write('\r');
@@ -690,7 +700,7 @@ describe('InputPrompt', () => {
 
   it('should clear the buffer on Ctrl+C if it has text', async () => {
     props.buffer.setText('some text to clear');
-    const { stdin, unmount } = render(<InputPrompt {...props} />);
+    const { stdin, unmount } = renderWithProviders(<InputPrompt {...props} />);
     await wait();
 
     stdin.write('\x03'); // Ctrl+C character
@@ -704,7 +714,7 @@ describe('InputPrompt', () => {
 
   it('should NOT clear the buffer on Ctrl+C if it is empty', async () => {
     props.buffer.text = '';
-    const { stdin, unmount } = render(<InputPrompt {...props} />);
+    const { stdin, unmount } = renderWithProviders(<InputPrompt {...props} />);
     await wait();
 
     stdin.write('\x03'); // Ctrl+C character
@@ -727,7 +737,7 @@ describe('InputPrompt', () => {
         suggestions: [{ label: 'Button.tsx', value: 'Button.tsx' }],
       });
 
-      const { unmount } = render(<InputPrompt {...props} />);
+      const { unmount } = renderWithProviders(<InputPrompt {...props} />);
       await wait();
 
       // Verify useCompletion was called with correct signature
@@ -755,7 +765,7 @@ describe('InputPrompt', () => {
         suggestions: [{ label: 'show', value: 'show' }],
       });
 
-      const { unmount } = render(<InputPrompt {...props} />);
+      const { unmount } = renderWithProviders(<InputPrompt {...props} />);
       await wait();
 
       expect(mockedUseCommandCompletion).toHaveBeenCalledWith(
@@ -782,7 +792,7 @@ describe('InputPrompt', () => {
         suggestions: [],
       });
 
-      const { unmount } = render(<InputPrompt {...props} />);
+      const { unmount } = renderWithProviders(<InputPrompt {...props} />);
       await wait();
 
       expect(mockedUseCommandCompletion).toHaveBeenCalledWith(
@@ -809,7 +819,7 @@ describe('InputPrompt', () => {
         suggestions: [],
       });
 
-      const { unmount } = render(<InputPrompt {...props} />);
+      const { unmount } = renderWithProviders(<InputPrompt {...props} />);
       await wait();
 
       expect(mockedUseCommandCompletion).toHaveBeenCalledWith(
@@ -836,7 +846,7 @@ describe('InputPrompt', () => {
         suggestions: [],
       });
 
-      const { unmount } = render(<InputPrompt {...props} />);
+      const { unmount } = renderWithProviders(<InputPrompt {...props} />);
       await wait();
 
       expect(mockedUseCommandCompletion).toHaveBeenCalledWith(
@@ -863,7 +873,7 @@ describe('InputPrompt', () => {
         suggestions: [],
       });
 
-      const { unmount } = render(<InputPrompt {...props} />);
+      const { unmount } = renderWithProviders(<InputPrompt {...props} />);
       await wait();
 
       // Verify useCompletion was called with the buffer
@@ -891,7 +901,7 @@ describe('InputPrompt', () => {
         suggestions: [{ label: 'show', value: 'show' }],
       });
 
-      const { unmount } = render(<InputPrompt {...props} />);
+      const { unmount } = renderWithProviders(<InputPrompt {...props} />);
       await wait();
 
       expect(mockedUseCommandCompletion).toHaveBeenCalledWith(
@@ -919,7 +929,7 @@ describe('InputPrompt', () => {
         suggestions: [{ label: 'file👍.txt', value: 'file👍.txt' }],
       });
 
-      const { unmount } = render(<InputPrompt {...props} />);
+      const { unmount } = renderWithProviders(<InputPrompt {...props} />);
       await wait();
 
       expect(mockedUseCommandCompletion).toHaveBeenCalledWith(
@@ -947,7 +957,7 @@ describe('InputPrompt', () => {
         suggestions: [],
       });
 
-      const { unmount } = render(<InputPrompt {...props} />);
+      const { unmount } = renderWithProviders(<InputPrompt {...props} />);
       await wait();
 
       expect(mockedUseCommandCompletion).toHaveBeenCalledWith(
@@ -975,7 +985,7 @@ describe('InputPrompt', () => {
         suggestions: [{ label: 'my file.txt', value: 'my file.txt' }],
       });
 
-      const { unmount } = render(<InputPrompt {...props} />);
+      const { unmount } = renderWithProviders(<InputPrompt {...props} />);
       await wait();
 
       expect(mockedUseCommandCompletion).toHaveBeenCalledWith(
@@ -1003,7 +1013,7 @@ describe('InputPrompt', () => {
         suggestions: [],
       });
 
-      const { unmount } = render(<InputPrompt {...props} />);
+      const { unmount } = renderWithProviders(<InputPrompt {...props} />);
       await wait();
 
       expect(mockedUseCommandCompletion).toHaveBeenCalledWith(
@@ -1033,7 +1043,7 @@ describe('InputPrompt', () => {
         ],
       });
 
-      const { unmount } = render(<InputPrompt {...props} />);
+      const { unmount } = renderWithProviders(<InputPrompt {...props} />);
       await wait();
 
       expect(mockedUseCommandCompletion).toHaveBeenCalledWith(
@@ -1061,7 +1071,7 @@ describe('InputPrompt', () => {
         suggestions: [{ label: 'test-command', value: 'test-command' }],
       });
 
-      const { unmount } = render(<InputPrompt {...props} />);
+      const { unmount } = renderWithProviders(<InputPrompt {...props} />);
       await wait();
 
       expect(mockedUseCommandCompletion).toHaveBeenCalledWith(
@@ -1091,7 +1101,7 @@ describe('InputPrompt', () => {
         ],
       });
 
-      const { unmount } = render(<InputPrompt {...props} />);
+      const { unmount } = renderWithProviders(<InputPrompt {...props} />);
       await wait();
 
       expect(mockedUseCommandCompletion).toHaveBeenCalledWith(
@@ -1112,7 +1122,9 @@ describe('InputPrompt', () => {
     it('should not call buffer.handleInput when vim mode is enabled and vim handles the input', async () => {
       props.vimModeEnabled = true;
       props.vimHandleInput = vi.fn().mockReturnValue(true); // Mock that vim handled it.
-      const { stdin, unmount } = render(<InputPrompt {...props} />);
+      const { stdin, unmount } = renderWithProviders(
+        <InputPrompt {...props} />,
+      );
       await wait();
 
       stdin.write('i');
@@ -1126,7 +1138,9 @@ describe('InputPrompt', () => {
     it('should call buffer.handleInput when vim mode is enabled but vim does not handle the input', async () => {
       props.vimModeEnabled = true;
       props.vimHandleInput = vi.fn().mockReturnValue(false); // Mock that vim did NOT handle it.
-      const { stdin, unmount } = render(<InputPrompt {...props} />);
+      const { stdin, unmount } = renderWithProviders(
+        <InputPrompt {...props} />,
+      );
       await wait();
 
       stdin.write('i');
@@ -1140,7 +1154,9 @@ describe('InputPrompt', () => {
     it('should call handleInput when vim mode is disabled', async () => {
       // Mock vimHandleInput to return false (vim didn't handle the input)
       props.vimHandleInput = vi.fn().mockReturnValue(false);
-      const { stdin, unmount } = render(<InputPrompt {...props} />);
+      const { stdin, unmount } = renderWithProviders(
+        <InputPrompt {...props} />,
+      );
       await wait();
 
       stdin.write('i');
@@ -1155,7 +1171,9 @@ describe('InputPrompt', () => {
   describe('unfocused paste', () => {
     it('should handle bracketed paste when not focused', async () => {
       props.focus = false;
-      const { stdin, unmount } = render(<InputPrompt {...props} />);
+      const { stdin, unmount } = renderWithProviders(
+        <InputPrompt {...props} />,
+      );
       await wait();
 
       stdin.write('\x1B[200~pasted text\x1B[201~');
@@ -1172,7 +1190,9 @@ describe('InputPrompt', () => {
 
     it('should ignore regular keypresses when not focused', async () => {
       props.focus = false;
-      const { stdin, unmount } = render(<InputPrompt {...props} />);
+      const { stdin, unmount } = renderWithProviders(
+        <InputPrompt {...props} />,
+      );
       await wait();
 
       stdin.write('a');
@@ -1189,7 +1209,9 @@ describe('InputPrompt', () => {
       props.onEscapePromptChange = onEscapePromptChange;
       props.buffer.setText('text to clear');
 
-      const { stdin, unmount } = render(<InputPrompt {...props} />);
+      const { stdin, unmount } = renderWithProviders(
+        <InputPrompt {...props} />,
+      );
       await wait();
 
       stdin.write('\x1B');
@@ -1208,7 +1230,9 @@ describe('InputPrompt', () => {
       props.onEscapePromptChange = onEscapePromptChange;
       props.buffer.setText('some text');
 
-      const { stdin, unmount } = render(<InputPrompt {...props} />);
+      const { stdin, unmount } = renderWithProviders(
+        <InputPrompt {...props} />,
+      );
 
       stdin.write('\x1B');
 
@@ -1227,7 +1251,9 @@ describe('InputPrompt', () => {
     it('should handle ESC in shell mode by disabling shell mode', async () => {
       props.shellModeActive = true;
 
-      const { stdin, unmount } = render(<InputPrompt {...props} />);
+      const { stdin, unmount } = renderWithProviders(
+        <InputPrompt {...props} />,
+      );
       await wait();
 
       stdin.write('\x1B');
@@ -1244,7 +1270,9 @@ describe('InputPrompt', () => {
         suggestions: [{ label: 'suggestion', value: 'suggestion' }],
       });
 
-      const { stdin, unmount } = render(<InputPrompt {...props} />);
+      const { stdin, unmount } = renderWithProviders(
+        <InputPrompt {...props} />,
+      );
       await wait();
 
       stdin.write('\x1B');
@@ -1258,7 +1286,9 @@ describe('InputPrompt', () => {
       props.onEscapePromptChange = undefined;
       props.buffer.setText('some text');
 
-      const { stdin, unmount } = render(<InputPrompt {...props} />);
+      const { stdin, unmount } = renderWithProviders(
+        <InputPrompt {...props} />,
+      );
       await wait();
 
       stdin.write('\x1B');
@@ -1268,7 +1298,9 @@ describe('InputPrompt', () => {
     });
 
     it('should not interfere with existing keyboard shortcuts', async () => {
-      const { stdin, unmount } = render(<InputPrompt {...props} />);
+      const { stdin, unmount } = renderWithProviders(
+        <InputPrompt {...props} />,
+      );
       await wait();
 
       stdin.write('\x0C');
@@ -1298,7 +1330,9 @@ describe('InputPrompt', () => {
     });
 
     it('invokes reverse search on Ctrl+R', async () => {
-      const { stdin, stdout, unmount } = render(<InputPrompt {...props} />);
+      const { stdin, stdout, unmount } = renderWithProviders(
+        <InputPrompt {...props} />,
+      );
       await wait();
 
       stdin.write('\x12');
@@ -1314,7 +1348,9 @@ describe('InputPrompt', () => {
     });
 
     it('resets reverse search state on Escape', async () => {
-      const { stdin, stdout, unmount } = render(<InputPrompt {...props} />);
+      const { stdin, stdout, unmount } = renderWithProviders(
+        <InputPrompt {...props} />,
+      );
       await wait();
 
       stdin.write('\x12');
@@ -1331,7 +1367,9 @@ describe('InputPrompt', () => {
     });
 
     it('completes the highlighted entry on Tab and exits reverse-search', async () => {
-      const { stdin, stdout, unmount } = render(<InputPrompt {...props} />);
+      const { stdin, stdout, unmount } = renderWithProviders(
+        <InputPrompt {...props} />,
+      );
       stdin.write('\x12');
       await wait();
       stdin.write('\t');
@@ -1345,7 +1383,9 @@ describe('InputPrompt', () => {
     });
 
     it('submits the highlighted entry on Enter and exits reverse-search', async () => {
-      const { stdin, stdout, unmount } = render(<InputPrompt {...props} />);
+      const { stdin, stdout, unmount } = renderWithProviders(
+        <InputPrompt {...props} />,
+      );
       stdin.write('\x12');
       await wait();
       expect(stdout.lastFrame()).toContain('(r:)');
@@ -1362,7 +1402,9 @@ describe('InputPrompt', () => {
     it('text and cursor position should be restored after reverse search', async () => {
       props.buffer.setText('initial text');
       props.buffer.cursor = [0, 3];
-      const { stdin, stdout, unmount } = render(<InputPrompt {...props} />);
+      const { stdin, stdout, unmount } = renderWithProviders(
+        <InputPrompt {...props} />,
+      );
       stdin.write('\x12');
       await wait();
       expect(stdout.lastFrame()).toContain('(r:)');
