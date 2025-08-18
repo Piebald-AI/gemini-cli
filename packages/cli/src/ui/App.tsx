@@ -1179,7 +1179,7 @@ const App = ({
                 alignItems={isNarrow ? 'flex-start' : 'center'}
               >
                 <Box>
-                  {process.env.GEMINI_SYSTEM_MD && (
+                  {process.env['GEMINI_SYSTEM_MD'] && (
                     <Text color={Colors.AccentRed}>|⌐■_■| </Text>
                   )}
                   {ctrlCPressedOnce ? (
