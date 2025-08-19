@@ -211,7 +211,22 @@ export const useSlashCommandProcessor = (
     ],
   );
 
-  const ideMode = config?.getIdeMode();
+  useEffect(() => {
+    if (!config) {
+      return;
+    }
+
+    const ideClient = config.getIdeClient();
+    const listener = () => {
+      reloadCommands();
+    };
+
+    ideClient.addStatusChangeListener(listener);
+
+    return () => {
+      ideClient.removeStatusChangeListener(listener);
+    };
+  }, [config, reloadCommands]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -233,7 +248,7 @@ export const useSlashCommandProcessor = (
     return () => {
       controller.abort();
     };
-  }, [config, ideMode, reloadTrigger]);
+  }, [config, reloadTrigger]);
 
   const handleSlashCommand = useCallback(
     async (

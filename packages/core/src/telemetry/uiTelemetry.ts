@@ -64,6 +64,10 @@ export interface SessionMetrics {
     };
     byName: Record<string, ToolCallStats>;
   };
+  files: {
+    totalLinesAdded: number;
+    totalLinesRemoved: number;
+  };
 }
 
 const createInitialModelMetrics = (): ModelMetrics => ({
@@ -96,6 +100,10 @@ const createInitialMetrics = (): SessionMetrics => ({
       [ToolCallDecision.AUTO_ACCEPT]: 0,
     },
     byName: {},
+  },
+  files: {
+    totalLinesAdded: 0,
+    totalLinesRemoved: 0,
   },
 });
 
@@ -184,7 +192,7 @@ export class UiTelemetryService extends EventEmitter {
   }
 
   private processToolCall(event: ToolCallEvent) {
-    const { tools } = this.#metrics;
+    const { tools, files } = this.#metrics;
     tools.totalCalls++;
     tools.totalDurationMs += event.duration_ms;
 
@@ -221,6 +229,16 @@ export class UiTelemetryService extends EventEmitter {
     if (event.decision) {
       tools.totalDecisions[event.decision]++;
       toolStats.decisions[event.decision]++;
+    }
+
+    // Aggregate line count data from metadata
+    if (event.metadata) {
+      if (event.metadata['ai_added_lines'] !== undefined) {
+        files.totalLinesAdded += event.metadata['ai_added_lines'];
+      }
+      if (event.metadata['ai_removed_lines'] !== undefined) {
+        files.totalLinesRemoved += event.metadata['ai_removed_lines'];
+      }
     }
   }
 

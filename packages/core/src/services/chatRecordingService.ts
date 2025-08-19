@@ -15,6 +15,9 @@ import fs from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { PartListUnion } from '@google/genai';
 
+/**
+ * Token usage summary for a message or conversation.
+ */
 export interface TokensSummary {
   input: number; // promptTokenCount
   output: number; // candidatesTokenCount
@@ -24,13 +27,18 @@ export interface TokensSummary {
   total: number; // totalTokenCount
 }
 
-// Base fields common to all messages.
+/**
+ * Base fields common to all messages.
+ */
 export interface BaseMessageRecord {
   id: string;
   timestamp: string;
   content: string;
 }
 
+/**
+ * Record of a tool call execution within a conversation.
+ */
 export interface ToolCallRecord {
   id: string;
   name: string;
@@ -45,7 +53,9 @@ export interface ToolCallRecord {
   renderOutputAsMarkdown?: boolean;
 }
 
-// Message type and message type-specific fields.
+/**
+ * Message type and message type-specific fields.
+ */
 export type ConversationRecordExtra =
   | {
       type: 'user' | 'system' | 'error';
@@ -58,8 +68,14 @@ export type ConversationRecordExtra =
       model?: string;
     };
 
+/**
+ * A single message record in a conversation.
+ */
 export type MessageRecord = BaseMessageRecord & ConversationRecordExtra;
 
+/**
+ * Complete conversation record stored in session files.
+ */
 export interface ConversationRecord {
   sessionId: string;
   projectHash: string;
@@ -68,11 +84,25 @@ export interface ConversationRecord {
   messages: MessageRecord[];
 }
 
+/**
+ * Data structure for resuming an existing session.
+ */
 export interface ResumedSessionData {
   conversation: ConversationRecord;
   filePath: string;
 }
 
+/**
+ * Service for automatically recording chat conversations to disk.
+ *
+ * This service provides comprehensive conversation recording that captures:
+ * - All user and assistant messages
+ * - Tool calls and their execution results
+ * - Token usage statistics
+ * - Assistant thoughts and reasoning
+ *
+ * Sessions are stored as JSON files in ~/.gemini/tmp/<project_hash>/chats/
+ */
 export class ChatRecordingService {
   private conversationFile: string | null = null;
   private cachedLastConvData: string | null = null;
@@ -134,9 +164,8 @@ export class ChatRecordingService {
       this.queuedThoughts = [];
       this.queuedTokens = null;
     } catch (error) {
-      if (this.config.getDebugMode()) {
-        console.error('Error initializing chat recording service:', error);
-      }
+      console.error('Error initializing chat recording service:', error);
+      throw error;
     }
   }
 
@@ -158,6 +187,9 @@ export class ChatRecordingService {
     };
   }
 
+  /**
+   * Records a message in the conversation.
+   */
   recordMessage(message: {
     type: ConversationRecordExtra['type'];
     content: string;
@@ -193,12 +225,14 @@ export class ChatRecordingService {
         }
       });
     } catch (error) {
-      if (this.config.getDebugMode()) {
-        console.error('Error saving message:', error);
-      }
+      console.error('Error saving message:', error);
+      throw error;
     }
   }
 
+  /**
+   * Records a thought from the assistant's reasoning process.
+   */
   recordThought(thought: ThoughtSummary): void {
     if (!this.conversationFile) return;
 
@@ -208,13 +242,14 @@ export class ChatRecordingService {
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
-      if (this.config.getDebugMode()) {
-        console.error('Error saving thought:', error);
-      }
+      console.error('Error saving thought:', error);
+      throw error;
     }
   }
 
-  /** Updates the tokens for the last message in the conversation (which should be by Gemini). */
+  /**
+   * Updates the tokens for the last message in the conversation (which should be by Gemini).
+   */
   recordMessageTokens(tokens: {
     input: number;
     output: number;
@@ -238,15 +273,15 @@ export class ChatRecordingService {
         }
       });
     } catch (error) {
-      if (this.config.getDebugMode()) {
-        console.error('Error updating message tokens:', error);
-      }
+      console.error('Error updating message tokens:', error);
+      throw error;
     }
   }
 
   /**
-   * Adds tool calls to the last message in the conversation (which should be by Gemini). */
-  recordToolCalls(toolCalls: Array<ToolCallRecord>): void {
+   * Adds tool calls to the last message in the conversation (which should be by Gemini).
+   */
+  recordToolCalls(toolCalls: ToolCallRecord[]): void {
     if (!this.conversationFile) return;
 
     try {
@@ -319,18 +354,24 @@ export class ChatRecordingService {
         }
       });
     } catch (error) {
-      if (this.config.getDebugMode()) {
-        console.error('Error adding tool call to message:', error);
-      }
+      console.error('Error adding tool call to message:', error);
+      throw error;
     }
   }
 
-  /** Loads up the conversation record from disk. */
+  /**
+   * Loads up the conversation record from disk.
+   */
   private readConversation(): ConversationRecord {
     try {
       this.cachedLastConvData = fs.readFileSync(this.conversationFile!, 'utf8');
       return JSON.parse(this.cachedLastConvData);
-    } catch {
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+        console.error('Error reading conversation file:', error);
+        throw error;
+      }
+
       // Placeholder empty conversation if file doesn't exist.
       return {
         sessionId: this.sessionId,
@@ -342,7 +383,9 @@ export class ChatRecordingService {
     }
   }
 
-  /** Saves the conversation record; overwrites the file. */
+  /**
+   * Saves the conversation record; overwrites the file.
+   */
   private writeConversation(conversation: ConversationRecord): void {
     try {
       if (!this.conversationFile) return;
@@ -357,9 +400,8 @@ export class ChatRecordingService {
         fs.writeFileSync(this.conversationFile, newContent);
       }
     } catch (error) {
-      if (this.config.getDebugMode()) {
-        console.error('Error writing conversation file:', error);
-      }
+      console.error('Error writing conversation file:', error);
+      throw error;
     }
   }
 
@@ -384,9 +426,7 @@ export class ChatRecordingService {
       const sessionPath = path.join(chatsDir, `${sessionId}.json`);
       fs.unlinkSync(sessionPath);
     } catch (error) {
-      if (this.config.getDebugMode()) {
-        console.error('Error deleting session:', error);
-      }
+      console.error('Error deleting session:', error);
       throw error;
     }
   }

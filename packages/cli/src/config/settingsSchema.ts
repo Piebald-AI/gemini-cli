@@ -104,7 +104,7 @@ export const SETTINGS_SCHEMA = {
     requiresRestart: true,
     default: true,
     description: 'Enable collection of usage statistics',
-    showInDialog: true,
+    showInDialog: false, // All details are shown in /privacy and dependent on auth type
   },
   autoConfigureMaxOldSpaceSize: {
     type: 'boolean',
@@ -129,10 +129,10 @@ export const SETTINGS_SCHEMA = {
     label: 'Max Session Turns',
     category: 'General',
     requiresRestart: false,
-    default: undefined as number | undefined,
+    default: -1,
     description:
-      'Maximum number of user/model/tool turns to keep in a session.',
-    showInDialog: false,
+      'Maximum number of user/model/tool turns to keep in a session. -1 means unlimited.',
+    showInDialog: true,
   },
   memoryImportFormat: {
     type: 'string',
@@ -148,9 +148,9 @@ export const SETTINGS_SCHEMA = {
     label: 'Memory Discovery Max Dirs',
     category: 'General',
     requiresRestart: false,
-    default: undefined as number | undefined,
+    default: 200,
     description: 'Maximum number of directories to search for memory.',
-    showInDialog: false,
+    showInDialog: true,
   },
   contextFileName: {
     type: 'object',
