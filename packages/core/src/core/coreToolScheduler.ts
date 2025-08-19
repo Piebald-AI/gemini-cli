@@ -234,7 +234,6 @@ interface CoreToolSchedulerOptions {
   getPreferredEditor: () => EditorType | undefined;
   config: Config;
   chatRecordingService?: ChatRecordingService;
-  getTerminalSize: () => { columns: number; rows: number };
   onEditorClose: () => void;
 }
 
@@ -247,7 +246,6 @@ export class CoreToolScheduler {
   private getPreferredEditor: () => EditorType | undefined;
   private config: Config;
   private chatRecordingService?: ChatRecordingService;
-  private getTerminalSize: () => { columns: number; rows: number };
   private onEditorClose: () => void;
   private isFinalizingToolCalls = false;
   private isScheduling = false;
@@ -266,7 +264,6 @@ export class CoreToolScheduler {
     this.onToolCallsUpdate = options.onToolCallsUpdate;
     this.getPreferredEditor = options.getPreferredEditor;
     this.chatRecordingService = options.chatRecordingService;
-    this.getTerminalSize = options.getTerminalSize;
     this.onEditorClose = options.onEditorClose;
   }
 

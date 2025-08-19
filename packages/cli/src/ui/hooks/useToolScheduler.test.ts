@@ -148,6 +148,16 @@ const mockToolRequiresConfirmation = new MockTool(
   true,
 );
 
+// Create mock chat recording service
+const mockChatRecordingService = {
+  recordThought: vi.fn(),
+  initialize: vi.fn(),
+  recordMessage: vi.fn(),
+  recordMessageTokens: vi.fn(),
+  recordToolCalls: vi.fn(),
+  getConversationFile: vi.fn(),
+} as any;
+
 describe('useReactToolScheduler in YOLO Mode', () => {
   let onComplete: Mock;
   let setPendingHistoryItem: Mock;
@@ -179,6 +189,7 @@ describe('useReactToolScheduler in YOLO Mode', () => {
         mockConfig as unknown as Config,
         setPendingHistoryItem,
         () => undefined,
+        mockChatRecordingService,
         () => {},
       ),
     );
@@ -333,6 +344,7 @@ describe('useReactToolScheduler', () => {
         mockConfig as unknown as Config,
         setPendingHistoryItem,
         () => undefined,
+        mockChatRecordingService,
         () => {},
       ),
     );

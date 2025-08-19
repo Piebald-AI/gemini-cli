@@ -145,9 +145,9 @@ export function convertSessionToHistoryFormats(
 
   for (const msg of messages) {
     // Skip system/error messages and user slash commands
-    if (msg.type === 'system' || msg.type === 'error') {
-      continue;
-    }
+    // if (msg.type === 'system' || msg.type === 'error') {
+    //   continue;
+    // }
 
     if (msg.type === 'user') {
       // Skip user slash commands

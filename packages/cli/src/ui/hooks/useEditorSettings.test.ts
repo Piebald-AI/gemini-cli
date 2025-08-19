@@ -17,12 +17,13 @@ import { act } from 'react';
 import { renderHook } from '@testing-library/react';
 import { useEditorSettings } from './useEditorSettings.js';
 import { LoadedSettings, SettingScope } from '../../config/settings.js';
-import { MessageType, type HistoryItem } from '../types.js';
+import { MessageType } from '../types.js';
 import {
   type EditorType,
   checkHasEditorType,
   allowEditorTypeInSandbox,
 } from '@google/gemini-cli-core';
+import { UseHistoryManagerReturn } from './useHistoryManager.js';
 
 vi.mock('@google/gemini-cli-core', async () => {
   const actual = await vi.importActual('@google/gemini-cli-core');
@@ -39,9 +40,7 @@ const mockAllowEditorTypeInSandbox = vi.mocked(allowEditorTypeInSandbox);
 describe('useEditorSettings', () => {
   let mockLoadedSettings: LoadedSettings;
   let mockSetEditorError: MockedFunction<(error: string | null) => void>;
-  let mockAddItem: MockedFunction<
-    (item: Omit<HistoryItem, 'id'>, timestamp: number) => void
-  >;
+  let mockAddItem: MockedFunction<UseHistoryManagerReturn['addItem']>;
 
   beforeEach(() => {
     vi.resetAllMocks();

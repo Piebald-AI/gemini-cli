@@ -143,7 +143,6 @@ export function useReactToolScheduler(
         getPreferredEditor,
         config,
         chatRecordingService,
-        getTerminalSize: () => terminalSize,
         onEditorClose,
       }),
     [
@@ -153,7 +152,6 @@ export function useReactToolScheduler(
       toolCallsUpdateHandler,
       getPreferredEditor,
       chatRecordingService,
-      terminalSize,
       onEditorClose,
     ],
   );

@@ -5,19 +5,23 @@
  */
 
 import { renderHook, act } from '@testing-library/react';
-import { useSessionBrowser, convertSessionToHistoryFormats } from './useSessionBrowser.js';
+import {
+  useSessionBrowser,
+  convertSessionToHistoryFormats,
+} from './useSessionBrowser.js';
 import * as fs from 'fs/promises';
 import path from 'path';
 import { MessageType, ToolCallStatus } from '../types.js';
-import type { ConversationRecord, MessageRecord } from '@google/gemini-cli-core';
+import type {
+  ConversationRecord,
+  MessageRecord,
+} from '@google/gemini-cli-core';
 
 vi.mock('fs/promises');
 vi.mock('path');
 
 const MOCKED_PROJECT_TEMP_DIR = '/test/project/temp';
-const MOCKED_CHATS_DIR = path.join(MOCKED_PROJECT_TEMP_DIR, 'chats');
 const MOCKED_SESSION_ID = 'test-session-123';
-const MOCKED_SESSION_FILE = path.join(MOCKED_CHATS_DIR, `${MOCKED_SESSION_ID}.json`);
 
 describe('useSessionBrowser', () => {
   const mockedFs = vi.mocked(fs);
@@ -40,7 +44,10 @@ describe('useSessionBrowser', () => {
 
     // Mock path.join to return predictable paths
     mockedPath.join.mockImplementation((...segments) => {
-      if (segments.includes('chats') && segments.includes('test-session-123.json')) {
+      if (
+        segments.includes('chats') &&
+        segments.includes('test-session-123.json')
+      ) {
         return '/test/project/temp/chats/test-session-123.json';
       }
       return segments.join('/');
@@ -53,7 +60,11 @@ describe('useSessionBrowser', () => {
   describe('hook initialization', () => {
     it('should initialize with isSessionBrowserOpen set to false', () => {
       const { result } = renderHook(() =>
-        useSessionBrowser(mockConfig as any, mockChatRecordingService as any, mockOnLoadHistory)
+        useSessionBrowser(
+          mockConfig as any,
+          mockChatRecordingService as any,
+          mockOnLoadHistory,
+        ),
       );
 
       expect(result.current.isSessionBrowserOpen).toBe(false);
@@ -61,7 +72,11 @@ describe('useSessionBrowser', () => {
 
     it('should provide all expected hook methods', () => {
       const { result } = renderHook(() =>
-        useSessionBrowser(mockConfig as any, mockChatRecordingService as any, mockOnLoadHistory)
+        useSessionBrowser(
+          mockConfig as any,
+          mockChatRecordingService as any,
+          mockOnLoadHistory,
+        ),
       );
 
       expect(result.current).toHaveProperty('isSessionBrowserOpen');
@@ -74,7 +89,11 @@ describe('useSessionBrowser', () => {
   describe('session browser open/close functionality', () => {
     it('should open session browser when openSessionBrowser is called', () => {
       const { result } = renderHook(() =>
-        useSessionBrowser(mockConfig as any, mockChatRecordingService as any, mockOnLoadHistory)
+        useSessionBrowser(
+          mockConfig as any,
+          mockChatRecordingService as any,
+          mockOnLoadHistory,
+        ),
       );
 
       act(() => {
@@ -86,7 +105,11 @@ describe('useSessionBrowser', () => {
 
     it('should close session browser when closeSessionBrowser is called', () => {
       const { result } = renderHook(() =>
-        useSessionBrowser(mockConfig as any, mockChatRecordingService as any, mockOnLoadHistory)
+        useSessionBrowser(
+          mockConfig as any,
+          mockChatRecordingService as any,
+          mockOnLoadHistory,
+        ),
       );
 
       // First open it
@@ -129,7 +152,11 @@ describe('useSessionBrowser', () => {
       mockedFs.readFile.mockResolvedValue(JSON.stringify(mockConversation));
 
       const { result } = renderHook(() =>
-        useSessionBrowser(mockConfig as any, mockChatRecordingService as any, mockOnLoadHistory)
+        useSessionBrowser(
+          mockConfig as any,
+          mockChatRecordingService as any,
+          mockOnLoadHistory,
+        ),
       );
 
       await act(async () => {
@@ -137,15 +164,20 @@ describe('useSessionBrowser', () => {
       });
 
       // Verify file was read from correct path
-      expect(mockedFs.readFile).toHaveBeenCalledWith('/chats/test-session-123.json', 'utf8');
+      expect(mockedFs.readFile).toHaveBeenCalledWith(
+        '/chats/test-session-123.json',
+        'utf8',
+      );
 
       // Verify config was updated with session ID
-      expect(mockConfig.setSessionId).toHaveBeenCalledWith('existing-session-456');
+      expect(mockConfig.setSessionId).toHaveBeenCalledWith(
+        'existing-session-456',
+      );
 
       // Verify chat recording service was initialized with resumed session data
       expect(mockChatRecordingService.initialize).toHaveBeenCalledWith({
         conversation: mockConversation,
-        filePath: '/chats/test-session-123.json'
+        filePath: '/chats/test-session-123.json',
       });
 
       // Verify session browser was closed
@@ -171,7 +203,7 @@ describe('useSessionBrowser', () => {
           {
             id: 'msg-2',
             timestamp: '2025-01-01T00:02:00Z',
-            content: 'I\'ll run the ls command for you.',
+            content: "I'll run the ls command for you.",
             type: 'gemini',
             toolCalls: [
               {
@@ -193,7 +225,11 @@ describe('useSessionBrowser', () => {
       mockedFs.readFile.mockResolvedValue(JSON.stringify(mockConversation));
 
       const { result } = renderHook(() =>
-        useSessionBrowser(mockConfig as any, mockChatRecordingService as any, mockOnLoadHistory)
+        useSessionBrowser(
+          mockConfig as any,
+          mockChatRecordingService as any,
+          mockOnLoadHistory,
+        ),
       );
 
       await act(async () => {
@@ -208,7 +244,9 @@ describe('useSessionBrowser', () => {
       expect(loadHistoryCall.history[2].type).toBe('tool_group');
       expect(loadHistoryCall.history[2].tools).toHaveLength(1);
       expect(loadHistoryCall.history[2].tools[0].name).toBe('Bash');
-      expect(loadHistoryCall.history[2].tools[0].status).toBe(ToolCallStatus.Success);
+      expect(loadHistoryCall.history[2].tools[0].status).toBe(
+        ToolCallStatus.Success,
+      );
     });
 
     it('should filter out empty messages', async () => {
@@ -248,7 +286,11 @@ describe('useSessionBrowser', () => {
       mockedFs.readFile.mockResolvedValue(JSON.stringify(mockConversation));
 
       const { result } = renderHook(() =>
-        useSessionBrowser(mockConfig as any, mockChatRecordingService as any, mockOnLoadHistory)
+        useSessionBrowser(
+          mockConfig as any,
+          mockChatRecordingService as any,
+          mockOnLoadHistory,
+        ),
       );
 
       await act(async () => {
@@ -268,10 +310,16 @@ describe('useSessionBrowser', () => {
       error.code = 'ENOENT';
       mockedFs.readFile.mockRejectedValue(error);
 
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleErrorSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
 
       const { result } = renderHook(() =>
-        useSessionBrowser(mockConfig as any, mockChatRecordingService as any, mockOnLoadHistory)
+        useSessionBrowser(
+          mockConfig as any,
+          mockChatRecordingService as any,
+          mockOnLoadHistory,
+        ),
       );
 
       // Open session browser first
@@ -283,7 +331,10 @@ describe('useSessionBrowser', () => {
         await result.current.handleResumeSession(MOCKED_SESSION_ID);
       });
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith('Error resuming session:', error);
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        'Error resuming session:',
+        error,
+      );
       expect(result.current.isSessionBrowserOpen).toBe(false); // Should be closed on error
       expect(mockOnLoadHistory).not.toHaveBeenCalled();
 
@@ -293,10 +344,16 @@ describe('useSessionBrowser', () => {
     it('should handle JSON parse error gracefully', async () => {
       mockedFs.readFile.mockResolvedValue('invalid json');
 
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleErrorSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
 
       const { result } = renderHook(() =>
-        useSessionBrowser(mockConfig as any, mockChatRecordingService as any, mockOnLoadHistory)
+        useSessionBrowser(
+          mockConfig as any,
+          mockChatRecordingService as any,
+          mockOnLoadHistory,
+        ),
       );
 
       act(() => {
@@ -326,7 +383,11 @@ describe('useSessionBrowser', () => {
       mockedFs.readFile.mockResolvedValue(JSON.stringify(mockConversation));
 
       const { result } = renderHook(() =>
-        useSessionBrowser(mockConfig as any, mockChatRecordingService as any, mockOnLoadHistory)
+        useSessionBrowser(
+          mockConfig as any,
+          mockChatRecordingService as any,
+          mockOnLoadHistory,
+        ),
       );
 
       act(() => {
@@ -346,7 +407,11 @@ describe('useSessionBrowser', () => {
   describe('callback stability', () => {
     it('should maintain stable callback references', () => {
       const { result, rerender } = renderHook(() =>
-        useSessionBrowser(mockConfig as any, mockChatRecordingService as any, mockOnLoadHistory)
+        useSessionBrowser(
+          mockConfig as any,
+          mockChatRecordingService as any,
+          mockOnLoadHistory,
+        ),
       );
 
       const initialCallbacks = {
@@ -357,9 +422,15 @@ describe('useSessionBrowser', () => {
 
       rerender();
 
-      expect(result.current.openSessionBrowser).toBe(initialCallbacks.openSessionBrowser);
-      expect(result.current.closeSessionBrowser).toBe(initialCallbacks.closeSessionBrowser);
-      expect(result.current.handleResumeSession).toBe(initialCallbacks.handleResumeSession);
+      expect(result.current.openSessionBrowser).toBe(
+        initialCallbacks.openSessionBrowser,
+      );
+      expect(result.current.closeSessionBrowser).toBe(
+        initialCallbacks.closeSessionBrowser,
+      );
+      expect(result.current.handleResumeSession).toBe(
+        initialCallbacks.handleResumeSession,
+      );
     });
 
     it('should update handleResumeSession callback when dependencies change', () => {
@@ -372,7 +443,7 @@ describe('useSessionBrowser', () => {
             chatRecordingService: mockChatRecordingService as any,
             onLoadHistory: mockOnLoadHistory,
           },
-        }
+        },
       );
 
       const initialCallback = result.current.handleResumeSession;
@@ -508,7 +579,7 @@ describe('convertSessionToHistoryFormats', () => {
       {
         id: 'msg-1',
         timestamp: '2025-01-01T00:01:00Z',
-        content: 'I\'ll help you with that.',
+        content: "I'll help you with that.",
         type: 'gemini',
         toolCalls: [
           {
@@ -541,29 +612,33 @@ describe('convertSessionToHistoryFormats', () => {
     expect(result.history).toHaveLength(2); // text message + tool group
     expect(result.history[0]).toEqual({
       type: MessageType.GEMINI,
-      text: 'I\'ll help you with that.',
+      text: "I'll help you with that.",
     });
 
     expect(result.history[1].type).toBe('tool_group');
-    expect(result.history[1].tools).toHaveLength(2);
-    expect(result.history[1].tools[0]).toEqual({
-      callId: 'tool-1',
-      name: 'Execute Command',
-      description: 'Run bash command',
-      renderOutputAsMarkdown: false,
-      status: ToolCallStatus.Success,
-      resultDisplay: 'total 4\ndrwxr-xr-x 2 user user 4096 Jan 1 00:00 .',
-      confirmationDetails: undefined,
-    });
-    expect(result.history[1].tools[1]).toEqual({
-      callId: 'tool-2',
-      name: 'Read File',
-      description: 'Read file contents',
-      renderOutputAsMarkdown: true, // default value
-      status: ToolCallStatus.Error,
-      resultDisplay: 'Permission denied',
-      confirmationDetails: undefined,
-    });
+    // This if-statement is only necessary because TypeScript can't tell that the toBe() assertion
+    // protects the .tools access below.
+    if (result.history[1].type == 'tool_group') {
+      expect(result.history[1].tools).toHaveLength(2);
+      expect(result.history[1].tools[0]).toEqual({
+        callId: 'tool-1',
+        name: 'Execute Command',
+        description: 'Run bash command',
+        renderOutputAsMarkdown: false,
+        status: ToolCallStatus.Success,
+        resultDisplay: 'total 4\ndrwxr-xr-x 2 user user 4096 Jan 1 00:00 .',
+        confirmationDetails: undefined,
+      });
+      expect(result.history[1].tools[1]).toEqual({
+        callId: 'tool-2',
+        name: 'Read File',
+        description: 'Read file contents',
+        renderOutputAsMarkdown: true, // default value
+        status: ToolCallStatus.Error,
+        resultDisplay: 'Permission denied',
+        confirmationDetails: undefined,
+      });
+    }
   });
 
   it('should skip empty tool calls arrays', () => {

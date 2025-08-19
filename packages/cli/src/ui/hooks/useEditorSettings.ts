@@ -6,7 +6,7 @@
 
 import { useState, useCallback } from 'react';
 import { LoadedSettings, SettingScope } from '../../config/settings.js';
-import { type HistoryItem, MessageType } from '../types.js';
+import { MessageType } from '../types.js';
 import {
   allowEditorTypeInSandbox,
   checkHasEditorType,

@@ -13,16 +13,9 @@ import {
   afterEach,
   afterAll,
 } from 'vitest';
-import {
-  Logger,
-  MessageSenderType,
-  LogEntry,
-  encodeTagName,
-  decodeTagName,
-} from './logger.js';
-import { promises as fs, existsSync } from 'node:fs';
+import { Logger, MessageSenderType, LogEntry } from './logger.js';
+import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import { Content } from '@google/genai';
 
 import crypto from 'node:crypto';
 import os from 'node:os';
