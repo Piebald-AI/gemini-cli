@@ -172,7 +172,7 @@ describe('Session Cleanup', () => {
 
       expect(result.scanned).toBe(4);
       expect(result.deleted).toBe(2); // Should delete the 2-week-old and 1-month-old sessions
-      expect(result.skipped).toBe(1); // Recent session should be skipped
+      expect(result.skipped).toBe(2); // Current session + recent session should be skipped
       expect(result.errors).toHaveLength(0);
     });
 
@@ -229,7 +229,7 @@ describe('Session Cleanup', () => {
 
       expect(result.scanned).toBe(4);
       expect(result.deleted).toBe(2); // Should delete 2 oldest sessions (after skipping the current one)
-      expect(result.skipped).toBe(1); // Current session + 1 recent session should be kept
+      expect(result.skipped).toBe(2); // Current session + 1 recent session should be kept
     });
 
     it('should handle file system errors gracefully', async () => {
