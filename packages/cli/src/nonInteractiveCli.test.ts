@@ -21,11 +21,20 @@ import { vi } from 'vitest';
 vi.mock('@google/gemini-cli-core', async (importOriginal) => {
   const original =
     await importOriginal<typeof import('@google/gemini-cli-core')>();
+
+  class MockChatRecordingService {
+    initialize = vi.fn();
+    recordMessage = vi.fn();
+    recordMessageTokens = vi.fn();
+    recordToolCalls = vi.fn();
+  }
+
   return {
     ...original,
     executeToolCall: vi.fn(),
     shutdownTelemetry: vi.fn(),
     isTelemetrySdkInitialized: vi.fn().mockReturnValue(true),
+    ChatRecordingService: MockChatRecordingService,
   };
 });
 
@@ -95,6 +104,10 @@ describe('runNonInteractive', () => {
     const events: ServerGeminiStreamEvent[] = [
       { type: GeminiEventType.Content, value: 'Hello' },
       { type: GeminiEventType.Content, value: ' World' },
+      {
+        type: GeminiEventType.Finished,
+        value: { reason: undefined, usageMetadata: { totalTokenCount: 10 } },
+      },
     ];
     mockGeminiClient.sendMessageStream.mockReturnValue(
       createStreamFromEvents(events),
