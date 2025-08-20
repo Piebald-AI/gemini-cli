@@ -987,6 +987,7 @@ describe('App UI', () => {
       initError: null,
       pendingHistoryItems: [],
       thought: null,
+      cancelOngoingRequest: vi.fn(),
     });
 
     const { lastFrame, unmount } = renderWithProviders(
@@ -1012,6 +1013,7 @@ describe('App UI', () => {
         initError: null,
         pendingHistoryItems: [],
         thought: null,
+        cancelOngoingRequest: vi.fn(),
       });
 
       mockConfig.getGeminiClient.mockReturnValue({
@@ -1336,6 +1338,7 @@ describe('App UI', () => {
         initError: null,
         pendingHistoryItems: [],
         thought: null,
+        cancelOngoingRequest: vi.fn(),
       });
 
       const { unmount } = renderWithProviders(
@@ -1361,6 +1364,7 @@ describe('App UI', () => {
         initError: null,
         pendingHistoryItems: [],
         thought: null,
+        cancelOngoingRequest: vi.fn(),
       });
 
       const { unmount, rerender } = renderWithProviders(
@@ -1379,6 +1383,7 @@ describe('App UI', () => {
         initError: null,
         pendingHistoryItems: [],
         thought: null,
+        cancelOngoingRequest: vi.fn(),
       });
 
       // Rerender to trigger the useEffect with new state
@@ -1408,6 +1413,7 @@ describe('App UI', () => {
         initError: null,
         pendingHistoryItems: [],
         thought: 'Processing...',
+        cancelOngoingRequest: vi.fn(),
       });
 
       const { unmount, lastFrame } = renderWithProviders(
@@ -1435,6 +1441,7 @@ describe('App UI', () => {
         initError: null,
         pendingHistoryItems: [],
         thought: null,
+        cancelOngoingRequest: vi.fn(),
       });
 
       const { unmount, lastFrame } = renderWithProviders(
@@ -1464,6 +1471,7 @@ describe('App UI', () => {
         initError: null,
         pendingHistoryItems: [],
         thought: null,
+        cancelOngoingRequest: vi.fn(),
       });
 
       const { unmount } = renderWithProviders(
@@ -1492,6 +1500,7 @@ describe('App UI', () => {
         initError: null,
         pendingHistoryItems: [],
         thought: null,
+        cancelOngoingRequest: vi.fn(),
       });
 
       const { unmount, lastFrame } = renderWithProviders(
@@ -1520,6 +1529,7 @@ describe('App UI', () => {
         initError: null,
         pendingHistoryItems: [],
         thought: 'Processing...',
+        cancelOngoingRequest: vi.fn(),
       });
 
       const { lastFrame, unmount } = renderWithProviders(
@@ -1551,6 +1561,7 @@ describe('App UI', () => {
         initError: null,
         pendingHistoryItems: [],
         thought: 'Processing...',
+        cancelOngoingRequest: vi.fn(),
       });
 
       const { lastFrame, unmount } = renderWithProviders(
