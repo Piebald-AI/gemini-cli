@@ -87,6 +87,15 @@ export const SETTINGS_SCHEMA = {
     description: 'Hide the application banner',
     showInDialog: true,
   },
+  hideFooter: {
+    type: 'boolean',
+    label: 'Hide Footer',
+    category: 'UI',
+    requiresRestart: false,
+    default: false,
+    description: 'Hide the footer from the UI',
+    showInDialog: true,
+  },
   showMemoryUsage: {
     type: 'boolean',
     label: 'Show Memory Usage',
@@ -266,6 +275,17 @@ export const SETTINGS_SCHEMA = {
     requiresRestart: false,
     default: false,
     description: 'Disable automatic updates',
+    showInDialog: true,
+  },
+
+  shouldUseNodePtyShell: {
+    type: 'boolean',
+    label: 'Use node-pty for Shell Execution',
+    category: 'Shell',
+    requiresRestart: true,
+    default: false,
+    description:
+      'Use node-pty for shell command execution. Fallback to child_process still applies.',
     showInDialog: true,
   },
 
@@ -504,6 +524,15 @@ export const SETTINGS_SCHEMA = {
     default: undefined as SessionRetentionSettings | undefined,
     description: 'Settings for automatic session cleanup.',
     showInDialog: false,
+  },
+  skipNextSpeakerCheck: {
+    type: 'boolean',
+    label: 'Skip Next Speaker Check',
+    category: 'General',
+    requiresRestart: false,
+    default: false,
+    description: 'Skip the next speaker check.',
+    showInDialog: true,
   },
 } as const;
 

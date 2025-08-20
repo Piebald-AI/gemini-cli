@@ -8,7 +8,6 @@ import {
   Config,
   ToolCallRequestInfo,
   executeToolCall,
-  ToolRegistry,
   shutdownTelemetry,
   isTelemetrySdkInitialized,
   ChatRecordingService,
@@ -49,7 +48,6 @@ export async function runNonInteractive(
     chatRecordingService.recordMessage({ type: 'user', content: input });
 
     const geminiClient = config.getGeminiClient();
-    const toolRegistry: ToolRegistry = await config.getToolRegistry();
 
     // Initialize chat.  Resume if resume data is passed.
     if (resumedSessionData) {
@@ -148,7 +146,6 @@ export async function runNonInteractive(
           const toolResponse = await executeToolCall(
             config,
             requestInfo,
-            toolRegistry,
             abortController.signal,
           );
 

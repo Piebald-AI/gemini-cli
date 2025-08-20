@@ -14,6 +14,7 @@ import {
   afterAll,
 } from 'vitest';
 import { Logger, MessageSenderType, LogEntry } from './logger.js';
+import { Storage } from '../config/storage.js';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 
@@ -71,7 +72,7 @@ describe('Logger', () => {
     await cleanupLogFiles();
     // Ensure the directory exists for the test
     await fs.mkdir(TEST_GEMINI_DIR, { recursive: true });
-    logger = new Logger(testSessionId);
+    logger = new Logger(testSessionId, new Storage(process.cwd()));
     await logger.initialize();
   });
 
@@ -138,7 +139,10 @@ describe('Logger', () => {
         TEST_LOG_FILE_PATH,
         JSON.stringify(existingLogs, null, 2),
       );
-      const newLogger = new Logger(currentSessionId);
+      const newLogger = new Logger(
+        currentSessionId,
+        new Storage(process.cwd()),
+      );
       await newLogger.initialize();
       expect(newLogger['messageId']).toBe(2);
       expect(newLogger['logs']).toEqual(existingLogs);
@@ -159,7 +163,7 @@ describe('Logger', () => {
         TEST_LOG_FILE_PATH,
         JSON.stringify(existingLogs, null, 2),
       );
-      const newLogger = new Logger('a-new-session');
+      const newLogger = new Logger('a-new-session', new Storage(process.cwd()));
       await newLogger.initialize();
       expect(newLogger['messageId']).toBe(0);
       newLogger.close();
@@ -184,7 +188,7 @@ describe('Logger', () => {
         .spyOn(console, 'debug')
         .mockImplementation(() => {});
 
-      const newLogger = new Logger(testSessionId);
+      const newLogger = new Logger(testSessionId, new Storage(process.cwd()));
       await newLogger.initialize();
 
       expect(consoleDebugSpy).toHaveBeenCalledWith(
@@ -212,7 +216,7 @@ describe('Logger', () => {
         .spyOn(console, 'debug')
         .mockImplementation(() => {});
 
-      const newLogger = new Logger(testSessionId);
+      const newLogger = new Logger(testSessionId, new Storage(process.cwd()));
       await newLogger.initialize();
 
       expect(consoleDebugSpy).toHaveBeenCalledWith(
@@ -262,7 +266,10 @@ describe('Logger', () => {
     });
 
     it('should handle logger not initialized', async () => {
-      const uninitializedLogger = new Logger(testSessionId);
+      const uninitializedLogger = new Logger(
+        testSessionId,
+        new Storage(process.cwd()),
+      );
       uninitializedLogger.close(); // Ensure it's treated as uninitialized
       const consoleDebugSpy = vi
         .spyOn(console, 'debug')
@@ -277,10 +284,16 @@ describe('Logger', () => {
 
     it('should simulate concurrent writes from different logger instances to the same file', async () => {
       const concurrentSessionId = 'concurrent-session';
-      const logger1 = new Logger(concurrentSessionId);
+      const logger1 = new Logger(
+        concurrentSessionId,
+        new Storage(process.cwd()),
+      );
       await logger1.initialize();
 
-      const logger2 = new Logger(concurrentSessionId);
+      const logger2 = new Logger(
+        concurrentSessionId,
+        new Storage(process.cwd()),
+      );
       await logger2.initialize();
       expect(logger2['sessionId']).toEqual(logger1['sessionId']);
 
@@ -333,14 +346,14 @@ describe('Logger', () => {
 
   describe('getPreviousUserMessages', () => {
     it('should retrieve all user messages from logs, sorted newest first', async () => {
-      const loggerSort = new Logger('session-1');
+      const loggerSort = new Logger('session-1', new Storage(process.cwd()));
       await loggerSort.initialize();
       await loggerSort.logMessage(MessageSenderType.USER, 'S1M0_ts100000');
       vi.advanceTimersByTime(1000);
       await loggerSort.logMessage(MessageSenderType.USER, 'S1M1_ts101000');
       vi.advanceTimersByTime(1000);
       // Switch to a different session to log
-      const loggerSort2 = new Logger('session-2');
+      const loggerSort2 = new Logger('session-2', new Storage(process.cwd()));
       await loggerSort2.initialize();
       await loggerSort2.logMessage(MessageSenderType.USER, 'S2M0_ts102000');
       vi.advanceTimersByTime(1000);
@@ -353,7 +366,10 @@ describe('Logger', () => {
       loggerSort.close();
       loggerSort2.close();
 
-      const finalLogger = new Logger('final-session');
+      const finalLogger = new Logger(
+        'final-session',
+        new Storage(process.cwd()),
+      );
       await finalLogger.initialize();
 
       const messages = await finalLogger.getPreviousUserMessages();
@@ -373,7 +389,10 @@ describe('Logger', () => {
     });
 
     it('should return empty array if logger not initialized', async () => {
-      const uninitializedLogger = new Logger(testSessionId);
+      const uninitializedLogger = new Logger(
+        testSessionId,
+        new Storage(process.cwd()),
+      );
       uninitializedLogger.close();
       const messages = await uninitializedLogger.getPreviousUserMessages();
       expect(messages).toEqual([]);
