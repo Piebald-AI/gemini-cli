@@ -39,6 +39,7 @@ describe('runNonInteractive', () => {
   let processStdoutSpy: vi.SpyInstance;
   let mockGeminiClient: {
     sendMessageStream: vi.Mock;
+    resumeChat: vi.Mock;
   };
 
   beforeEach(() => {
@@ -60,6 +61,7 @@ describe('runNonInteractive', () => {
 
     mockGeminiClient = {
       sendMessageStream: vi.fn(),
+      resumeChat: vi.fn().mockResolvedValue(undefined),
     };
 
     mockConfig = {
@@ -69,7 +71,7 @@ describe('runNonInteractive', () => {
       getMaxSessionTurns: vi.fn().mockReturnValue(10),
       getSessionId: vi.fn().mockReturnValue('test-session-id'),
       getProjectRoot: vi.fn().mockReturnValue('/test/project'),
-      getDebugMode: vi.fn().mockReturnValue(false),
+      getProjectTempDir: vi.fn().mockReturnValue('/test/project/.gemini/tmp'),
       getIdeMode: vi.fn().mockReturnValue(false),
       getFullContext: vi.fn().mockReturnValue(false),
       getContentGeneratorConfig: vi.fn().mockReturnValue({}),

@@ -26,7 +26,14 @@ import { getProjectHash } from '../utils/paths.js';
 
 vi.mock('node:fs');
 vi.mock('node:path');
-vi.mock('node:crypto');
+vi.mock('node:crypto', () => ({
+  randomUUID: vi.fn(),
+  createHash: vi.fn(() => ({
+    update: vi.fn(() => ({
+      digest: vi.fn(() => 'mocked-hash')
+    }))
+  }))
+}));
 vi.mock('../utils/paths.js');
 
 describe('ChatRecordingService', () => {
