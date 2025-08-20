@@ -991,6 +991,7 @@ describe('useGeminiStream', () => {
           () => Promise.resolve(),
           false,
           () => {},
+          mockChatRecordingService,
           () => {},
           cancelSubmitSpy,
         ),
