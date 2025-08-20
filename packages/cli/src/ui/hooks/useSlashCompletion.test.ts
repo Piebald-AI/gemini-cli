@@ -314,36 +314,26 @@ describe('useSlashCompletion', () => {
 
   describe('Argument Completion', () => {
     it('should call the command.completion function for argument suggestions', async () => {
-      const availableTags = [
-        'my-chat-tag-1',
-        'my-chat-tag-2',
-        'another-channel',
-      ];
+      const availableServers = ['my-server-1', 'my-server-2', 'another-server'];
       const mockCompletionFn = vi
         .fn()
         .mockImplementation(
           async (_context: CommandContext, partialArg: string) =>
-            availableTags.filter((tag) => tag.startsWith(partialArg)),
+            availableServers.filter((server) => server.startsWith(partialArg)),
         );
 
       const slashCommands = [
         {
-          name: 'chat',
-          description: 'Manage chat history',
-          subCommands: [
-            {
-              name: 'resume',
-              description: 'Resume a saved chat',
-              completion: mockCompletionFn,
-            },
-          ],
+          name: 'mcp',
+          description: 'Manage MCP servers',
+          completion: mockCompletionFn,
         },
       ] as unknown as SlashCommand[];
 
       const { result } = renderHook(() =>
         useTestHarnessForSlashCompletion(
           true,
-          '/resume',
+          '/mcp my-se',
           slashCommands,
           mockCommandContext,
         ),
@@ -352,14 +342,14 @@ describe('useSlashCompletion', () => {
       await waitFor(() => {
         expect(mockCompletionFn).toHaveBeenCalledWith(
           mockCommandContext,
-          'my-ch',
+          'my-se',
         );
       });
 
       await waitFor(() => {
         expect(result.current.suggestions).toEqual([
-          { label: 'my-chat-tag-1', value: 'my-chat-tag-1' },
-          { label: 'my-chat-tag-2', value: 'my-chat-tag-2' },
+          { label: 'my-server-1', value: 'my-server-1' },
+          { label: 'my-server-2', value: 'my-server-2' },
         ]);
       });
     });
@@ -367,26 +357,20 @@ describe('useSlashCompletion', () => {
     it('should call command.completion with an empty string when args start with a space', async () => {
       const mockCompletionFn = vi
         .fn()
-        .mockResolvedValue(['my-chat-tag-1', 'my-chat-tag-2', 'my-channel']);
+        .mockResolvedValue(['server-1', 'server-2', 'server-3']);
 
       const slashCommands = [
         {
-          name: 'chat',
-          description: 'Manage chat history',
-          subCommands: [
-            {
-              name: 'resume',
-              description: 'Resume a saved chat',
-              completion: mockCompletionFn,
-            },
-          ],
+          name: 'mcp',
+          description: 'Manage MCP servers',
+          completion: mockCompletionFn,
         },
       ] as unknown as SlashCommand[];
 
       const { result } = renderHook(() =>
         useTestHarnessForSlashCompletion(
           true,
-          '/resume ',
+          '/mcp ',
           slashCommands,
           mockCommandContext,
         ),
@@ -405,22 +389,16 @@ describe('useSlashCompletion', () => {
       const completionFn = vi.fn().mockResolvedValue(null);
       const slashCommands = [
         {
-          name: 'chat',
-          description: 'Manage chat history',
-          subCommands: [
-            {
-              name: 'resume',
-              description: 'Resume a saved chat',
-              completion: completionFn,
-            },
-          ],
+          name: 'mcp',
+          description: 'Manage MCP servers',
+          completion: completionFn,
         },
       ] as unknown as SlashCommand[];
 
       const { result } = renderHook(() =>
         useTestHarnessForSlashCompletion(
           true,
-          '/resume ',
+          '/mcp server',
           slashCommands,
           mockCommandContext,
         ),
