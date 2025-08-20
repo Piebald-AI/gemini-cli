@@ -198,6 +198,33 @@ vi.mock('./hooks/useGeminiStream', () => ({
   })),
 }));
 
+vi.mock('./hooks/useHistoryManager', () => ({
+  useHistory: vi.fn(() => ({
+    history: [],
+    addItem: vi.fn(),
+    clearItems: vi.fn(),
+    loadHistory: vi.fn(),
+  })),
+}));
+
+vi.mock('./hooks/useChatRecording', () => ({
+  useChatRecordingService: vi.fn(() => null),
+}));
+
+vi.mock('./hooks/useSessionBrowser', () => ({
+  useSessionBrowser: vi.fn(() => ({
+    isSessionBrowserOpen: false,
+    openSessionBrowser: vi.fn(),
+    closeSessionBrowser: vi.fn(),
+    handleResumeSession: vi.fn(),
+    handleDeleteSession: vi.fn(),
+  })),
+  convertSessionToHistoryFormats: vi.fn(() => ({
+    history: [],
+    clientHistory: [],
+  })),
+}));
+
 vi.mock('./hooks/useAuthCommand', () => ({
   useAuthCommand: vi.fn(() => ({
     isAuthDialogOpen: false,
@@ -1073,7 +1100,7 @@ describe('App UI', () => {
         },
       };
 
-      const { lastFrame, unmount } = render(
+      const { lastFrame, unmount } = renderWithProviders(
         <App
           config={mockConfig as unknown as ServerConfig}
           settings={mockSettings}
