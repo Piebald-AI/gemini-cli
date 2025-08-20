@@ -149,7 +149,7 @@ vi.mock('@google/gemini-cli-core', async (importOriginal) => {
         getProjectRoot: vi.fn(() => opts.targetDir),
         getGeminiClient: vi.fn(() => ({
           isInitialized: vi.fn(() => true),
-          setHistory: vi.fn(),
+          resumeChat: vi.fn(),
           getUserTier: vi.fn(),
         })),
         getCheckpointingEnabled: vi.fn(() => opts.checkpointing ?? true),
@@ -198,11 +198,17 @@ vi.mock('./hooks/useGeminiStream', () => ({
   })),
 }));
 
+const mockHistory: any[] = [];
+
 vi.mock('./hooks/useHistoryManager', () => ({
   useHistory: vi.fn(() => ({
-    history: [],
-    addItem: vi.fn(),
-    clearItems: vi.fn(),
+    history: mockHistory,
+    addItem: vi.fn((item: any) => {
+      mockHistory.push({ ...item, id: mockHistory.length });
+    }),
+    clearItems: vi.fn(() => {
+      mockHistory.length = 0;
+    }),
     loadHistory: vi.fn(),
   })),
 }));
@@ -329,6 +335,9 @@ describe('App UI', () => {
   };
 
   beforeEach(() => {
+    // Clear mock history before each test
+    mockHistory.length = 0;
+
     vi.spyOn(useTerminalSize, 'useTerminalSize').mockReturnValue({
       columns: 120,
       rows: 24,
@@ -1040,7 +1049,7 @@ describe('App UI', () => {
     it('should display conversation history when resuming with --resume', async () => {
       const mockGeminiClient = {
         isInitialized: vi.fn(() => true),
-        setHistory: vi.fn(),
+        resumeChat: vi.fn(),
       };
 
       mockConfig.getGeminiClient.mockReturnValue(
@@ -1048,56 +1057,58 @@ describe('App UI', () => {
       );
 
       const resumedSessionData = {
-        messages: [
-          {
-            role: 'user',
-            parts: [{ text: 'Hello from previous session' }],
-          },
-          {
-            role: 'model',
-            parts: [{ text: 'Hi! How can I help you today?' }],
-          },
-          {
-            role: 'user',
-            parts: [{ text: 'Can you list the files in the current directory?' }],
-          },
-          {
-            role: 'model',
-            parts: [
-              {
-                functionCall: {
+        conversation: {
+          sessionId: 'test-session-123',
+          projectHash: 'test-project-hash',
+          startTime: new Date().toISOString(),
+          lastUpdated: new Date().toISOString(),
+          messages: [
+            {
+              id: 'msg-1',
+              timestamp: '2024-01-01T10:00:00.000Z',
+              type: 'user',
+              content: 'Hello from previous session',
+            },
+            {
+              id: 'msg-2',
+              timestamp: '2024-01-01T10:00:01.000Z',
+              type: 'gemini',
+              content: 'Hi! How can I help you today?',
+            },
+            {
+              id: 'msg-3',
+              timestamp: '2024-01-01T10:00:02.000Z',
+              type: 'user',
+              content: 'Can you list the files in the current directory?',
+            },
+            {
+              id: 'msg-4',
+              timestamp: '2024-01-01T10:00:03.000Z',
+              type: 'gemini',
+              content: 'I\'ll list the files for you.',
+              toolCalls: [
+                {
+                  id: 'tool-call-1',
                   name: 'list_files',
                   args: { path: '.' },
                 },
-              },
-            ],
-          },
-          {
-            role: 'function',
-            parts: [
-              {
-                functionResponse: {
-                  name: 'list_files',
-                  response: {
-                    files: ['package.json', 'src/', 'README.md'],
-                  },
-                },
-              },
-            ],
-          },
-          {
-            role: 'model',
-            parts: [
-              {
-                text: 'I can see the files in your current directory:\n- package.json\n- src/\n- README.md',
-              },
-            ],
-          },
-        ],
-        metadata: {
-          sessionId: 'test-session-123',
-          timestamp: Date.now(),
+              ],
+            },
+            {
+              id: 'msg-5',
+              timestamp: '2024-01-01T10:00:04.000Z',
+              type: 'system',
+              content: 'Tool execution result: files: ["package.json", "src/", "README.md"]',
+            },
+            {
+              id: 'msg-6',
+              timestamp: '2024-01-01T10:00:05.000Z',
+              type: 'gemini',
+              content: 'I can see the files in your current directory:\n- package.json\n- src/\n- README.md',
+            },
+          ],
         },
+        filePath: '/path/to/test-session.json',
       };
 
       const { lastFrame, unmount } = renderWithProviders(
@@ -1112,8 +1123,8 @@ describe('App UI', () => {
 
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      // Verify that the Gemini client's setHistory method was called
-      expect(mockGeminiClient.setHistory).toHaveBeenCalled();
+      // Verify that the Gemini client's resumeChat method was called
+      expect(mockGeminiClient.resumeChat).toHaveBeenCalled();
 
       // The exact display format depends on the HistoryItemDisplay component,
       // but we can verify the component rendered without errors
