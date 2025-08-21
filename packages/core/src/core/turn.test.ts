@@ -504,6 +504,32 @@ describe('Turn', () => {
         },
       ]);
     });
+
+    it('should not crash when cancelled request has malformed error', async () => {
+      const abortController = new AbortController();
+
+      const errorToThrow = {
+        response: {
+          data: undefined, // Malformed error data
+        },
+      };
+
+      mockSendMessageStream.mockImplementation(async () => {
+        abortController.abort();
+        throw errorToThrow;
+      });
+
+      const events = [];
+      const reqParts: Part[] = [{ text: 'Test malformed error handling' }];
+
+      for await (const event of turn.run(reqParts, abortController.signal)) {
+        events.push(event);
+      }
+
+      expect(events).toEqual([{ type: GeminiEventType.UserCancelled }]);
+
+      expect(reportError).not.toHaveBeenCalled();
+    });
   });
 
   describe('getDebugResponses', () => {
