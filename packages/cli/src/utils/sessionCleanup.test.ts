@@ -24,7 +24,9 @@ const mockGetSessionFiles = vi.mocked(getSessionFiles);
 // Create mock config
 function createMockConfig(overrides: Partial<Config> = {}): Config {
   return {
-    getProjectTempDir: vi.fn().mockReturnValue('/tmp/test-project'),
+    storage: {
+      getProjectTempDir: vi.fn().mockReturnValue('/tmp/test-project'),
+    },
     getSessionId: vi.fn().mockReturnValue('current123'),
     getDebugMode: vi.fn().mockReturnValue(false),
     initialize: vi.fn().mockResolvedValue(undefined),

@@ -80,7 +80,9 @@ describe('runNonInteractive', () => {
       getMaxSessionTurns: vi.fn().mockReturnValue(10),
       getSessionId: vi.fn().mockReturnValue('test-session-id'),
       getProjectRoot: vi.fn().mockReturnValue('/test/project'),
-      getProjectTempDir: vi.fn().mockReturnValue('/test/project/.gemini/tmp'),
+      storage: {
+        getProjectTempDir: vi.fn().mockReturnValue('/test/project/.gemini/tmp'),
+      },
       getIdeMode: vi.fn().mockReturnValue(false),
       getFullContext: vi.fn().mockReturnValue(false),
       getContentGeneratorConfig: vi.fn().mockReturnValue({}),

@@ -834,7 +834,7 @@ const useLoadSessions = (config: Config, state: SessionBrowserState) => {
   useEffect(() => {
     const loadSessions = async () => {
       try {
-        const chatsDir = path.join(config.getProjectTempDir(), 'chats');
+        const chatsDir = path.join(config.storage.getProjectTempDir(), 'chats');
         const sessionData = await getSessionFiles(
           chatsDir,
           true,

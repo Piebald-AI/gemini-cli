@@ -29,7 +29,9 @@ describe('useSessionBrowser', () => {
 
   // Mock dependencies
   const mockConfig = {
-    getProjectTempDir: vi.fn().mockReturnValue(MOCKED_PROJECT_TEMP_DIR),
+    storage: {
+      getProjectTempDir: vi.fn().mockReturnValue(MOCKED_PROJECT_TEMP_DIR),
+    },
     setSessionId: vi.fn(),
   };
 

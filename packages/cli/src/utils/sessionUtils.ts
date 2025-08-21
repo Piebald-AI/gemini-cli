@@ -173,7 +173,7 @@ export class SessionSelector {
    * Lists all available sessions for the current project.
    */
   async listSessions(): Promise<SessionInfo[]> {
-    const chatsDir = path.join(this.config.getProjectTempDir(), 'chats');
+    const chatsDir = path.join(this.config.storage.getProjectTempDir(), 'chats');
     return getSessionFiles(chatsDir, this.config.getSessionId());
   }
 
@@ -226,7 +226,7 @@ export class SessionSelector {
   private async selectSession(
     sessionInfo: SessionInfo,
   ): Promise<SessionSelectionResult> {
-    const chatsDir = path.join(this.config.getProjectTempDir(), 'chats');
+    const chatsDir = path.join(this.config.storage.getProjectTempDir(), 'chats');
     const sessionPath = path.join(chatsDir, sessionInfo.fileName);
 
     try {

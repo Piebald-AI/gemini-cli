@@ -38,7 +38,7 @@ export const useSessionBrowser = (
     handleResumeSession: useCallback(
       async (sessionId: string) => {
         try {
-          const chatsDir = path.join(config.getProjectTempDir(), 'chats');
+          const chatsDir = path.join(config.storage.getProjectTempDir(), 'chats');
           const originalFilePath = path.join(chatsDir, `${sessionId}.json`);
 
           // Load up the conversation.

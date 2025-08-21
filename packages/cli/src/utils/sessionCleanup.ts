@@ -41,7 +41,7 @@ export async function cleanupExpiredSessions(
     }
 
     const retentionConfig = settings.sessionRetention;
-    const chatsDir = path.join(config.getProjectTempDir(), 'chats');
+    const chatsDir = path.join(config.storage.getProjectTempDir(), 'chats');
     
     // Validate retention configuration
     const validationResult = validateRetentionConfig(retentionConfig);
