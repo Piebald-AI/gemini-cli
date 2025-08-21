@@ -12,7 +12,9 @@ import { Config } from '@google/gemini-cli-core';
 // Create a mock config for integration testing
 function createTestConfig(): Config {
   return {
-    getProjectTempDir: () => '/tmp/nonexistent-test-dir',
+    storage: {
+      getProjectTempDir: () => '/tmp/nonexistent-test-dir'
+    },
     getSessionId: () => 'test-session-id',
     getDebugMode: () => false,
     initialize: async () => undefined,
