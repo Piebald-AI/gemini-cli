@@ -57,6 +57,9 @@ gemini --resume
 # Resume a specific session by index
 gemini --resume 5
 
+# Resume a specific session by UUID
+gemini --resume a1b2c3d4-e5f6-7890-abcd-ef1234567890
+
 # Resume latest session with a new prompt
 gemini --resume latest -p "Continue working on the API"
 ```
@@ -75,6 +78,9 @@ Output shows session indices, dates, message counts, and first user message prev
 ```bash
 # Delete a specific session by index
 gemini --delete-session 3
+
+# Delete a specific session by UUID
+gemini --delete-session a1b2c3d4-e5f6-7890-abcd-ef1234567890
 ```
 
 ## Session Retention & Cleanup

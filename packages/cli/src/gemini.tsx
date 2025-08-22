@@ -49,7 +49,7 @@ import { detectAndEnableKittyProtocol } from './ui/utils/kittyProtocolDetector.j
 import { checkForUpdates } from './ui/utils/updateCheck.js';
 import { handleAutoUpdate } from './utils/handleAutoUpdate.js';
 import { appEvents, AppEvent } from './utils/events.js';
-import { formatRelativeTime, SessionSelector } from './utils/sessionUtils.js';
+import { formatRelativeTime, SessionInfo, SessionSelector } from './utils/sessionUtils.js';
 import { SettingsContext } from './ui/contexts/SettingsContext.js';
 
 export function validateDnsResolutionOrder(
@@ -130,10 +130,10 @@ async function listSessions(config: Config): Promise<void> {
         new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
     )
     .forEach((session, index) => {
-      const current = session.isCurrentSession ? ' (current)' : '';
+      const current = session.isCurrentSession ? ', current' : '';
       const time = formatRelativeTime(session.lastUpdated);
       console.log(
-        `  ${index + 1}. ${session.firstUserMessage} (${time}${current})`,
+        `  ${index + 1}. ${session.firstUserMessage} (${time}${current}) [${session.id}]`,
       );
     });
 }
@@ -150,21 +150,28 @@ async function deleteSession(
     return;
   }
 
-  // Parse session index
-  const index = parseInt(sessionIndex, 10);
-  if (isNaN(index) || index < 1 || index > sessions.length) {
-    console.error(
-      `Invalid session index "${sessionIndex}". Use --list-sessions to see available sessions.`,
-    );
-    return;
-  }
-
   // Sort sessions by start time to match list-sessions ordering
   const sortedSessions = sessions.sort(
     (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
   );
 
-  const sessionToDelete = sortedSessions[index - 1];
+  let sessionToDelete: SessionInfo;
+
+  // Try to find by UUID first
+  const sessionByUuid = sortedSessions.find((session) => session.id === sessionIndex);
+  if (sessionByUuid) {
+    sessionToDelete = sessionByUuid;
+  } else {
+    // Parse session index
+    const index = parseInt(sessionIndex, 10);
+    if (isNaN(index) || index < 1 || index > sessions.length) {
+      console.error(
+        `Invalid session identifier "${sessionIndex}". Use --list-sessions to see available sessions.`,
+      );
+      return;
+    }
+    sessionToDelete = sortedSessions[index - 1];
+  }
 
   // Prevent deleting the current session
   if (sessionToDelete.isCurrentSession) {
@@ -180,7 +187,7 @@ async function deleteSession(
 
     const time = formatRelativeTime(sessionToDelete.lastUpdated);
     console.log(
-      `Deleted session ${index}: ${sessionToDelete.firstUserMessage} (${time})`,
+      `Deleted session ${sessionToDelete.index}: ${sessionToDelete.firstUserMessage} (${time})`,
     );
   } catch (error) {
     console.error(

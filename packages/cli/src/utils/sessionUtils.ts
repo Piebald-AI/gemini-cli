@@ -66,16 +66,6 @@ export const extractFirstUserMessage = (messages: MessageRecord[]): string => {
 };
 
 /**
- * Extracts session ID from filename.
- * Session files are named: session-YYYY-MM-DDTHH-MM-SS-<sessionId-8-chars>.json
- */
-export const extractSessionId = (fileName: string): string => {
-  // Extract the last part after the final dash, before .json
-  const match = fileName.match(/session-.*-([a-f0-9]{8})\.json$/);
-  return match ? match[1] : fileName.replace('.json', '');
-};
-
-/**
  * Formats a timestamp as relative time (e.g., "2 hours ago", "3 days ago").
  */
 export const formatRelativeTime = (timestamp: string): string => {
@@ -119,13 +109,12 @@ export const getSessionFiles = async (
         );
 
         const firstUserMessage = extractFirstUserMessage(content.messages);
-        const sessionId = extractSessionId(file);
         const isCurrentSession = currentSessionId
           ? file.includes(currentSessionId.slice(0, 8))
           : false;
 
         return {
-          id: sessionId,
+          id: content.sessionId, // Use full UUID instead of extracted 8-char version
           file: file.replace('.json', ''),
           fileName: file,
           startTime: content.startTime,
@@ -180,7 +169,7 @@ export class SessionSelector {
   /**
    * Resolves a resume argument to a specific session.
    *
-   * @param resumeArg - Can be "latest", a session ID prefix, or an index number (1-based)
+   * @param resumeArg - Can be "latest", a full UUID, or an index number (1-based)
    * @returns Promise resolving to session selection result
    */
   async resolveSession(resumeArg: string): Promise<SessionSelectionResult> {
@@ -201,19 +190,25 @@ export class SessionSelector {
     if (resumeArg === 'latest') {
       selectedSession = sessions[sessions.length - 1];
     } else {
-      // Parse as index number (1-based) - only allow numeric indexes
-      const index = parseInt(resumeArg, 10);
-      if (
-        !isNaN(index) &&
-        index.toString() === resumeArg &&
-        index > 0 &&
-        index <= sessions.length
-      ) {
-        selectedSession = sessions[index - 1];
+      // Try to find by UUID first
+      const sessionByUuid = sessions.find((session) => session.id === resumeArg);
+      if (sessionByUuid) {
+        selectedSession = sessionByUuid;
       } else {
-        throw new Error(
-          `Invalid session index "${resumeArg}". Use --list-sessions to see available sessions, then use --resume {number} or --resume latest.`,
-        );
+        // Parse as index number (1-based) - only allow numeric indexes
+        const index = parseInt(resumeArg, 10);
+        if (
+          !isNaN(index) &&
+          index.toString() === resumeArg &&
+          index > 0 &&
+          index <= sessions.length
+        ) {
+          selectedSession = sessions[index - 1];
+        } else {
+          throw new Error(
+            `Invalid session identifier "${resumeArg}". Use --list-sessions to see available sessions, then use --resume {number}, --resume {uuid}, or --resume latest.`,
+          );
+        }
       }
     }
 

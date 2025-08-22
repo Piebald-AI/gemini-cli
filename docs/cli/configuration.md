@@ -513,18 +513,18 @@ Arguments passed directly when running the CLI can override other configurations
   - Sets the proxy for the CLI.
   - Example: `--proxy http://localhost:7890`.
 - **`--resume [session_id]`** (**`-r [session_id]`**):
-  - Resume a previous chat session. Use "latest" for the most recent session or provide a session index number.
+  - Resume a previous chat session. Use "latest" for the most recent session, provide a session index number, or provide a full session UUID.
   - If no session_id is provided, defaults to "latest".
-  - Example: `gemini --resume 5` or `gemini --resume latest` or `gemini --resume`
+  - Example: `gemini --resume 5` or `gemini --resume latest` or `gemini --resume a1b2c3d4-e5f6-7890-abcd-ef1234567890` or `gemini --resume`
   - See [Chat Recording](../chat-recording.md) for more details.
 - **`--list-sessions`**:
   - List all available chat sessions for the current project and exit.
   - Shows session indices, dates, message counts, and preview of first user message.
   - Example: `gemini --list-sessions`
-- **`--delete-session <index>`**:
-  - Delete a specific chat session by its index number.
-  - Use `--list-sessions` first to see available sessions and their indices.
-  - Example: `gemini --delete-session 3`
+- **`--delete-session <identifier>`**:
+  - Delete a specific chat session by its index number or full session UUID.
+  - Use `--list-sessions` first to see available sessions, their indices, and UUIDs.
+  - Example: `gemini --delete-session 3` or `gemini --delete-session a1b2c3d4-e5f6-7890-abcd-ef1234567890`
 - **`--include-directories <dir1,dir2,...>`**:
   - Includes additional directories in the workspace for multi-directory support.
   - Can be specified multiple times or as comma-separated values.
