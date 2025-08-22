@@ -16,10 +16,11 @@ import {
   GeminiEventType,
   parseAndFormatApiError,
 } from '@google/gemini-cli-core';
-import { Content, Part, FunctionCall } from '@google/genai';
+import { Content, Part } from '@google/genai';
 
 import { convertSessionToHistoryFormats } from './ui/hooks/useSessionBrowser.js';
 import { ConsolePatcher } from './ui/utils/ConsolePatcher.js';
+import { handleAtCommand } from './ui/hooks/atCommandProcessor.js';
 
 export async function runNonInteractive(
   config: Config,
@@ -58,9 +59,27 @@ export async function runNonInteractive(
     }
 
     const abortController = new AbortController();
+
+    const { processedQuery, shouldProceed } = await handleAtCommand({
+      query: input,
+      config,
+      addItem: (_item, _timestamp) => 0,
+      onDebugMessage: () => {},
+      messageId: Date.now(),
+      signal: abortController.signal,
+    });
+
+    if (!shouldProceed || !processedQuery) {
+      // An error occurred during @include processing (e.g., file not found).
+      // The error message is already logged by handleAtCommand.
+      console.error('Exiting due to an error processing the @ command.');
+      process.exit(1);
+    }
+
     let currentMessages: Content[] = [
-      { role: 'user', parts: [{ text: input }] },
+      { role: 'user', parts: processedQuery as Part[] },
     ];
+
     let turnCount = 0;
     while (true) {
       turnCount++;
@@ -73,8 +92,8 @@ export async function runNonInteractive(
         );
         return;
       }
-      const functionCalls: FunctionCall[] = [];
       let fullResponseText = '';
+      const toolCallRequests: ToolCallRequestInfo[] = [];
 
       const responseStream = geminiClient.sendMessageStream(
         currentMessages[0]?.parts || [],
@@ -92,13 +111,7 @@ export async function runNonInteractive(
           process.stdout.write(event.value);
           fullResponseText += event.value;
         } else if (event.type === GeminiEventType.ToolCallRequest) {
-          const toolCallRequest = event.value;
-          const fc: FunctionCall = {
-            name: toolCallRequest.name,
-            args: toolCallRequest.args,
-            id: toolCallRequest.callId,
-          };
-          functionCalls.push(fc);
+          toolCallRequests.push(event.value);
         } else if (event.type === GeminiEventType.Finished) {
           chatRecordingService.recordMessageTokens({
             input: event.value.usageMetadata?.promptTokenCount ?? 0,
@@ -119,29 +132,24 @@ export async function runNonInteractive(
         });
       }
 
-      if (functionCalls.length > 0) {
+      if (toolCallRequests.length > 0) {
         // Record the initial tool calls before execution.
-        const toolCallRecords: ToolCallRecord[] = functionCalls.map((fc) => ({
-          id: fc.id ?? `${fc.name}-${Date.now()}`,
-          name: fc.name as string,
-          args: fc.args ?? {},
-          status: 'executing',
-          timestamp: new Date().toISOString(),
-          displayName: fc.name as string,
-        }));
+        const toolCallRecords: ToolCallRecord[] = toolCallRequests.map(
+          (tc) => ({
+            id: tc.callId ?? `${tc.name}-${Date.now()}`,
+            name: tc.name as string,
+            args: tc.args ?? {},
+            status: 'executing',
+            timestamp: new Date().toISOString(),
+            displayName: tc.name as string,
+          }),
+        );
         chatRecordingService.recordToolCalls(toolCallRecords);
 
         const toolResponseParts: Part[] = [];
-
-        for (let i = 0; i < functionCalls.length; i++) {
-          const fc = functionCalls[i];
-          const requestInfo: ToolCallRequestInfo = {
-            callId: toolCallRecords[i].id,
-            name: fc.name as string,
-            args: (fc.args ?? {}) as Record<string, unknown>,
-            isClientInitiated: false,
-            prompt_id,
-          };
+        for (let i = 0; i < toolCallRequests.length; ++i) {
+          const requestInfo = toolCallRequests[i];
+          const toolCallRecord = toolCallRecords[i];
 
           const toolResponse = await executeToolCall(
             config,
@@ -150,11 +158,11 @@ export async function runNonInteractive(
           );
 
           // Update the saved tool call record's status and other properties.
-          toolCallRecords[i].status = toolResponse.error ? 'error' : 'success';
-          toolCallRecords[i].result = toolResponse.error
+          toolCallRecord.status = toolResponse.error ? 'error' : 'success';
+          toolCallRecord.result = toolResponse.error
             ? undefined
             : toolResponse.responseParts;
-          toolCallRecords[i].resultDisplay =
+          toolCallRecord.resultDisplay =
             typeof toolResponse.resultDisplay === 'string'
               ? toolResponse.resultDisplay
               : undefined;
@@ -162,7 +170,7 @@ export async function runNonInteractive(
           // Tool call error handling.
           if (toolResponse.error) {
             console.error(
-              `Error executing tool ${fc.name}: ${toolResponse.resultDisplay || toolResponse.error.message}`,
+              `Error executing tool ${requestInfo.name}: ${toolResponse.resultDisplay || toolResponse.error.message}`,
             );
           }
 

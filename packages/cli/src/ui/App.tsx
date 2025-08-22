@@ -1004,10 +1004,12 @@ const App = ({
           key={staticKey}
           items={[
             <Box flexDirection="column" key="header">
-              {!settings.merged.hideBanner && (
+              {!(settings.merged.hideBanner || config.getScreenReader()) && (
                 <Header version={version} nightly={nightly} />
               )}
-              {!settings.merged.hideTips && <Tips config={config} />}
+              {!(settings.merged.hideTips || config.getScreenReader()) && (
+                <Tips config={config} />
+              )}
             </Box>,
             ...history.map((h) => (
               <HistoryItemDisplay
@@ -1183,12 +1185,14 @@ const App = ({
               <LoadingIndicator
                 thought={
                   streamingState === StreamingState.WaitingForConfirmation ||
-                  config.getAccessibility()?.disableLoadingPhrases
+                  config.getAccessibility()?.disableLoadingPhrases ||
+                  config.getScreenReader()
                     ? undefined
                     : thought
                 }
                 currentLoadingPhrase={
-                  config.getAccessibility()?.disableLoadingPhrases
+                  config.getAccessibility()?.disableLoadingPhrases ||
+                  config.getScreenReader()
                     ? undefined
                     : currentLoadingPhrase
                 }
