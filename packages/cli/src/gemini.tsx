@@ -49,7 +49,11 @@ import { detectAndEnableKittyProtocol } from './ui/utils/kittyProtocolDetector.j
 import { checkForUpdates } from './ui/utils/updateCheck.js';
 import { handleAutoUpdate } from './utils/handleAutoUpdate.js';
 import { appEvents, AppEvent } from './utils/events.js';
-import { formatRelativeTime, SessionInfo, SessionSelector } from './utils/sessionUtils.js';
+import {
+  formatRelativeTime,
+  SessionInfo,
+  SessionSelector,
+} from './utils/sessionUtils.js';
 import { SettingsContext } from './ui/contexts/SettingsContext.js';
 
 export function validateDnsResolutionOrder(
@@ -158,7 +162,9 @@ async function deleteSession(
   let sessionToDelete: SessionInfo;
 
   // Try to find by UUID first
-  const sessionByUuid = sortedSessions.find((session) => session.id === sessionIndex);
+  const sessionByUuid = sortedSessions.find(
+    (session) => session.id === sessionIndex,
+  );
   if (sessionByUuid) {
     sessionToDelete = sessionByUuid;
   } else {
@@ -216,6 +222,46 @@ ${reason.stack}`
       appEvents.emit(AppEvent.OpenDebugConsole);
     }
   });
+}
+
+export async function startInteractiveUI(
+  config: Config,
+  settings: LoadedSettings,
+  startupWarnings: string[],
+  workspaceRoot: string,
+  resumedSessionData: ResumedSessionData | undefined,
+) {
+  const version = await getCliVersion();
+  // Detect and enable Kitty keyboard protocol once at startup
+  await detectAndEnableKittyProtocol();
+  setWindowTitle(basename(workspaceRoot), settings);
+  const instance = render(
+    <React.StrictMode>
+      <SettingsContext.Provider value={settings}>
+        <AppWrapper
+          config={config}
+          settings={settings}
+          startupWarnings={startupWarnings}
+          version={version}
+          resumedSessionData={resumedSessionData}
+        />
+      </SettingsContext.Provider>
+    </React.StrictMode>,
+    { exitOnCtrlC: false, isScreenReaderEnabled: config.getScreenReader() },
+  );
+
+  checkForUpdates()
+    .then((info) => {
+      handleAutoUpdate(info, settings, config.getProjectRoot());
+    })
+    .catch((err) => {
+      // Silently ignore update check errors.
+      if (config.getDebugMode()) {
+        console.error('Update check failed:', err);
+      }
+    });
+
+  registerCleanup(() => instance.unmount());
 }
 
 export async function main() {
@@ -429,37 +475,13 @@ export async function main() {
 
   // Render UI, passing necessary config values. Check that there is no command line question.
   if (config.isInteractive()) {
-    const version = await getCliVersion();
-    // Detect and enable Kitty keyboard protocol once at startup
-    await detectAndEnableKittyProtocol();
-    setWindowTitle(basename(workspaceRoot), settings);
-    const instance = render(
-      <React.StrictMode>
-        <SettingsContext.Provider value={settings}>
-          <AppWrapper
-            config={config}
-            settings={settings}
-            startupWarnings={startupWarnings}
-            version={version}
-            resumedSessionData={resumedSessionData}
-          />
-        </SettingsContext.Provider>
-      </React.StrictMode>,
-      { exitOnCtrlC: false, isScreenReaderEnabled: config.getScreenReader() },
+    await startInteractiveUI(
+      config,
+      settings,
+      startupWarnings,
+      workspaceRoot,
+      resumedSessionData,
     );
-
-    checkForUpdates()
-      .then((info) => {
-        handleAutoUpdate(info, settings, config.getProjectRoot());
-      })
-      .catch((err) => {
-        // Silently ignore update check errors.
-        if (config.getDebugMode()) {
-          console.error('Update check failed:', err);
-        }
-      });
-
-    registerCleanup(() => instance.unmount());
     return;
   }
   // If not a TTY, read from stdin
@@ -471,7 +493,9 @@ export async function main() {
     }
   }
   if (!input) {
-    console.error('No input provided via stdin.');
+    console.error(
+      `No input provided via stdin. Input can be provided by piping data into gemini or using the --prompt option.`,
+    );
     process.exit(1);
   }
 
