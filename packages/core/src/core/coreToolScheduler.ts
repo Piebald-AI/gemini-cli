@@ -18,7 +18,6 @@ import {
   logToolCall,
   ToolCallEvent,
   ToolConfirmationPayload,
-  ChatRecordingService,
   ToolErrorType,
   AnyDeclarativeTool,
   AnyToolInvocation,
@@ -232,7 +231,6 @@ interface CoreToolSchedulerOptions {
   onAllToolCallsComplete?: AllToolCallsCompleteHandler;
   onToolCallsUpdate?: ToolCallsUpdateHandler;
   getPreferredEditor: () => EditorType | undefined;
-  chatRecordingService?: ChatRecordingService;
   onEditorClose: () => void;
 }
 
@@ -244,7 +242,6 @@ export class CoreToolScheduler {
   private onToolCallsUpdate?: ToolCallsUpdateHandler;
   private getPreferredEditor: () => EditorType | undefined;
   private config: Config;
-  private chatRecordingService?: ChatRecordingService;
   private onEditorClose: () => void;
   private isFinalizingToolCalls = false;
   private isScheduling = false;
@@ -262,7 +259,6 @@ export class CoreToolScheduler {
     this.onAllToolCallsComplete = options.onAllToolCallsComplete;
     this.onToolCallsUpdate = options.onToolCallsUpdate;
     this.getPreferredEditor = options.getPreferredEditor;
-    this.chatRecordingService = options.chatRecordingService;
     this.onEditorClose = options.onEditorClose;
   }
 
@@ -900,11 +896,12 @@ export class CoreToolScheduler {
       call.status === 'cancelled';
     const allCallsAreTerminal = this.toolCalls.every(isToolCallTerminal);
 
-    // Add all the tool calls in their current state: pending, executing success, or any other.
-    if (this.chatRecordingService) {
+    // Record all tool calls in their final state
+    const chatRecordingService = this.config.getGeminiClient()?.getChatRecordingService();
+    if (chatRecordingService) {
       const toolRegistry = await this.toolRegistry;
 
-      this.chatRecordingService.recordToolCalls(
+      chatRecordingService.recordToolCalls(
         this.toolCalls.map((c) => {
           // Get UI data from tool registry
           const toolInstance = toolRegistry.getTool(c.request.name);

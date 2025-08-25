@@ -25,7 +25,6 @@ import {
   UnauthorizedError,
   UserPromptEvent,
   DEFAULT_GEMINI_FLASH_MODEL,
-  ChatRecordingService,
   parseAndFormatApiError,
 } from '@google/gemini-cli-core';
 import { type Part, type PartListUnion, FinishReason } from '@google/genai';
@@ -94,10 +93,10 @@ export const useGeminiStream = (
   performMemoryRefresh: () => Promise<void>,
   modelSwitchedFromQuotaError: boolean,
   setModelSwitchedFromQuotaError: React.Dispatch<React.SetStateAction<boolean>>,
-  chatRecordingService: ChatRecordingService,
   onEditorClose: () => void,
   onCancelSubmit: () => void,
 ) => {
+  const chatRecordingService = geminiClient?.getChatRecordingService();
   const [initError, setInitError] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const turnCancelledRef = useRef(false);
@@ -138,7 +137,6 @@ export const useGeminiStream = (
       config,
       setPendingHistoryItem,
       getPreferredEditor,
-      chatRecordingService,
       onEditorClose,
     );
 
@@ -568,7 +566,6 @@ export const useGeminiStream = (
         switch (event.type) {
           case ServerGeminiEventType.Thought:
             setThought(event.value);
-            chatRecordingService.recordThought(event.value);
             break;
           case ServerGeminiEventType.Content:
             geminiMessageBuffer = handleContentEvent(

@@ -11,7 +11,7 @@ import {
   Config,
   GitService,
   Logger,
-  ChatRecordingService,
+  ResumedSessionData,
 } from '@google/gemini-cli-core';
 import { LoadedSettings } from '../../config/settings.js';
 import { UseHistoryManagerReturn } from '../hooks/useHistoryManager.js';
@@ -36,7 +36,6 @@ export interface CommandContext {
     settings: LoadedSettings;
     git: GitService | undefined;
     logger: Logger;
-    chatRecording: ChatRecordingService | null;
   };
   // UI state and history management
   ui: {
@@ -120,6 +119,7 @@ export interface LoadHistoryActionReturn {
   type: 'load_history';
   history: HistoryItemWithoutId[];
   clientHistory: Content[]; // The history for the generative client
+  resumedSessionData?: ResumedSessionData; // Optional session data for resuming
 }
 
 /**

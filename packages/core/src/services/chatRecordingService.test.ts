@@ -138,7 +138,7 @@ describe('ChatRecordingService', () => {
       expect(conversation.messages[0].type).toBe('user');
     });
 
-    it('should append to the last message if append is true and types match', () => {
+    it('should create separate messages when recording multiple messages', () => {
       const writeFileSyncSpy = vi
         .spyOn(fs, 'writeFileSync')
         .mockImplementation(() => undefined);
@@ -160,8 +160,7 @@ describe('ChatRecordingService', () => {
 
       chatRecordingService.recordMessage({
         type: 'user',
-        content: ' World',
-        append: true,
+        content: 'World',
       });
 
       expect(mkdirSyncSpy).toHaveBeenCalled();
@@ -169,8 +168,9 @@ describe('ChatRecordingService', () => {
       const conversation = JSON.parse(
         writeFileSyncSpy.mock.calls[0][1] as string,
       ) as ConversationRecord;
-      expect(conversation.messages).toHaveLength(1);
-      expect(conversation.messages[0].content).toBe('Hello World');
+      expect(conversation.messages).toHaveLength(2);
+      expect(conversation.messages[0].content).toBe('Hello');
+      expect(conversation.messages[1].content).toBe('World');
     });
   });
 
@@ -218,10 +218,10 @@ describe('ChatRecordingService', () => {
       );
 
       chatRecordingService.recordMessageTokens({
-        input: 1,
-        output: 2,
-        total: 3,
-        cached: 0,
+        promptTokenCount: 1,
+        candidatesTokenCount: 2,
+        totalTokenCount: 3,
+        cachedContentTokenCount: 0,
       });
 
       expect(mkdirSyncSpy).toHaveBeenCalled();
@@ -231,7 +231,7 @@ describe('ChatRecordingService', () => {
       ) as ConversationRecord;
       expect(conversation.messages[0]).toEqual({
         ...initialConversation.messages[0],
-        tokens: { input: 1, output: 2, total: 3, cached: 0 },
+        tokens: { input: 1, output: 2, total: 3, cached: 0, thoughts: 0, tool: 0 },
       });
     });
 
@@ -254,10 +254,10 @@ describe('ChatRecordingService', () => {
       );
 
       chatRecordingService.recordMessageTokens({
-        input: 2,
-        output: 2,
-        total: 4,
-        cached: 0,
+        promptTokenCount: 2,
+        candidatesTokenCount: 2,
+        totalTokenCount: 4,
+        cachedContentTokenCount: 0,
       });
 
       // @ts-expect-error private property
@@ -266,6 +266,8 @@ describe('ChatRecordingService', () => {
         output: 2,
         total: 4,
         cached: 0,
+        thoughts: 0,
+        tool: 0,
       });
     });
   });

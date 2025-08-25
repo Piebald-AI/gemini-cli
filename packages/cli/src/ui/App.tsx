@@ -102,7 +102,6 @@ import ansiEscapes from 'ansi-escapes';
 import { OverflowProvider } from './contexts/OverflowContext.js';
 import { ShowMoreLines } from './components/ShowMoreLines.js';
 import { PrivacyNotice } from './privacy/PrivacyNotice.js';
-import { useChatRecordingService } from './hooks/useChatRecording.js';
 import { LoadHistoryActionReturn } from './commands/types.js';
 import { useSettingsCommand } from './hooks/useSettingsCommand.js';
 import { SettingsDialog } from './components/SettingsDialog.js';
@@ -151,14 +150,8 @@ const App = ({
   const { stdout } = useStdout();
   const nightly = version.includes('nightly');
 
-  // Initialize the AutoSavingService to automatically log conversation history.
-  const chatRecordingService = useChatRecordingService(
-    config,
-    resumedSessionData,
-  );
-
   const { history, addItem, clearItems, loadHistory } = useHistory({
-    chatRecordingService
+    chatRecordingService: config.getGeminiClient()?.getChatRecordingService(),
   });
 
   const [idePromptAnswered, setIdePromptAnswered] = useState(false);
@@ -322,7 +315,9 @@ const App = ({
       refreshStatic(); // Force Static component to re-render with the updated history.
 
       // Give the history to the Gemini client.
-      config.getGeminiClient()?.resumeChat(history.clientHistory);
+      config
+        .getGeminiClient()
+        ?.resumeChat(history.clientHistory, history.resumedSessionData);
     },
     [
       clearItems,
@@ -340,17 +335,19 @@ const App = ({
     closeSessionBrowser,
     handleResumeSession,
     handleDeleteSession,
-  } = useSessionBrowser(config, chatRecordingService, loadHistoryForResume);
+  } = useSessionBrowser(config, loadHistoryForResume);
 
   // Handle interactive resume from the command line (-r/--resume without -p/--prompt-interactive).
   // Only if we're not authenticating, though.
   useEffect(() => {
     if (resumedSessionData && !isAuthenticating) {
-      loadHistoryForResume(
-        convertSessionToHistoryFormats(
-          resumedSessionData.conversation.messages,
-        ),
+      const historyData = convertSessionToHistoryFormats(
+        resumedSessionData.conversation.messages,
       );
+      loadHistoryForResume({
+        ...historyData,
+        resumedSessionData,
+      });
     }
   }, [resumedSessionData, isAuthenticating, loadHistoryForResume]);
 
@@ -609,7 +606,6 @@ const App = ({
     setQuittingMessages,
     openPrivacyNotice,
     openSessionBrowser,
-    chatRecordingService,
     openSettingsDialog,
     toggleVimEnabled,
     setIsProcessing,
@@ -650,7 +646,6 @@ const App = ({
     performMemoryRefresh,
     modelSwitchedFromQuotaError,
     setModelSwitchedFromQuotaError,
-    chatRecordingService,
     refreshStatic,
     () => cancelHandlerRef.current(),
   );

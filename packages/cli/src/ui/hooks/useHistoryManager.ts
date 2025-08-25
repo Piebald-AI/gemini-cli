@@ -78,7 +78,8 @@ export function useHistory({
         return [...prevHistory, newItem];
       });
 
-      // Record useful info, but don't do it if we're actually loading an existing session.
+      // Record UI-specific messages, but don't do it if we're actually loading
+      // an existing session.
       if (!isResuming && chatRecordingService) {
         switch (itemData.type) {
           case 'compression':
@@ -88,30 +89,16 @@ export function useHistory({
               content: itemData.text ?? '',
             });
             break;
-          case 'user':
-            chatRecordingService?.recordMessage({
-              type: 'user',
-              content: itemData.text ?? '',
-            });
-            break;
-          case 'gemini':
-            chatRecordingService?.recordMessage({
-              type: 'gemini',
-              content: itemData.text ?? '',
-            });
-            break;
-          case 'gemini_content':
-            chatRecordingService?.recordMessage({
-              type: 'gemini',
-              content: itemData.text ?? '',
-              append: true,
-            });
-            break;
           case 'error':
             chatRecordingService?.recordMessage({
               type: 'error',
               content: itemData.text ?? '',
             });
+            break;
+          case 'user':
+          case 'gemini':
+          case 'gemini_content':
+            // Core conversation recording handled by GeminiChat.
             break;
           default:
             // Ignore the rest.

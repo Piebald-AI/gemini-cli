@@ -15,7 +15,10 @@ export const clearCommand: SlashCommand = {
   action: async (context, _args) => {
     const geminiClient = context.services.config?.getGeminiClient();
     const config = context.services.config;
-    const chatRecording = context.services.chatRecording;
+    const chatRecordingService = context.services.config
+      ?.getGeminiClient()
+      ?.getChat()
+      .getChatRecordingService();
 
     if (geminiClient) {
       context.ui.setDebugMessage('Clearing terminal and resetting chat.');
@@ -27,10 +30,10 @@ export const clearCommand: SlashCommand = {
     }
 
     // Start a new conversation recording with a new session ID
-    if (config && chatRecording) {
+    if (config && chatRecordingService) {
       const newSessionId = randomUUID();
       config.setSessionId(newSessionId);
-      chatRecording.initialize();
+      chatRecordingService.initialize();
     }
 
     uiTelemetryService.resetLastPromptTokenCount();

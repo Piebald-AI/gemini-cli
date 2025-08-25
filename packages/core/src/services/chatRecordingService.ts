@@ -13,7 +13,11 @@ import {
 import path from 'node:path';
 import fs from 'node:fs';
 import { randomUUID } from 'node:crypto';
-import { PartListUnion } from '@google/genai';
+import {
+  GenerateContentResponseUsageMetadata,
+  PartListUnion,
+} from '@google/genai';
+import { appendFileSync } from 'fs';
 
 /**
  * Token usage summary for a message or conversation.
@@ -33,7 +37,7 @@ export interface TokensSummary {
 export interface BaseMessageRecord {
   id: string;
   timestamp: string;
-  content: string;
+  content: PartListUnion;
 }
 
 /**
@@ -123,6 +127,10 @@ export class ChatRecordingService {
    * this service instance, or resumes from an existing session if resumedSessionData is provided.
    */
   initialize(resumedSessionData?: ResumedSessionData): void {
+    appendFileSync(
+      'SMS_lg.txt',
+      `initialize: resumedSessionData = ${!!resumedSessionData}\n`,
+    );
     try {
       if (resumedSessionData) {
         // Resume from existing session
@@ -180,8 +188,9 @@ export class ChatRecordingService {
 
   private newMessage(
     type: ConversationRecordExtra['type'],
-    content: string,
+    content: PartListUnion,
   ): MessageRecord {
+
     return {
       id: randomUUID(),
       timestamp: new Date().toISOString(),
@@ -195,22 +204,16 @@ export class ChatRecordingService {
    */
   recordMessage(message: {
     type: ConversationRecordExtra['type'];
-    content: string;
-    append?: boolean;
+    content: PartListUnion;
   }): void {
+    appendFileSync(
+      'SMS_lg.txt',
+      `recordMessage: this.conversationFile = ${!!this.conversationFile}\n`,
+    );
     if (!this.conversationFile) return;
 
     try {
       this.updateConversation((conversation) => {
-        if (message.append) {
-          const lastMsg = this.getLastMessage(conversation);
-          if (lastMsg && lastMsg.type === message.type) {
-            lastMsg.content += message.content;
-            return;
-          }
-        }
-        // We're not appending, or we are appending but the last message's type is not the same as
-        // the specified type, so just create a new message.
         const msg = this.newMessage(message.type, message.content);
         if (msg.type === 'gemini') {
           // If it's a new Gemini message then incorporate any queued thoughts.
@@ -237,6 +240,10 @@ export class ChatRecordingService {
    * Records a thought from the assistant's reasoning process.
    */
   recordThought(thought: ThoughtSummary): void {
+    appendFileSync(
+      'SMS_lg.txt',
+      `recordThought: this.conversationFile = ${!!this.conversationFile}\n`,
+    );
     if (!this.conversationFile) return;
 
     try {
@@ -253,17 +260,24 @@ export class ChatRecordingService {
   /**
    * Updates the tokens for the last message in the conversation (which should be by Gemini).
    */
-  recordMessageTokens(tokens: {
-    input: number;
-    output: number;
-    cached: number;
-    thoughts?: number;
-    tool?: number;
-    total: number;
-  }): void {
+  recordMessageTokens(
+    respUsageMetadata: GenerateContentResponseUsageMetadata,
+  ): void {
+    appendFileSync(
+      'SMS_lg.txt',
+      `recordMessageTokens: this.conversationFile = ${!!this.conversationFile}\n`,
+    );
     if (!this.conversationFile) return;
 
     try {
+      const tokens = {
+        input: respUsageMetadata.promptTokenCount ?? 0,
+        output: respUsageMetadata.candidatesTokenCount ?? 0,
+        cached: respUsageMetadata.cachedContentTokenCount ?? 0,
+        thoughts: respUsageMetadata.thoughtsTokenCount ?? 0,
+        tool: respUsageMetadata.toolUsePromptTokenCount ?? 0,
+        total: respUsageMetadata.totalTokenCount ?? 0,
+      };
       this.updateConversation((conversation) => {
         const lastMsg = this.getLastMessage(conversation);
         // If the last message already has token info, it's because this new token info is for a
@@ -285,6 +299,10 @@ export class ChatRecordingService {
    * Adds tool calls to the last message in the conversation (which should be by Gemini).
    */
   recordToolCalls(toolCalls: ToolCallRecord[]): void {
+    appendFileSync(
+      'SMS_lg.txt',
+      `recordToolCalls: this.conversationFile = ${!!this.conversationFile}\n`,
+    );
     if (!this.conversationFile) return;
 
     try {
@@ -366,6 +384,10 @@ export class ChatRecordingService {
    * Loads up the conversation record from disk.
    */
   private readConversation(): ConversationRecord {
+    appendFileSync(
+      'SMS_lg.txt',
+      `readConversation: this.conversationFile = ${!!this.conversationFile}\n`,
+    );
     try {
       this.cachedLastConvData = fs.readFileSync(this.conversationFile!, 'utf8');
       return JSON.parse(this.cachedLastConvData);
@@ -390,6 +412,10 @@ export class ChatRecordingService {
    * Saves the conversation record; overwrites the file.
    */
   private writeConversation(conversation: ConversationRecord): void {
+    appendFileSync(
+      'SMS_lg.txt',
+      `writeConversation: conversation = ${!!conversation}\n`,
+    );
     try {
       if (!this.conversationFile) return;
       // Don't write the file yet until there's at least one message.
@@ -415,6 +441,10 @@ export class ChatRecordingService {
   private updateConversation(
     updateFn: (conversation: ConversationRecord) => void,
   ) {
+    appendFileSync(
+      'SMS_lg.txt',
+      'updateConversation',
+    );
     const conversation = this.readConversation();
     updateFn(conversation);
     this.writeConversation(conversation);

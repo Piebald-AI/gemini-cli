@@ -33,6 +33,7 @@ import { retryWithBackoff } from '../utils/retry.js';
 import { getErrorMessage } from '../utils/errors.js';
 import { isFunctionResponse } from '../utils/messageInspectors.js';
 import { tokenLimit } from './tokenLimits.js';
+import { ChatRecordingService, ResumedSessionData } from '../services/chatRecordingService.js';
 import {
   AuthType,
   ContentGenerator,
@@ -211,8 +212,17 @@ export class GeminiClient {
     this.chat = await this.startChat();
   }
 
-  async resumeChat(history: Content[]): Promise<void> {
-    this.chat = await this.startChat(history);
+  async resumeChat(history: Content[], resumedSessionData?: ResumedSessionData): Promise<void> {
+    this.chat = await this.startChat(history, resumedSessionData);
+  }
+
+  setChatRecordingService(service: ChatRecordingService): void {
+    // Legacy method - now that GeminiChat owns CRS, this is a no-op
+    // TODO: Remove this method in a future version
+  }
+
+  getChatRecordingService(): ChatRecordingService | undefined {
+    return this.chat?.getChatRecordingService();
   }
 
   async addDirectoryContext(): Promise<void> {
@@ -226,7 +236,7 @@ export class GeminiClient {
     });
   }
 
-  async startChat(extraHistory?: Content[]): Promise<GeminiChat> {
+  async startChat(extraHistory?: Content[], resumedSessionData?: ResumedSessionData): Promise<GeminiChat> {
     this.forceFullIdeContext = true;
     const envParts = await getEnvironmentContext(this.config);
     const toolRegistry = this.config.getToolRegistry();
@@ -265,6 +275,7 @@ export class GeminiClient {
           tools,
         },
         history,
+        resumedSessionData,
       );
     } catch (error) {
       await reportError(

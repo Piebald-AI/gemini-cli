@@ -10,7 +10,6 @@ import {
   executeToolCall,
   shutdownTelemetry,
   isTelemetrySdkInitialized,
-  ChatRecordingService,
   ToolCallRecord,
   ResumedSessionData,
   GeminiEventType,
@@ -43,11 +42,6 @@ export async function runNonInteractive(
       }
     });
 
-    // Initialize session recording service
-    const chatRecordingService = new ChatRecordingService(config);
-    chatRecordingService.initialize(resumedSessionData);
-    chatRecordingService.recordMessage({ type: 'user', content: input });
-
     const geminiClient = config.getGeminiClient();
 
     // Initialize chat.  Resume if resume data is passed.
@@ -55,6 +49,7 @@ export async function runNonInteractive(
       await geminiClient.resumeChat(
         convertSessionToHistoryFormats(resumedSessionData.conversation.messages)
           .clientHistory,
+        resumedSessionData,
       );
     }
 
@@ -113,27 +108,14 @@ export async function runNonInteractive(
         } else if (event.type === GeminiEventType.ToolCallRequest) {
           toolCallRequests.push(event.value);
         } else if (event.type === GeminiEventType.Finished) {
-          chatRecordingService.recordMessageTokens({
-            input: event.value.usageMetadata?.promptTokenCount ?? 0,
-            output: event.value.usageMetadata?.candidatesTokenCount ?? 0,
-            cached: event.value.usageMetadata?.cachedContentTokenCount ?? 0,
-            thoughts: event.value.usageMetadata?.thoughtsTokenCount ?? 0,
-            tool: event.value.usageMetadata?.toolUsePromptTokenCount ?? 0,
-            total: event.value.usageMetadata?.totalTokenCount ?? 0,
-          });
+          // Token recording now handled in GeminiChat
         }
       }
 
-      // Record the Gemini response if there was text content
-      if (fullResponseText.trim()) {
-        chatRecordingService.recordMessage({
-          type: 'gemini',
-          content: fullResponseText,
-        });
-      }
+      // Model response recording now handled in GeminiChat
 
       if (toolCallRequests.length > 0) {
-        // Record the initial tool calls before execution.
+        // Record tool calls (non-interactive mode handles tools directly, not via CoreToolScheduler)
         const toolCallRecords: ToolCallRecord[] = toolCallRequests.map(
           (tc) => ({
             id: tc.callId ?? `${tc.name}-${Date.now()}`,
@@ -144,7 +126,6 @@ export async function runNonInteractive(
             displayName: tc.name as string,
           }),
         );
-        chatRecordingService.recordToolCalls(toolCallRecords);
 
         const toolResponseParts: Part[] = [];
         for (let i = 0; i < toolCallRequests.length; ++i) {
@@ -188,8 +169,11 @@ export async function runNonInteractive(
           }
         }
 
-        // Update the session with final tool call results
-        chatRecordingService.recordToolCalls(toolCallRecords);
+        // Record final tool call states after execution
+        const chatRecordingService = geminiClient.getChatRecordingService();
+        if (chatRecordingService) {
+          chatRecordingService.recordToolCalls(toolCallRecords);
+        }
         currentMessages = [{ role: 'user', parts: toolResponseParts }];
       } else {
         process.stdout.write('\n'); // Ensure a final newline

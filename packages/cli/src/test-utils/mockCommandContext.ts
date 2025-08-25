@@ -42,7 +42,6 @@ export const createMockCommandContext = (
         logMessage: vi.fn(),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any, // Cast because Logger is a class.
-      chatRecording: null
     },
     ui: {
       addItem: vi.fn(),

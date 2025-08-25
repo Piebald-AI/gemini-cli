@@ -50,6 +50,7 @@ describe('runNonInteractive', () => {
   let mockGeminiClient: {
     sendMessageStream: vi.Mock;
     resumeChat: vi.Mock;
+    setChatRecordingService: vi.Mock;
   };
 
   beforeEach(async () => {
@@ -72,6 +73,7 @@ describe('runNonInteractive', () => {
     mockGeminiClient = {
       sendMessageStream: vi.fn(),
       resumeChat: vi.fn().mockResolvedValue(undefined),
+      setChatRecordingService: vi.fn(),
     };
 
     mockConfig = {
@@ -154,6 +156,10 @@ describe('runNonInteractive', () => {
     const firstCallEvents: ServerGeminiStreamEvent[] = [toolCallEvent];
     const secondCallEvents: ServerGeminiStreamEvent[] = [
       { type: GeminiEventType.Content, value: 'Final answer' },
+      {
+        type: GeminiEventType.Finished,
+        value: { reason: undefined, usageMetadata: { totalTokenCount: 10 } },
+      },
     ];
 
     mockGeminiClient.sendMessageStream
@@ -208,6 +214,10 @@ describe('runNonInteractive', () => {
       {
         type: GeminiEventType.Content,
         value: 'Sorry, let me try again.',
+      },
+      {
+        type: GeminiEventType.Finished,
+        value: { reason: undefined, usageMetadata: { totalTokenCount: 10 } },
       },
     ];
     mockGeminiClient.sendMessageStream
@@ -268,11 +278,16 @@ describe('runNonInteractive', () => {
     mockCoreExecuteToolCall.mockResolvedValue({
       error: new Error('Tool "nonexistentTool" not found in registry.'),
       resultDisplay: 'Tool "nonexistentTool" not found in registry.',
+      responseParts: [],
     });
     const finalResponse: ServerGeminiStreamEvent[] = [
       {
         type: GeminiEventType.Content,
         value: "Sorry, I can't find that tool.",
+      },
+      {
+        type: GeminiEventType.Finished,
+        value: { reason: undefined, usageMetadata: { totalTokenCount: 10 } },
       },
     ];
 
@@ -330,6 +345,10 @@ describe('runNonInteractive', () => {
     // Mock a simple stream response from the Gemini client
     const events: ServerGeminiStreamEvent[] = [
       { type: GeminiEventType.Content, value: 'Summary complete.' },
+      {
+        type: GeminiEventType.Finished,
+        value: { reason: undefined, usageMetadata: { totalTokenCount: 10 } },
+      },
     ];
     mockGeminiClient.sendMessageStream.mockReturnValue(
       createStreamFromEvents(events),

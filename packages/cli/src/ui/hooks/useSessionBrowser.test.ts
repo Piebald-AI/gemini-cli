@@ -28,15 +28,21 @@ describe('useSessionBrowser', () => {
   const mockedPath = vi.mocked(path);
 
   // Mock dependencies
+  const mockChatRecordingService = {
+    deleteSession: vi.fn(),
+    initialize: vi.fn(),
+  };
+
+  const mockGeminiClient = {
+    getChatRecordingService: vi.fn().mockReturnValue(mockChatRecordingService),
+  };
+
   const mockConfig = {
     storage: {
       getProjectTempDir: vi.fn().mockReturnValue(MOCKED_PROJECT_TEMP_DIR),
     },
     setSessionId: vi.fn(),
-  };
-
-  const mockChatRecordingService = {
-    initialize: vi.fn(),
+    getGeminiClient: vi.fn().mockReturnValue(mockGeminiClient),
   };
 
   const mockOnLoadHistory = vi.fn();
@@ -64,7 +70,6 @@ describe('useSessionBrowser', () => {
       const { result } = renderHook(() =>
         useSessionBrowser(
           mockConfig as any,
-          mockChatRecordingService as any,
           mockOnLoadHistory,
         ),
       );
@@ -76,7 +81,6 @@ describe('useSessionBrowser', () => {
       const { result } = renderHook(() =>
         useSessionBrowser(
           mockConfig as any,
-          mockChatRecordingService as any,
           mockOnLoadHistory,
         ),
       );
@@ -93,7 +97,6 @@ describe('useSessionBrowser', () => {
       const { result } = renderHook(() =>
         useSessionBrowser(
           mockConfig as any,
-          mockChatRecordingService as any,
           mockOnLoadHistory,
         ),
       );
@@ -109,7 +112,6 @@ describe('useSessionBrowser', () => {
       const { result } = renderHook(() =>
         useSessionBrowser(
           mockConfig as any,
-          mockChatRecordingService as any,
           mockOnLoadHistory,
         ),
       );
@@ -156,7 +158,6 @@ describe('useSessionBrowser', () => {
       const { result } = renderHook(() =>
         useSessionBrowser(
           mockConfig as any,
-          mockChatRecordingService as any,
           mockOnLoadHistory,
         ),
       );
@@ -229,7 +230,6 @@ describe('useSessionBrowser', () => {
       const { result } = renderHook(() =>
         useSessionBrowser(
           mockConfig as any,
-          mockChatRecordingService as any,
           mockOnLoadHistory,
         ),
       );
@@ -290,7 +290,6 @@ describe('useSessionBrowser', () => {
       const { result } = renderHook(() =>
         useSessionBrowser(
           mockConfig as any,
-          mockChatRecordingService as any,
           mockOnLoadHistory,
         ),
       );
@@ -319,7 +318,6 @@ describe('useSessionBrowser', () => {
       const { result } = renderHook(() =>
         useSessionBrowser(
           mockConfig as any,
-          mockChatRecordingService as any,
           mockOnLoadHistory,
         ),
       );
@@ -353,7 +351,6 @@ describe('useSessionBrowser', () => {
       const { result } = renderHook(() =>
         useSessionBrowser(
           mockConfig as any,
-          mockChatRecordingService as any,
           mockOnLoadHistory,
         ),
       );
@@ -387,7 +384,6 @@ describe('useSessionBrowser', () => {
       const { result } = renderHook(() =>
         useSessionBrowser(
           mockConfig as any,
-          mockChatRecordingService as any,
           mockOnLoadHistory,
         ),
       );
@@ -411,7 +407,6 @@ describe('useSessionBrowser', () => {
       const { result, rerender } = renderHook(() =>
         useSessionBrowser(
           mockConfig as any,
-          mockChatRecordingService as any,
           mockOnLoadHistory,
         ),
       );
@@ -437,12 +432,11 @@ describe('useSessionBrowser', () => {
 
     it('should update handleResumeSession callback when dependencies change', () => {
       const { result, rerender } = renderHook(
-        ({ config, chatRecordingService, onLoadHistory }) =>
-          useSessionBrowser(config, chatRecordingService, onLoadHistory),
+        ({ config, onLoadHistory }) =>
+          useSessionBrowser(config, onLoadHistory),
         {
           initialProps: {
             config: mockConfig as any,
-            chatRecordingService: mockChatRecordingService as any,
             onLoadHistory: mockOnLoadHistory,
           },
         },
@@ -453,7 +447,6 @@ describe('useSessionBrowser', () => {
       const newOnLoadHistory = vi.fn();
       rerender({
         config: mockConfig as any,
-        chatRecordingService: mockChatRecordingService as any,
         onLoadHistory: newOnLoadHistory,
       });
 

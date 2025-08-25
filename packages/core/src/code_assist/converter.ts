@@ -199,7 +199,7 @@ function toContent(content: ContentUnion): Content {
   };
 }
 
-function toParts(parts: PartUnion[]): Part[] {
+export function toParts(parts: PartUnion[]): Part[] {
   return parts.map(toPart);
 }
 
@@ -210,6 +210,7 @@ function toPart(part: PartUnion): Part {
   }
   return part;
 }
+
 
 function toVertexGenerationConfig(
   config?: GenerateContentConfig,

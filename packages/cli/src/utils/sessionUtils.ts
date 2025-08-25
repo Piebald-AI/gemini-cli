@@ -9,6 +9,7 @@ import {
   ConversationRecord,
   MessageRecord,
 } from '@google/gemini-cli-core';
+import { partListUnionToString } from '@google/gemini-cli-core/dist/src/core/geminiRequest.js';
 import * as fs from 'fs/promises';
 import path from 'path';
 
@@ -52,8 +53,10 @@ export interface SessionSelectionResult {
  */
 export const extractFirstUserMessage = (messages: MessageRecord[]): string => {
   const userMessage = messages.find(
-    (msg) =>
-      msg.type === 'user' && msg.content?.trim() && msg.content !== '/resume',
+    (msg) => {
+      const content = partListUnionToString(msg.content);
+      return msg.type === 'user' && content?.trim() && content !== '/resume';
+    }
   );
 
   if (!userMessage) {
@@ -61,7 +64,7 @@ export const extractFirstUserMessage = (messages: MessageRecord[]): string => {
   }
 
   // Truncate long messages for display
-  const content = userMessage.content.trim();
+  const content = partListUnionToString(userMessage.content).trim();
   return content.length > 100 ? content.slice(0, 97) + '...' : content;
 };
 

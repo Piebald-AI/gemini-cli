@@ -17,6 +17,7 @@ import { useTerminalSize } from '../hooks/useTerminalSize.js';
 import * as fs from 'fs/promises';
 import path from 'path';
 import { Config, ConversationRecord } from '@google/gemini-cli-core';
+import { partListUnionToString } from '@google/gemini-cli-core/dist/src/core/geminiRequest.js';
 
 /**
  * Processed session information used for display and interaction.
@@ -177,14 +178,15 @@ const extractFirstUserMessage = (
   const firstUserMsg =
     messages
       // First try filtering out slash commands.
-      .filter(
-        (msg) => !msg.content.startsWith('/') && !msg.content.startsWith('?'),
-      )
+      .filter((msg) => {
+        const content = partListUnionToString(msg.content);
+        return !content.startsWith('/') && !content.startsWith('?');
+      })
       .find((msg) => msg.type === 'user') ??
     // Then just default to the first message, even though it be a slash command, if there aren't
     // any non-slash commands.
     messages.find((msg) => msg.type === 'user');
-  return firstUserMsg ? cleanMessage(firstUserMsg.content) : '';
+  return firstUserMsg ? cleanMessage(partListUnionToString(firstUserMsg.content)) : '';
 };
 
 /**

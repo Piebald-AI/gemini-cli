@@ -16,6 +16,7 @@ import {
   Part,
   Tool,
 } from '@google/genai';
+import { toParts } from '../code_assist/converter.js';
 import { retryWithBackoff } from '../utils/retry.js';
 import { isFunctionResponse } from '../utils/messageInspectors.js';
 import { ContentGenerator, AuthType } from './contentGenerator.js';
@@ -23,6 +24,12 @@ import { Config } from '../config/config.js';
 import { DEFAULT_GEMINI_FLASH_MODEL } from '../config/models.js';
 import { hasCycleInSchema } from '../tools/tools.js';
 import { StructuredError } from './turn.js';
+import {
+  ChatRecordingService,
+  ToolCallRecord,
+  ResumedSessionData,
+} from '../services/chatRecordingService.js';
+import { appendFileSync } from 'fs';
 
 /**
  * Returns true if the response is valid, false otherwise.
@@ -118,14 +125,19 @@ export class GeminiChat {
   // A promise to represent the current state of the message being sent to the
   // model.
   private sendPromise: Promise<void> = Promise.resolve();
+  private readonly chatRecordingService: ChatRecordingService;
 
   constructor(
     private readonly config: Config,
     private readonly contentGenerator: ContentGenerator,
     private readonly generationConfig: GenerateContentConfig = {},
     private history: Content[] = [],
+    resumedSessionData?: ResumedSessionData,
   ) {
     validateHistory(history);
+    // Create and initialize CRS
+    this.chatRecordingService = new ChatRecordingService(config);
+    this.chatRecordingService.initialize(resumedSessionData);
   }
 
   /**
@@ -203,7 +215,23 @@ export class GeminiChat {
     prompt_id: string,
   ): Promise<GenerateContentResponse> {
     await this.sendPromise;
+    appendFileSync(
+      'SMS_lg.txt',
+      `GeminiChat.sendMessage called, this.chatRecordingService = ${this.chatRecordingService}\n`,
+    );
     const userContent = createUserContent(params.message);
+
+    // Record user input - capture complete message with all parts (text, files, images, etc.)
+    // but skip recording function responses (tool call results) as they should be stored in tool call records
+    if (!isFunctionResponse(userContent)) {
+      const userMessage = Array.isArray(params.message)
+        ? params.message
+        : [params.message];
+      this.chatRecordingService.recordMessage({
+        type: 'user',
+        content: userMessage,
+      });
+    }
     const requestContents = this.getHistory(true).concat(userContent);
 
     let response: GenerateContentResponse;
@@ -305,7 +333,26 @@ export class GeminiChat {
     prompt_id: string,
   ): Promise<AsyncGenerator<GenerateContentResponse>> {
     await this.sendPromise;
+
+    appendFileSync(
+      'SMS_lg.txt',
+      `sendMessageStream: this.chatRecordingService = ${!!this.chatRecordingService}\n`,
+    );
+    
     const userContent = createUserContent(params.message);
+
+    // Record user input - capture complete message with all parts (text, files, images, etc.)
+    // but skip recording function responses (tool call results) as they should be stored in tool call records
+    if (!isFunctionResponse(userContent)) {
+      const userMessage = Array.isArray(params.message)
+        ? params.message
+        : [params.message];
+      const userMessageContent = serializeUserMessage(toParts(userMessage));
+      this.chatRecordingService.recordMessage({
+        type: 'user',
+        content: userMessageContent,
+      });
+    }
     const requestContents = this.getHistory(true).concat(userContent);
 
     try {
@@ -464,12 +511,20 @@ export class GeminiChat {
           const content = chunk.candidates?.[0]?.content;
           if (content !== undefined) {
             if (this.isThoughtContent(content)) {
+              // Record thoughts
+              this.recordThoughtFromContent(content);
               yield chunk;
               continue;
             }
             outputContent.push(content);
           }
         }
+
+        // Record token usage if this chunk has usageMetadata
+        if (chunk.usageMetadata) {
+          this.chatRecordingService.recordMessageTokens(chunk.usageMetadata);
+        }
+
         yield chunk;
       }
     } catch (error) {
@@ -482,6 +537,21 @@ export class GeminiChat {
       for (const content of outputContent) {
         if (content.parts) {
           allParts.push(...content.parts);
+        }
+      }
+
+      // Record model response text
+      if (outputContent.length > 0) {
+        const responseText = outputContent
+          .map((content) => extractTextFromContent(content))
+          .filter((text) => text.trim())
+          .join('');
+
+        if (responseText.trim()) {
+          this.chatRecordingService.recordMessage({
+            type: 'gemini',
+            content: responseText,
+          });
         }
       }
     }
@@ -599,6 +669,81 @@ export class GeminiChat {
       content.parts[0].thought === true
     );
   }
+
+  /**
+   * Records tool calls to the chat recording service.
+   */
+  public recordToolCalls(toolCalls: ToolCallRecord[]): void {
+    this.chatRecordingService.recordToolCalls(toolCalls);
+  }
+
+  /**
+   * Gets the chat recording service instance.
+   */
+  public getChatRecordingService(): ChatRecordingService {
+    return this.chatRecordingService;
+  }
+
+  /**
+   * Extracts and records thought from thought content.
+   */
+  private recordThoughtFromContent(content: Content): void {
+    if (!content.parts || content.parts.length === 0) {
+      return;
+    }
+
+    const thoughtPart = content.parts[0];
+    if (thoughtPart.text) {
+      // Extract subject and description using the same logic as turn.ts
+      const rawText = thoughtPart.text;
+      const subjectStringMatches = rawText.match(/\*\*(.*?)\*\*/s);
+      const subject = subjectStringMatches
+        ? subjectStringMatches[1].trim()
+        : '';
+      const description = rawText.replace(/\*\*(.*?)\*\*/s, '').trim();
+
+      this.chatRecordingService.recordThought({
+        subject,
+        description,
+      });
+    }
+  }
+}
+
+/**
+ * Serializes user message parts into a string representation for recording.
+ * Captures complete user message including text, files, images, etc.
+ */
+function serializeUserMessage(parts: Part[]): string {
+  return parts
+    .map((part) => {
+      if (part.text) {
+        return part.text;
+      } else if (part.inlineData) {
+        return '[image]';
+      } else if (part.fileData) {
+        return '[file]';
+      } else if (part.functionCall) {
+        return '[tool call]';
+      } else if (part.functionResponse) {
+        return '[tool call result]';
+      } else {
+        return '[unknown]';
+      }
+    })
+    .join('\n');
+}
+
+/**
+ * Extracts text content from Content object.
+ */
+function extractTextFromContent(content: Content): string {
+  return content.parts
+    ? content.parts
+        .filter((part) => part.text)
+        .map((part) => part.text)
+        .join('')
+    : '';
 }
 
 /** Visible for Testing */

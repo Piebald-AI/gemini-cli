@@ -8,15 +8,14 @@ import { useState, useCallback } from 'react';
 import { Config } from '@google/gemini-cli-core';
 import { LoadHistoryActionReturn } from '../commands/types.js';
 import { HistoryItemWithoutId } from '../types.js';
-import { ChatRecordingService } from '@google/gemini-cli-core';
 import * as fs from 'fs/promises';
 import path from 'path';
 import { ConversationRecord } from '@google/gemini-cli-core';
+import { partListUnionToString } from '@google/gemini-cli-core/dist/src/core/geminiRequest.js';
 import { MessageType, ToolCallStatus } from '../types.js';
 
 export const useSessionBrowser = (
   config: Config,
-  chatRecordingService: ChatRecordingService,
   onLoadHistory: (result: LoadHistoryActionReturn) => void,
 ) => {
   const [isSessionBrowserOpen, setIsSessionBrowserOpen] = useState(false);
@@ -49,20 +48,25 @@ export const useSessionBrowser = (
           // Use the old session's ID to continue it.
           const existingSessionId = conversation.sessionId;
           config.setSessionId(existingSessionId);
-          chatRecordingService.initialize({
+
+          const resumedSessionData = {
             conversation,
             filePath: originalFilePath,
-          });
+          };
 
           // We've loaded it; tell the UI about it.
           setIsSessionBrowserOpen(false);
-          onLoadHistory(convertSessionToHistoryFormats(conversation.messages));
+          const historyData = convertSessionToHistoryFormats(conversation.messages);
+          onLoadHistory({
+            ...historyData,
+            resumedSessionData,
+          });
         } catch (error) {
           console.error('Error resuming session:', error);
           setIsSessionBrowserOpen(false);
         }
       },
-      [config, chatRecordingService, onLoadHistory],
+      [config, onLoadHistory],
     ),
 
     /**
@@ -71,13 +75,16 @@ export const useSessionBrowser = (
     handleDeleteSession: useCallback(
       (sessionId: string) => {
         try {
-          chatRecordingService.deleteSession(sessionId);
+          const chatRecordingService = config.getGeminiClient()?.getChatRecordingService();
+          if (chatRecordingService) {
+            chatRecordingService.deleteSession(sessionId);
+          }
         } catch (error) {
           console.error('Error deleting session:', error);
           throw error;
         }
       },
-      [chatRecordingService],
+      [config],
     ),
   };
 };
@@ -92,7 +99,8 @@ export function convertSessionToHistoryFormats(
 
   for (const msg of messages) {
     // Add the message only if it has content
-    if (msg.content && msg.content.trim()) {
+    const contentString = partListUnionToString(msg.content);
+    if (msg.content && contentString.trim()) {
       let messageType: MessageType;
       switch (msg.type) {
         case 'user':
@@ -111,7 +119,7 @@ export function convertSessionToHistoryFormats(
 
       uiHistory.push({
         type: messageType,
-        text: msg.content,
+        text: contentString,
       });
     }
 
@@ -151,9 +159,10 @@ export function convertSessionToHistoryFormats(
 
     if (msg.type === 'user') {
       // Skip user slash commands
+      const contentString = partListUnionToString(msg.content);
       if (
-        msg.content.trim().startsWith('/') ||
-        msg.content.trim().startsWith('?')
+        contentString.trim().startsWith('/') ||
+        contentString.trim().startsWith('?')
       ) {
         continue;
       }
@@ -161,7 +170,7 @@ export function convertSessionToHistoryFormats(
       // Add regular user message
       clientHistory.push({
         role: 'user',
-        parts: [{ text: msg.content }],
+        parts: [{ text: contentString }],
       });
     } else if (msg.type === 'gemini') {
       // Handle Gemini messages with potential tool calls
@@ -173,8 +182,9 @@ export function convertSessionToHistoryFormats(
         const modelParts: any[] = [];
 
         // Add text content if present
-        if (msg.content && msg.content.trim()) {
-          modelParts.push({ text: msg.content });
+        const contentString = partListUnionToString(msg.content);
+        if (msg.content && contentString.trim()) {
+          modelParts.push({ text: contentString });
         }
 
         // Add function calls
@@ -239,10 +249,11 @@ export function convertSessionToHistoryFormats(
         }
       } else {
         // Regular Gemini message without tool calls
-        if (msg.content && msg.content.trim()) {
+        const contentString = partListUnionToString(msg.content);
+        if (msg.content && contentString.trim()) {
           clientHistory.push({
             role: 'model',
-            parts: [{ text: msg.content }],
+            parts: [{ text: contentString }],
           });
         }
       }

@@ -216,10 +216,6 @@ vi.mock('./hooks/useHistoryManager', () => ({
   })),
 }));
 
-vi.mock('./hooks/useChatRecording', () => ({
-  useChatRecordingService: vi.fn(() => null),
-}));
-
 vi.mock('./hooks/useSessionBrowser', () => ({
   useSessionBrowser: vi.fn(() => ({
     isSessionBrowserOpen: false,
