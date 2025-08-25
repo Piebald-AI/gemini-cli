@@ -543,6 +543,14 @@ export const SETTINGS_SCHEMA = {
     requiresRestart: false,
     default: undefined as SessionRetentionSettings | undefined,
     description: 'Settings for automatic session cleanup.',
+  },
+  extensionManagement: {
+    type: 'boolean',
+    label: 'Extension Management',
+    category: 'Feature Flag',
+    requiresRestart: true,
+    default: false,
+    description: 'Enable extension management features.',
     showInDialog: false,
   },
   skipNextSpeakerCheck: {
