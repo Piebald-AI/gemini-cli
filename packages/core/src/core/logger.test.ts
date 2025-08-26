@@ -13,7 +13,8 @@ import {
   afterEach,
   afterAll,
 } from 'vitest';
-import { Logger, MessageSenderType, LogEntry } from './logger.js';
+import type { LogEntry } from './logger.js';
+import { Logger, MessageSenderType } from './logger.js';
 import { Storage } from '../config/storage.js';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';

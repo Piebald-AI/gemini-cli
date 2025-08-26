@@ -6,7 +6,7 @@
 
 import path from 'node:path';
 import { promises as fs } from 'node:fs';
-import { Storage } from '../config/storage.js';
+import type { Storage } from '../config/storage.js';
 
 const LOG_FILE_NAME = 'logs.json';
 

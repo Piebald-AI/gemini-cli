@@ -13,11 +13,10 @@ import {
 import path from 'node:path';
 import fs from 'node:fs';
 import { randomUUID } from 'node:crypto';
-import {
-  GenerateContentResponseUsageMetadata,
+import type {
   PartListUnion,
+  GenerateContentResponseUsageMetadata,
 } from '@google/genai';
-import { appendFileSync } from 'fs';
 
 /**
  * Token usage summary for a message or conversation.
@@ -190,7 +189,6 @@ export class ChatRecordingService {
     type: ConversationRecordExtra['type'],
     content: PartListUnion,
   ): MessageRecord {
-
     return {
       id: randomUUID(),
       timestamp: new Date().toISOString(),
@@ -441,10 +439,7 @@ export class ChatRecordingService {
   private updateConversation(
     updateFn: (conversation: ConversationRecord) => void,
   ) {
-    appendFileSync(
-      'SMS_lg.txt',
-      'updateConversation',
-    );
+    appendFileSync('SMS_lg.txt', 'updateConversation');
     const conversation = this.readConversation();
     updateFn(conversation);
     this.writeConversation(conversation);

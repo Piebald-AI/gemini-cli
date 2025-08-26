@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
+import type {
   EmbedContentParameters,
   GenerateContentConfig,
   PartListUnion,
@@ -16,14 +16,10 @@ import {
   getDirectoryContextString,
   getEnvironmentContext,
 } from '../utils/environmentContext.js';
-import {
-  Turn,
-  ServerGeminiStreamEvent,
-  GeminiEventType,
-  ChatCompressionInfo,
-} from './turn.js';
-import { Config } from '../config/config.js';
-import { UserTierId } from '../code_assist/types.js';
+import type { ServerGeminiStreamEvent, ChatCompressionInfo } from './turn.js';
+import { Turn, GeminiEventType } from './turn.js';
+import type { Config } from '../config/config.js';
+import type { UserTierId } from '../code_assist/types.js';
 import { getCoreSystemPrompt, getCompressionPrompt } from './prompts.js';
 import { getResponseText } from '../utils/generateContentResponseUtilities.js';
 import { checkNextSpeaker } from '../utils/nextSpeakerChecker.js';
@@ -33,13 +29,15 @@ import { retryWithBackoff } from '../utils/retry.js';
 import { getErrorMessage } from '../utils/errors.js';
 import { isFunctionResponse } from '../utils/messageInspectors.js';
 import { tokenLimit } from './tokenLimits.js';
-import { ChatRecordingService, ResumedSessionData } from '../services/chatRecordingService.js';
-import {
-  AuthType,
+import type {
+  ChatRecordingService,
+  ResumedSessionData,
+} from '../services/chatRecordingService.js';
+import type {
   ContentGenerator,
   ContentGeneratorConfig,
-  createContentGenerator,
 } from './contentGenerator.js';
+import { AuthType, createContentGenerator } from './contentGenerator.js';
 import { ProxyAgent, setGlobalDispatcher } from 'undici';
 import { DEFAULT_GEMINI_FLASH_MODEL } from '../config/models.js';
 import { LoopDetectionService } from '../services/loopDetectionService.js';
@@ -54,7 +52,7 @@ import {
   MalformedJsonResponseEvent,
   NextSpeakerCheckEvent,
 } from '../telemetry/types.js';
-import { IdeContext, File } from '../ide/ideContext.js';
+import type { IdeContext, File } from '../ide/ideContext.js';
 
 function isThinkingSupported(model: string) {
   if (model.startsWith('gemini-2.5')) return true;
@@ -212,7 +210,10 @@ export class GeminiClient {
     this.chat = await this.startChat();
   }
 
-  async resumeChat(history: Content[], resumedSessionData?: ResumedSessionData): Promise<void> {
+  async resumeChat(
+    history: Content[],
+    resumedSessionData?: ResumedSessionData,
+  ): Promise<void> {
     this.chat = await this.startChat(history, resumedSessionData);
   }
 
@@ -236,7 +237,10 @@ export class GeminiClient {
     });
   }
 
-  async startChat(extraHistory?: Content[], resumedSessionData?: ResumedSessionData): Promise<GeminiChat> {
+  async startChat(
+    extraHistory?: Content[],
+    resumedSessionData?: ResumedSessionData,
+  ): Promise<GeminiChat> {
     this.forceFullIdeContext = true;
     const envParts = await getEnvironmentContext(this.config);
     const toolRegistry = this.config.getToolRegistry();
@@ -262,6 +266,7 @@ export class GeminiClient {
         ? {
             ...this.generateContentConfig,
             thinkingConfig: {
+              thinkingBudget: -1,
               includeThoughts: true,
             },
           }

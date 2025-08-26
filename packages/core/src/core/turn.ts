@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
+import type {
   Part,
   PartListUnion,
   GenerateContentResponse,
@@ -13,12 +13,12 @@ import {
   FinishReason,
   GenerateContentResponseUsageMetadata,
 } from '@google/genai';
-import {
+import type {
   ToolCallConfirmationDetails,
   ToolResult,
   ToolResultDisplay,
 } from '../tools/tools.js';
-import { ToolErrorType } from '../tools/tool-error.js';
+import type { ToolErrorType } from '../tools/tool-error.js';
 import { getResponseText } from '../utils/generateContentResponseUtilities.js';
 import { reportError } from '../utils/errorReporting.js';
 import {
@@ -26,7 +26,7 @@ import {
   UnauthorizedError,
   toFriendlyError,
 } from '../utils/errors.js';
-import { GeminiChat } from './geminiChat.js';
+import type { GeminiChat } from './geminiChat.js';
 
 // Define a structure for tools passed to the server
 export interface ServerTool {

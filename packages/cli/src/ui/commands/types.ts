@@ -5,18 +5,18 @@
  */
 
 import { type ReactNode } from 'react';
-import { Content } from '@google/genai';
-import { HistoryItemWithoutId } from '../types.js';
-import {
+import type { Content } from '@google/genai';
+import type { HistoryItemWithoutId } from '../types.js';
+import type {
   Config,
   GitService,
   Logger,
   ResumedSessionData,
 } from '@google/gemini-cli-core';
-import { LoadedSettings } from '../../config/settings.js';
-import { UseHistoryManagerReturn } from '../hooks/useHistoryManager.js';
+import type { LoadedSettings } from '../../config/settings.js';
+import type { UseHistoryManagerReturn } from '../hooks/useHistoryManager.js';
 import type { HistoryItem } from '../types.js';
-import { SessionStatsState } from '../contexts/SessionContext.js';
+import type { SessionStatsState } from '../contexts/SessionContext.js';
 
 // Grouped dependencies for clarity and easier mocking
 export interface CommandContext {
@@ -108,7 +108,14 @@ export interface MessageActionReturn {
  */
 export interface OpenDialogActionReturn {
   type: 'dialog';
-  dialog: 'help' | 'auth' | 'theme' | 'editor' | 'privacy' | 'settings' | 'sessionBrowser';
+  dialog:
+    | 'help'
+    | 'auth'
+    | 'theme'
+    | 'editor'
+    | 'privacy'
+    | 'settings'
+    | 'sessionBrowser';
 }
 
 /**

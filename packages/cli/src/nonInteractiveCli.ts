@@ -4,9 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import type { Config, ToolCallRequestInfo } from '@google/gemini-cli-core';
 import {
-  Config,
-  ToolCallRequestInfo,
   executeToolCall,
   shutdownTelemetry,
   isTelemetrySdkInitialized,
@@ -15,7 +14,7 @@ import {
   GeminiEventType,
   parseAndFormatApiError,
 } from '@google/gemini-cli-core';
-import { Content, Part } from '@google/genai';
+import type { Content, Part } from '@google/genai';
 
 import { convertSessionToHistoryFormats } from './ui/hooks/useSessionBrowser.js';
 import { ConsolePatcher } from './ui/utils/ConsolePatcher.js';
