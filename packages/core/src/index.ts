@@ -47,7 +47,6 @@ export * from './utils/errorParsing.js';
 export * from './utils/ignorePatterns.js';
 
 // Export services
-export * from './services/chatRecordingService.js';
 export * from './services/fileDiscoveryService.js';
 export * from './services/gitService.js';
 export * from './services/chatRecordingService.js';

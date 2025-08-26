@@ -163,7 +163,6 @@ export class GeminiChat {
     resumedSessionData?: ResumedSessionData,
   ) {
     validateHistory(history);
-    // Create and initialize CRS
     this.chatRecordingService = new ChatRecordingService(config);
     this.chatRecordingService.initialize(resumedSessionData);
   }

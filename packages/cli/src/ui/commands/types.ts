@@ -6,7 +6,7 @@
 
 import { type ReactNode } from 'react';
 import type { Content } from '@google/genai';
-import type { HistoryItemWithoutId } from '../types.js';
+import type { HistoryItemWithoutId, HistoryItem } from '../types.js';
 import type {
   Config,
   GitService,
@@ -15,7 +15,6 @@ import type {
 } from '@google/gemini-cli-core';
 import type { LoadedSettings } from '../../config/settings.js';
 import type { UseHistoryManagerReturn } from '../hooks/useHistoryManager.js';
-import type { HistoryItem } from '../types.js';
 import type { SessionStatsState } from '../contexts/SessionContext.js';
 
 // Grouped dependencies for clarity and easier mocking

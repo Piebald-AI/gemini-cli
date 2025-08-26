@@ -153,7 +153,6 @@ const mockToolRequiresConfirmation = new MockTool(
   true,
 );
 
-
 describe('useReactToolScheduler in YOLO Mode', () => {
   let onComplete: Mock;
   let setPendingHistoryItem: Mock;

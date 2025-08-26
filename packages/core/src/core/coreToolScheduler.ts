@@ -442,12 +442,7 @@ export class CoreToolScheduler {
       }
     });
     this.notifyToolCallsUpdate();
-    // Note: Not awaiting to avoid making setStatusInternal async
-    this.checkAndNotifyCompletion().catch((error) => {
-      if (this.config.getDebugMode()) {
-        console.error('Error in checkAndNotifyCompletion:', error);
-      }
-    });
+    this.checkAndNotifyCompletion();
   }
 
   private setArgsInternal(targetCallId: string, args: unknown): void {

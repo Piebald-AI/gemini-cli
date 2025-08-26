@@ -16,7 +16,8 @@ import {
 import { act } from 'react';
 import { renderHook } from '@testing-library/react';
 import { useEditorSettings } from './useEditorSettings.js';
-import { type LoadedSettings, SettingScope } from '../../config/settings.js';
+import type { LoadedSettings } from '../../config/settings.js';
+import { SettingScope } from '../../config/settings.js';
 import { MessageType } from '../types.js';
 import {
   type EditorType,

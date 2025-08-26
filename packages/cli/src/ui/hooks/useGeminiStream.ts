@@ -905,9 +905,7 @@ export const useGeminiStream = (
         } catch (error) {
           if (!isNodeError(error) || error.code !== 'EEXIST') {
             onDebugMessage(
-              `Failed to create checkpoint directory: ${getErrorMessage(
-                error,
-              )}`,
+              `Failed to create checkpoint directory: ${getErrorMessage(error)}`,
             );
             return;
           }

@@ -4,12 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-  type Config,
-  type Status,
-  type ThoughtSummary,
-  getProjectHash,
-} from '@google/gemini-cli-core';
+import { type Config } from '../config/config.js';
+import { type Status } from '../core/coreToolScheduler.js';
+import { type ThoughtSummary } from '../core/turn.js';
+import { getProjectHash } from '../utils/paths.js';
 import path from 'node:path';
 import fs, { appendFileSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';

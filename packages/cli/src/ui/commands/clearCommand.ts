@@ -5,7 +5,8 @@
  */
 
 import { uiTelemetryService } from '@google/gemini-cli-core';
-import { CommandKind, type SlashCommand } from './types.js';
+import type { SlashCommand } from './types.js';
+import { CommandKind } from './types.js';
 import { randomUUID } from 'crypto';
 
 export const clearCommand: SlashCommand = {
