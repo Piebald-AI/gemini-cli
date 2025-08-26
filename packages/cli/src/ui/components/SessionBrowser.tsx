@@ -16,7 +16,7 @@ import { Colors } from '../colors.js';
 import { useTerminalSize } from '../hooks/useTerminalSize.js';
 import * as fs from 'fs/promises';
 import path from 'path';
-import { Config, ConversationRecord } from '@google/gemini-cli-core';
+import type { Config, ConversationRecord } from '@google/gemini-cli-core';
 import { partListUnionToString } from '@google/gemini-cli-core/dist/src/core/geminiRequest.js';
 
 /**
@@ -186,7 +186,9 @@ const extractFirstUserMessage = (
     // Then just default to the first message, even though it be a slash command, if there aren't
     // any non-slash commands.
     messages.find((msg) => msg.type === 'user');
-  return firstUserMsg ? cleanMessage(partListUnionToString(firstUserMsg.content)) : '';
+  return firstUserMsg
+    ? cleanMessage(partListUnionToString(firstUserMsg.content))
+    : '';
 };
 
 /**

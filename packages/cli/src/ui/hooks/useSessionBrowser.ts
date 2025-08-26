@@ -6,11 +6,11 @@
 
 import { useState, useCallback } from 'react';
 import { Config } from '@google/gemini-cli-core';
-import { LoadHistoryActionReturn } from '../commands/types.js';
-import { HistoryItemWithoutId } from '../types.js';
+import type { LoadHistoryActionReturn } from '../commands/types.js';
+import type { HistoryItemWithoutId } from '../types.js';
 import * as fs from 'fs/promises';
 import path from 'path';
-import { ConversationRecord } from '@google/gemini-cli-core';
+import type { ConversationRecord } from '@google/gemini-cli-core';
 import { partListUnionToString } from '@google/gemini-cli-core/dist/src/core/geminiRequest.js';
 import { MessageType, ToolCallStatus } from '../types.js';
 
@@ -37,7 +37,10 @@ export const useSessionBrowser = (
     handleResumeSession: useCallback(
       async (sessionId: string) => {
         try {
-          const chatsDir = path.join(config.storage.getProjectTempDir(), 'chats');
+          const chatsDir = path.join(
+            config.storage.getProjectTempDir(),
+            'chats',
+          );
           const originalFilePath = path.join(chatsDir, `${sessionId}.json`);
 
           // Load up the conversation.
@@ -56,7 +59,9 @@ export const useSessionBrowser = (
 
           // We've loaded it; tell the UI about it.
           setIsSessionBrowserOpen(false);
-          const historyData = convertSessionToHistoryFormats(conversation.messages);
+          const historyData = convertSessionToHistoryFormats(
+            conversation.messages,
+          );
           onLoadHistory({
             ...historyData,
             resumedSessionData,
@@ -75,7 +80,9 @@ export const useSessionBrowser = (
     handleDeleteSession: useCallback(
       (sessionId: string) => {
         try {
-          const chatRecordingService = config.getGeminiClient()?.getChatRecordingService();
+          const chatRecordingService = config
+            .getGeminiClient()
+            ?.getChatRecordingService();
           if (chatRecordingService) {
             chatRecordingService.deleteSession(sessionId);
           }

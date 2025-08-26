@@ -32,8 +32,8 @@ import {
 } from '../telemetry/metrics.js';
 import {
   ChatRecordingService,
-  ToolCallRecord,
-  ResumedSessionData,
+  type ToolCallRecord,
+  type ResumedSessionData,
 } from '../services/chatRecordingService.js';
 import { appendFileSync } from 'fs';
 

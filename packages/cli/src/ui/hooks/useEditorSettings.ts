@@ -12,7 +12,7 @@ import {
   allowEditorTypeInSandbox,
   checkHasEditorType,
 } from '@google/gemini-cli-core';
-import { UseHistoryManagerReturn } from './useHistoryManager.js';
+import type { UseHistoryManagerReturn } from './useHistoryManager.js';
 
 interface UseEditorSettingsReturn {
   isEditorDialogOpen: boolean;

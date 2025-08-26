@@ -25,13 +25,12 @@ import { runNonInteractive } from './nonInteractiveCli.js';
 import { loadExtensions } from './config/extension.js';
 import { cleanupCheckpoints, registerCleanup } from './utils/cleanup.js';
 import { getCliVersion } from './utils/version.js';
-import type { Config } from '@google/gemini-cli-core';
+import type { Config, ResumedSessionData } from '@google/gemini-cli-core';
 import {
   sessionId,
   logUserPrompt,
   AuthType,
   getOauthClient,
-  ResumedSessionData,
   logIdeConnection,
   IdeConnectionEvent,
   IdeConnectionType,
@@ -46,8 +45,8 @@ import { checkForUpdates } from './ui/utils/updateCheck.js';
 import { handleAutoUpdate } from './utils/handleAutoUpdate.js';
 import { appEvents, AppEvent } from './utils/events.js';
 import {
+  type SessionInfo,
   formatRelativeTime,
-  SessionInfo,
   SessionSelector,
 } from './utils/sessionUtils.js';
 import { SettingsContext } from './ui/contexts/SettingsContext.js';

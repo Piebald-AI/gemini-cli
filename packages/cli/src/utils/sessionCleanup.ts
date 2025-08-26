@@ -7,8 +7,8 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { Config } from '@google/gemini-cli-core';
-import { Settings, SessionRetentionSettings } from '../config/settings.js';
-import { getSessionFiles, SessionInfo } from './sessionUtils.js';
+import type { Settings, SessionRetentionSettings } from '../config/settings.js';
+import { getSessionFiles, type SessionInfo } from './sessionUtils.js';
 
 /**
  * Result of session cleanup operation
@@ -25,13 +25,13 @@ export interface CleanupResult {
  */
 export async function cleanupExpiredSessions(
   config: Config,
-  settings: Settings
+  settings: Settings,
 ): Promise<CleanupResult> {
   const result: CleanupResult = {
     scanned: 0,
     deleted: 0,
     errors: [],
-    skipped: 0
+    skipped: 0,
   };
 
   try {
@@ -42,7 +42,7 @@ export async function cleanupExpiredSessions(
 
     const retentionConfig = settings.sessionRetention;
     const chatsDir = path.join(config.storage.getProjectTempDir(), 'chats');
-    
+
     // Validate retention configuration
     const validationResult = validateRetentionConfig(retentionConfig);
     if (!validationResult.valid) {
@@ -64,7 +64,7 @@ export async function cleanupExpiredSessions(
     const sessionsToDelete = await identifyExpiredSessions(
       sessionFiles,
       retentionConfig,
-      config.getSessionId()
+      config.getSessionId(),
     );
 
     // Perform cleanup
@@ -75,7 +75,7 @@ export async function cleanupExpiredSessions(
       } catch (error) {
         result.errors.push({
           sessionId: session.id,
-          error: error instanceof Error ? error.message : 'Unknown error'
+          error: error instanceof Error ? error.message : 'Unknown error',
         });
       }
     }
@@ -84,10 +84,9 @@ export async function cleanupExpiredSessions(
 
     if (config.getDebugMode() && result.deleted > 0) {
       console.debug(
-        `Session cleanup: deleted ${result.deleted}, skipped ${result.skipped}, errors ${result.errors.length}`
+        `Session cleanup: deleted ${result.deleted}, skipped ${result.skipped}, errors ${result.errors.length}`,
       );
     }
-
   } catch (error) {
     // Global error handler - don't let cleanup failures break startup
     if (config.getDebugMode()) {
@@ -95,7 +94,7 @@ export async function cleanupExpiredSessions(
     }
     result.errors.push({
       sessionId: 'global',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 
@@ -108,7 +107,7 @@ export async function cleanupExpiredSessions(
 async function identifyExpiredSessions(
   sessions: SessionInfo[],
   retentionConfig: SessionRetentionSettings,
-  currentSessionId: string
+  currentSessionId: string,
 ): Promise<SessionInfo[]> {
   const now = new Date();
   const expiredSessions: SessionInfo[] = [];
@@ -124,12 +123,13 @@ async function identifyExpiredSessions(
 
   // Sort sessions by lastUpdated (newest first) for count-based retention
   const sortedSessions = [...sessions].sort(
-    (a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()
+    (a, b) =>
+      new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime(),
   );
 
   for (let i = 0; i < sortedSessions.length; i++) {
     const session = sortedSessions[i];
-    
+
     // Never delete the current active session
     if (isActiveSession(session, currentSessionId)) {
       continue;
@@ -158,7 +158,10 @@ async function identifyExpiredSessions(
 /**
  * Checks if a session is currently active and should not be deleted
  */
-function isActiveSession(session: SessionInfo, currentSessionId: string): boolean {
+function isActiveSession(
+  session: SessionInfo,
+  currentSessionId: string,
+): boolean {
   return (
     session.id === currentSessionId ||
     session.isCurrentSession ||
@@ -169,33 +172,44 @@ function isActiveSession(session: SessionInfo, currentSessionId: string): boolea
 /**
  * Safely deletes a session file with proper error handling
  */
-async function safeDeleteSession(session: SessionInfo, chatsDir: string, debugMode: boolean): Promise<void> {
+async function safeDeleteSession(
+  session: SessionInfo,
+  chatsDir: string,
+  debugMode: boolean,
+): Promise<void> {
   const sessionPath = path.join(chatsDir, session.fileName);
 
   try {
     // Verify file exists before attempting deletion
     await fs.access(sessionPath, fs.constants.F_OK);
-    
+
     // Attempt to read and validate the session file structure
     // This ensures we're not deleting corrupted or non-session files
     const content = await fs.readFile(sessionPath, 'utf8');
     const sessionData = JSON.parse(content);
-    
+
     // Basic validation that this is actually a session file
-    if (!sessionData.sessionId || !sessionData.messages || !Array.isArray(sessionData.messages)) {
+    if (
+      !sessionData.sessionId ||
+      !sessionData.messages ||
+      !Array.isArray(sessionData.messages)
+    ) {
       throw new Error('Invalid session file structure');
     }
 
     // Perform the deletion
     await fs.unlink(sessionPath);
-    
+
     if (debugMode) {
-      console.debug(`Deleted expired session: ${session.id} (${session.lastUpdated})`);
+      console.debug(
+        `Deleted expired session: ${session.id} (${session.lastUpdated})`,
+      );
     }
-    
   } catch (error) {
     if (error instanceof Error) {
-      throw new Error(`Failed to delete session ${session.id}: ${error.message}`);
+      throw new Error(
+        `Failed to delete session ${session.id}: ${error.message}`,
+      );
     }
     throw error;
   }
@@ -214,10 +228,10 @@ function parseRetentionPeriod(period: string): number {
   const unit = match[2];
 
   const multipliers = {
-    'h': 60 * 60 * 1000,           // hours to ms
-    'd': 24 * 60 * 60 * 1000,     // days to ms
-    'w': 7 * 24 * 60 * 60 * 1000, // weeks to ms
-    'm': 30 * 24 * 60 * 60 * 1000 // months (30 days) to ms
+    h: 60 * 60 * 1000, // hours to ms
+    d: 24 * 60 * 60 * 1000, // days to ms
+    w: 7 * 24 * 60 * 60 * 1000, // weeks to ms
+    m: 30 * 24 * 60 * 60 * 1000, // months (30 days) to ms
   };
 
   return value * multipliers[unit as keyof typeof multipliers] || 0;
@@ -240,7 +254,7 @@ function validateRetentionConfig(config: SessionRetentionSettings): {
     if (maxAgeMs === 0) {
       return { valid: false, error: `Invalid maxAge format: ${config.maxAge}` };
     }
-    
+
     // Enforce minimum retention period (1 day)
     const minRetentionMs = 24 * 60 * 60 * 1000; // 1 day
     if (maxAgeMs < minRetentionMs) {
@@ -260,7 +274,10 @@ function validateRetentionConfig(config: SessionRetentionSettings): {
 
   // At least one retention method must be specified
   if (!config.maxAge && config.maxCount === undefined) {
-    return { valid: false, error: 'Either maxAge or maxCount must be specified' };
+    return {
+      valid: false,
+      error: 'Either maxAge or maxCount must be specified',
+    };
   }
 
   return { valid: true };

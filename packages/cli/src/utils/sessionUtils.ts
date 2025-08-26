@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
+import type {
   Config,
   ConversationRecord,
   MessageRecord,
@@ -52,12 +52,10 @@ export interface SessionSelectionResult {
  * Extracts the first meaningful user message from conversation messages.
  */
 export const extractFirstUserMessage = (messages: MessageRecord[]): string => {
-  const userMessage = messages.find(
-    (msg) => {
-      const content = partListUnionToString(msg.content);
-      return msg.type === 'user' && content?.trim() && content !== '/resume';
-    }
-  );
+  const userMessage = messages.find((msg) => {
+    const content = partListUnionToString(msg.content);
+    return msg.type === 'user' && content?.trim() && content !== '/resume';
+  });
 
   if (!userMessage) {
     return 'Empty conversation';
@@ -165,7 +163,10 @@ export class SessionSelector {
    * Lists all available sessions for the current project.
    */
   async listSessions(): Promise<SessionInfo[]> {
-    const chatsDir = path.join(this.config.storage.getProjectTempDir(), 'chats');
+    const chatsDir = path.join(
+      this.config.storage.getProjectTempDir(),
+      'chats',
+    );
     return getSessionFiles(chatsDir, this.config.getSessionId());
   }
 
@@ -194,7 +195,9 @@ export class SessionSelector {
       selectedSession = sessions[sessions.length - 1];
     } else {
       // Try to find by UUID first
-      const sessionByUuid = sessions.find((session) => session.id === resumeArg);
+      const sessionByUuid = sessions.find(
+        (session) => session.id === resumeArg,
+      );
       if (sessionByUuid) {
         selectedSession = sessionByUuid;
       } else {
@@ -224,7 +227,10 @@ export class SessionSelector {
   private async selectSession(
     sessionInfo: SessionInfo,
   ): Promise<SessionSelectionResult> {
-    const chatsDir = path.join(this.config.storage.getProjectTempDir(), 'chats');
+    const chatsDir = path.join(
+      this.config.storage.getProjectTempDir(),
+      'chats',
+    );
     const sessionPath = path.join(chatsDir, sessionInfo.fileName);
 
     try {

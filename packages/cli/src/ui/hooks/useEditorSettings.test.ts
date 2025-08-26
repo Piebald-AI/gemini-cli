@@ -23,7 +23,7 @@ import {
   checkHasEditorType,
   allowEditorTypeInSandbox,
 } from '@google/gemini-cli-core';
-import { UseHistoryManagerReturn } from './useHistoryManager.js';
+import type { UseHistoryManagerReturn } from './useHistoryManager.js';
 
 vi.mock('@google/gemini-cli-core', async () => {
   const actual = await vi.importActual('@google/gemini-cli-core');

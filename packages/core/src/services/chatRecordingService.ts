@@ -11,7 +11,7 @@ import {
   getProjectHash,
 } from '@google/gemini-cli-core';
 import path from 'node:path';
-import fs from 'node:fs';
+import fs, { appendFileSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import type {
   PartListUnion,

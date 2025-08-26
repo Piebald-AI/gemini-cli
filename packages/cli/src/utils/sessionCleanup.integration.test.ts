@@ -6,7 +6,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { cleanupExpiredSessions } from './sessionCleanup.js';
-import { Settings } from '../config/settings.js';
+import type { Settings } from '../config/settings.js';
 import { Config } from '@google/gemini-cli-core';
 
 // Create a mock config for integration testing
@@ -37,7 +37,7 @@ describe('Session Cleanup Integration', () => {
 
     // Should complete quickly even with non-existent directory
     expect(endTime - startTime).toBeLessThan(100);
-    
+
     // Should return empty result for non-existent directory
     expect(result.scanned).toBe(0);
     expect(result.deleted).toBe(0);
@@ -59,7 +59,7 @@ describe('Session Cleanup Integration', () => {
 
     // Should complete almost instantly when disabled
     expect(endTime - startTime).toBeLessThan(10);
-    
+
     expect(result.scanned).toBe(0);
     expect(result.deleted).toBe(0);
     expect(result.skipped).toBe(0);
@@ -76,7 +76,7 @@ describe('Session Cleanup Integration', () => {
 
     // Should complete almost instantly when not configured
     expect(endTime - startTime).toBeLessThan(10);
-    
+
     expect(result.scanned).toBe(0);
     expect(result.deleted).toBe(0);
     expect(result.skipped).toBe(0);
@@ -98,7 +98,7 @@ describe('Session Cleanup Integration', () => {
 
     // Should complete quickly even with invalid config
     expect(endTime - startTime).toBeLessThan(50);
-    
+
     expect(result.scanned).toBe(0);
     expect(result.deleted).toBe(0);
     expect(result.skipped).toBe(0);
