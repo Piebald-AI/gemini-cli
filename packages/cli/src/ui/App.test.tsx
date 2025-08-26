@@ -27,6 +27,7 @@ import { LoadedSettings } from '../config/settings.js';
 import process from 'node:process';
 import { useGeminiStream } from './hooks/useGeminiStream.js';
 import { useConsoleMessages } from './hooks/useConsoleMessages.js';
+import { convertSessionToHistoryFormats } from './hooks/useSessionBrowser.js';
 import type { ConsoleMessageItem } from './types.js';
 import { StreamingState } from './types.js';
 import { Tips } from './components/Tips.js';
@@ -160,6 +161,20 @@ vi.mock('@google/gemini-cli-core', async (importOriginal) => {
           isInitialized: vi.fn(() => true),
           resumeChat: vi.fn(),
           getUserTier: vi.fn(),
+          getChatRecordingService: vi.fn(() => ({
+            initialize: vi.fn(),
+            recordMessage: vi.fn(),
+            recordMessageTokens: vi.fn(),
+            recordToolCalls: vi.fn(),
+          })),
+          getChat: vi.fn(() => ({
+            getChatRecordingService: vi.fn(() => ({
+              initialize: vi.fn(),
+              recordMessage: vi.fn(),
+              recordMessageTokens: vi.fn(),
+              recordToolCalls: vi.fn(),
+            })),
+          })),
         })),
         getCheckpointingEnabled: vi.fn(() => opts.checkpointing ?? true),
         getAllGeminiMdFilenames: vi.fn(() => ['GEMINI.md']),
@@ -267,6 +282,32 @@ vi.mock('./hooks/useConsoleMessages.js', () => ({
     consoleMessages: [],
     handleNewMessage: vi.fn(),
     clearConsoleMessages: vi.fn(),
+  })),
+}));
+
+vi.mock('./hooks/useThemeCommand', () => ({
+  useThemeCommand: vi.fn(() => ({
+    isThemeDialogOpen: false,
+    openThemeDialog: vi.fn(),
+    handleThemeSelect: vi.fn(),
+    handleThemeHighlight: vi.fn(),
+  })),
+}));
+
+vi.mock('./hooks/useEditorSettings', () => ({
+  useEditorSettings: vi.fn(() => ({
+    isEditorDialogOpen: false,
+    openEditorDialog: vi.fn(),
+    handleEditorSelect: vi.fn(),
+    exitEditorDialog: vi.fn(),
+  })),
+}));
+
+vi.mock('./hooks/useSettingsCommand', () => ({
+  useSettingsCommand: vi.fn(() => ({
+    isSettingsDialogOpen: false,
+    openSettingsDialog: vi.fn(),
+    closeSettingsDialog: vi.fn(),
   })),
 }));
 
@@ -1089,6 +1130,12 @@ describe('App UI', () => {
       mockConfig.getGeminiClient.mockReturnValue({
         isInitialized: vi.fn(() => true),
         getUserTier: vi.fn(),
+        getChatRecordingService: vi.fn().mockReturnValue({
+          initialize: vi.fn(),
+          recordMessage: vi.fn(),
+          recordMessageTokens: vi.fn(),
+          recordToolCalls: vi.fn(),
+        }),
       } as unknown as GeminiClient);
 
       const { unmount, rerender } = renderWithProviders(
@@ -1122,11 +1169,24 @@ describe('App UI', () => {
       const mockGeminiClient = {
         isInitialized: vi.fn(() => true),
         resumeChat: vi.fn(),
+        getChatRecordingService: vi.fn().mockReturnValue({
+          initialize: vi.fn(),
+          recordMessage: vi.fn(),
+          recordMessageTokens: vi.fn(),
+          recordToolCalls: vi.fn(),
+        }),
       };
 
       mockConfig.getGeminiClient.mockReturnValue(
         mockGeminiClient as unknown as GeminiClient,
       );
+
+      // Mock convertSessionToHistoryFormats to return proper format
+      const mockHistoryData = {
+        history: [{ id: 1, type: 'user', content: 'Hello' }],
+        clientHistory: [{ role: 'user', parts: [{ text: 'Hello' }] }],
+      };
+      vi.mocked(convertSessionToHistoryFormats).mockReturnValue(mockHistoryData);
 
       const resumedSessionData = {
         conversation: {

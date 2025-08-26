@@ -53,6 +53,7 @@ describe('runNonInteractive', () => {
     sendMessageStream: vi.Mock;
     resumeChat: vi.Mock;
     setChatRecordingService: vi.Mock;
+    getChatRecordingService: vi.Mock;
   };
 
   beforeEach(async () => {
@@ -76,6 +77,12 @@ describe('runNonInteractive', () => {
       sendMessageStream: vi.fn(),
       resumeChat: vi.fn().mockResolvedValue(undefined),
       setChatRecordingService: vi.fn(),
+      getChatRecordingService: vi.fn(() => ({
+        initialize: vi.fn(),
+        recordMessage: vi.fn(),
+        recordMessageTokens: vi.fn(),
+        recordToolCalls: vi.fn(),
+      })),
     };
 
     mockConfig = {
