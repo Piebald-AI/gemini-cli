@@ -612,11 +612,12 @@ export class GeminiChat {
       if (isValidResponse(chunk)) {
         const content = chunk.candidates?.[0]?.content;
         if (content) {
-          if (this.isThoughtContent(content)) {
+          if (content.parts?.some((part) => part.thought)) {
             // Record thoughts
             this.recordThoughtFromContent(content);
-          } else if (content.parts) {
-            // Filter out thought parts from being added to history.
+          }
+          // Always add parts - thoughts will be filtered out later in recordHistory
+          if (content.parts) {
             modelResponseParts.push(...content.parts);
           }
         }
