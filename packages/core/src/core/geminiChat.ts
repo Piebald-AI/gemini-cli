@@ -41,6 +41,7 @@ import {
   InvalidChunkEvent,
 } from '../telemetry/types.js';
 import { isFunctionResponse } from '../utils/messageInspectors.js';
+import { partListUnionToString } from './geminiRequest.js';
 
 /**
  * Options for retrying due to invalid content from the model.
@@ -385,7 +386,7 @@ export class GeminiChat {
       const userMessage = Array.isArray(params.message)
         ? params.message
         : [params.message];
-      const userMessageContent = serializeUserMessage(toParts(userMessage));
+      const userMessageContent = partListUnionToString(toParts(userMessage));
       this.chatRecordingService.recordMessage({
         type: 'user',
         content: userMessageContent,
@@ -806,29 +807,6 @@ export class GeminiChat {
   }
 }
 
-/**
- * Serializes user message parts into a string representation for recording.
- * Captures complete user message including text, files, images, etc.
- */
-function serializeUserMessage(parts: Part[]): string {
-  return parts
-    .map((part) => {
-      if (part.text) {
-        return part.text;
-      } else if (part.inlineData) {
-        return '[image]';
-      } else if (part.fileData) {
-        return '[file]';
-      } else if (part.functionCall) {
-        return '[tool call]';
-      } else if (part.functionResponse) {
-        return '[tool call result]';
-      } else {
-        return '[unknown]';
-      }
-    })
-    .join('\n');
-}
 /** Visible for Testing */
 export function isSchemaDepthError(errorMessage: string): boolean {
   return errorMessage.includes('maximum schema depth exceeded');
