@@ -177,17 +177,19 @@ describe('useSessionBrowser', () => {
         'existing-session-456',
       );
 
-      // Verify chat recording service was initialized with resumed session data
-      expect(mockChatRecordingService.initialize).toHaveBeenCalledWith({
-        conversation: mockConversation,
-        filePath: '/chats/test-session-123.json',
-      });
-
       // Verify session browser was closed
       expect(result.current.isSessionBrowserOpen).toBe(false);
 
-      // Verify onLoadHistory was called
-      expect(mockOnLoadHistory).toHaveBeenCalled();
+      // Verify onLoadHistory was called with correct resumed session data
+      expect(mockOnLoadHistory).toHaveBeenCalledWith({
+        type: 'load_history',
+        history: expect.any(Array),
+        clientHistory: expect.any(Array),
+        resumedSessionData: {
+          conversation: mockConversation,
+          filePath: '/chats/test-session-123.json',
+        },
+      });
     });
 
     it('should handle messages with tool calls', async () => {
