@@ -151,7 +151,6 @@ describe('useSlashCommandProcessor', () => {
         mockSetQuittingMessages,
         vi.fn(), // openPrivacyNotice
         vi.fn(), // openSessionBrowser
-        null, // chatRecordingService
         vi.fn(), // openSettingsDialog
         vi.fn(), // toggleVimEnabled
         setIsProcessing,
@@ -905,7 +904,6 @@ describe('useSlashCommandProcessor', () => {
           mockSetQuittingMessages,
           vi.fn(), // openPrivacyNotice
           vi.fn(), // openSessionBrowser
-          null, // chatRecordingService
           vi.fn(), // openSettingsDialog
           vi.fn(), // toggleVimEnabled
           vi.fn(), // setIsProcessing
