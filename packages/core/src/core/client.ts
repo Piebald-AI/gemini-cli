@@ -217,11 +217,6 @@ export class GeminiClient {
     this.chat = await this.startChat(history, resumedSessionData);
   }
 
-  setChatRecordingService(service: ChatRecordingService): void {
-    // Legacy method - now that GeminiChat owns CRS, this is a no-op
-    // TODO: Remove this method in a future version
-  }
-
   getChatRecordingService(): ChatRecordingService | undefined {
     return this.chat?.getChatRecordingService();
   }
