@@ -5,9 +5,22 @@
  */
 
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
-import type { DOMElement } from 'ink';
-import { Box, measureElement, Static, Text, useStdin, useStdout } from 'ink';
-import { StreamingState, type HistoryItem, MessageType } from './types.js';
+import {
+  Box,
+  type DOMElement,
+  measureElement,
+  Static,
+  Text,
+  useStdin,
+  useStdout,
+} from 'ink';
+import {
+  StreamingState,
+  type HistoryItem,
+  MessageType,
+  ToolCallStatus,
+  type HistoryItemWithoutId,
+} from './types.js';
 import { useTerminalSize } from './hooks/useTerminalSize.js';
 import { useGeminiStream } from './hooks/useGeminiStream.js';
 import { useLoadingIndicator } from './hooks/useLoadingIndicator.js';
@@ -101,6 +114,8 @@ import { SettingsDialog } from './components/SettingsDialog.js';
 import { setUpdateHandler } from '../utils/handleAutoUpdate.js';
 import { appEvents, AppEvent } from '../utils/events.js';
 import { isNarrowWidth } from './utils/isNarrowWidth.js';
+import { useWorkspaceMigration } from './hooks/useWorkspaceMigration.js';
+import { WorkspaceMigrationDialog } from './components/WorkspaceMigrationDialog.js';
 
 const CTRL_EXIT_PROMPT_DURATION_MS = 1000;
 // Maximum number of queued messages to display in UI to prevent performance issues
@@ -112,6 +127,17 @@ interface AppProps {
   startupWarnings?: string[];
   version: string;
   resumedSessionData?: ResumedSessionData;
+}
+
+function isToolExecuting(pendingHistoryItems: HistoryItemWithoutId[]) {
+  return pendingHistoryItems.some((item) => {
+    if (item && item.type === 'tool_group') {
+      return item.tools.some(
+        (tool) => ToolCallStatus.Executing === tool.status,
+      );
+    }
+    return false;
+  });
 }
 
 export const AppWrapper = (props: AppProps) => {
@@ -220,6 +246,12 @@ const App = ({
   >();
   const [showEscapePrompt, setShowEscapePrompt] = useState(false);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const {
+    showWorkspaceMigrationDialog,
+    workspaceExtensions,
+    onWorkspaceMigrationDialogOpen,
+    onWorkspaceMigrationDialogClose,
+  } = useWorkspaceMigration(settings);
 
   useEffect(() => {
     const unsubscribe = ideContext.subscribeToIdeContext(setIdeContextState);
@@ -644,6 +676,11 @@ const App = ({
     () => cancelHandlerRef.current(),
   );
 
+  const pendingHistoryItems = useMemo(
+    () => [...pendingSlashCommandHistoryItems, ...pendingGeminiHistoryItems],
+    [pendingSlashCommandHistoryItems, pendingGeminiHistoryItems],
+  );
+
   // Message queue for handling input during streaming
   const { messageQueue, addMessage, clearQueue, getQueuedMessagesText } =
     useMessageQueue({
@@ -653,6 +690,11 @@ const App = ({
 
   // Update the cancel handler with message queue support
   cancelHandlerRef.current = useCallback(() => {
+    if (isToolExecuting(pendingHistoryItems)) {
+      buffer.setText(''); // Just clear the prompt
+      return;
+    }
+
     const lastUserMessage = userMessages.at(-1);
     let textToSet = lastUserMessage || '';
 
@@ -666,7 +708,13 @@ const App = ({
     if (textToSet) {
       buffer.setText(textToSet);
     }
-  }, [buffer, userMessages, getQueuedMessagesText, clearQueue]);
+  }, [
+    buffer,
+    userMessages,
+    getQueuedMessagesText,
+    clearQueue,
+    pendingHistoryItems,
+  ]);
 
   // Input handling - queue messages for processing
   const handleFinalSubmit = useCallback(
@@ -702,8 +750,6 @@ const App = ({
   );
 
   const { handleInput: vimHandleInput } = useVim(buffer, handleFinalSubmit);
-  const pendingHistoryItems = [...pendingSlashCommandHistoryItems];
-  pendingHistoryItems.push(...pendingGeminiHistoryItems);
 
   const { elapsedTime, currentLoadingPhrase } =
     useLoadingIndicator(streamingState);
@@ -1060,8 +1106,13 @@ const App = ({
               ))}
             </Box>
           )}
-
-          {shouldShowIdePrompt && currentIDE ? (
+          {showWorkspaceMigrationDialog ? (
+            <WorkspaceMigrationDialog
+              workspaceExtensions={workspaceExtensions}
+              onOpen={onWorkspaceMigrationDialogOpen}
+              onClose={onWorkspaceMigrationDialogClose}
+            />
+          ) : shouldShowIdePrompt && currentIDE ? (
             <IdeIntegrationNudge
               ide={currentIDE}
               onComplete={handleIdePromptComplete}
@@ -1218,8 +1269,7 @@ const App = ({
                     <Box paddingLeft={2}>
                       <Text dimColor>
                         ... (+
-                        {messageQueue.length -
-                          MAX_DISPLAYED_QUEUED_MESSAGES}{' '}
+                        {messageQueue.length - MAX_DISPLAYED_QUEUED_MESSAGES}
                         more)
                       </Text>
                     </Box>
