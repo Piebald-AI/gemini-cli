@@ -641,7 +641,7 @@ export class GeminiChat {
     // Record model response text from the collected parts
     if (modelResponseParts.length > 0) {
       const responseText = modelResponseParts
-        .filter((part) => part.text)
+        .filter((part) => part.text && !part.thought)
         .map((part) => part.text)
         .join('');
 
