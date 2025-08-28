@@ -34,7 +34,6 @@ import {
   type ToolCallRecord,
   type ResumedSessionData,
 } from '../services/chatRecordingService.js';
-import { appendFileSync } from 'fs';
 import {
   ContentRetryEvent,
   ContentRetryFailureEvent,
@@ -249,10 +248,6 @@ export class GeminiChat {
     prompt_id: string,
   ): Promise<GenerateContentResponse> {
     await this.sendPromise;
-    appendFileSync(
-      'SMS_lg.txt',
-      `GeminiChat.sendMessage called, this.chatRecordingService = ${this.chatRecordingService}\n`,
-    );
     const userContent = createUserContent(params.message);
 
     // Record user input - capture complete message with all parts (text, files, images, etc.)

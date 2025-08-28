@@ -9,7 +9,7 @@ import { type Status } from '../core/coreToolScheduler.js';
 import { type ThoughtSummary } from '../core/turn.js';
 import { getProjectHash } from '../utils/paths.js';
 import path from 'node:path';
-import fs, { appendFileSync } from 'node:fs';
+import fs from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import type {
   PartListUnion,
@@ -124,10 +124,6 @@ export class ChatRecordingService {
    * this service instance, or resumes from an existing session if resumedSessionData is provided.
    */
   initialize(resumedSessionData?: ResumedSessionData): void {
-    appendFileSync(
-      'SMS_lg.txt',
-      `initialize: resumedSessionData = ${!!resumedSessionData}\n`,
-    );
     try {
       if (resumedSessionData) {
         // Resume from existing session
@@ -202,10 +198,6 @@ export class ChatRecordingService {
     type: ConversationRecordExtra['type'];
     content: PartListUnion;
   }): void {
-    appendFileSync(
-      'SMS_lg.txt',
-      `recordMessage: this.conversationFile = ${!!this.conversationFile}\n`,
-    );
     if (!this.conversationFile) return;
 
     try {
@@ -236,10 +228,6 @@ export class ChatRecordingService {
    * Records a thought from the assistant's reasoning process.
    */
   recordThought(thought: ThoughtSummary): void {
-    appendFileSync(
-      'SMS_lg.txt',
-      `recordThought: this.conversationFile = ${!!this.conversationFile}\n`,
-    );
     if (!this.conversationFile) return;
 
     try {
@@ -259,10 +247,6 @@ export class ChatRecordingService {
   recordMessageTokens(
     respUsageMetadata: GenerateContentResponseUsageMetadata,
   ): void {
-    appendFileSync(
-      'SMS_lg.txt',
-      `recordMessageTokens: this.conversationFile = ${!!this.conversationFile}\n`,
-    );
     if (!this.conversationFile) return;
 
     try {
@@ -295,10 +279,6 @@ export class ChatRecordingService {
    * Adds tool calls to the last message in the conversation (which should be by Gemini).
    */
   recordToolCalls(toolCalls: ToolCallRecord[]): void {
-    appendFileSync(
-      'SMS_lg.txt',
-      `recordToolCalls: this.conversationFile = ${!!this.conversationFile}\n`,
-    );
     if (!this.conversationFile) return;
 
     try {
@@ -380,10 +360,6 @@ export class ChatRecordingService {
    * Loads up the conversation record from disk.
    */
   private readConversation(): ConversationRecord {
-    appendFileSync(
-      'SMS_lg.txt',
-      `readConversation: this.conversationFile = ${!!this.conversationFile}\n`,
-    );
     try {
       this.cachedLastConvData = fs.readFileSync(this.conversationFile!, 'utf8');
       return JSON.parse(this.cachedLastConvData);
@@ -408,10 +384,6 @@ export class ChatRecordingService {
    * Saves the conversation record; overwrites the file.
    */
   private writeConversation(conversation: ConversationRecord): void {
-    appendFileSync(
-      'SMS_lg.txt',
-      `writeConversation: conversation = ${!!conversation}\n`,
-    );
     try {
       if (!this.conversationFile) return;
       // Don't write the file yet until there's at least one message.
@@ -437,7 +409,6 @@ export class ChatRecordingService {
   private updateConversation(
     updateFn: (conversation: ConversationRecord) => void,
   ) {
-    appendFileSync('SMS_lg.txt', 'updateConversation');
     const conversation = this.readConversation();
     updateFn(conversation);
     this.writeConversation(conversation);
