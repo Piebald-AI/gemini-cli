@@ -5,14 +5,9 @@
  */
 
 import { type ReactNode } from 'react';
-import type { Content, PartListUnion } from '@google/genai';
+import type { PartListUnion } from '@google/genai';
 import type { HistoryItemWithoutId, HistoryItem } from '../types.js';
-import type {
-  Config,
-  GitService,
-  Logger,
-  ResumedSessionData,
-} from '@google/gemini-cli-core';
+import type { Config, GitService, Logger } from '@google/gemini-cli-core';
 import type { LoadedSettings } from '../../config/settings.js';
 import type { UseHistoryManagerReturn } from '../hooks/useHistoryManager.js';
 import type { SessionStatsState } from '../contexts/SessionContext.js';
@@ -118,17 +113,6 @@ export interface OpenDialogActionReturn {
 }
 
 /**
- * The return type for a command action that results in replacing
- * the entire conversation history.
- */
-export interface LoadHistoryActionReturn {
-  type: 'load_history';
-  history: HistoryItemWithoutId[];
-  clientHistory: Content[]; // The history for the generative client
-  resumedSessionData?: ResumedSessionData; // Optional session data for resuming
-}
-
-/**
  * The return type for a command action that should immediately submit
  * content as a prompt to the Gemini model.
  */
@@ -166,7 +150,6 @@ export type SlashCommandActionReturn =
   | MessageActionReturn
   | QuitActionReturn
   | OpenDialogActionReturn
-  | LoadHistoryActionReturn
   | SubmitPromptActionReturn
   | ConfirmShellCommandsActionReturn
   | ConfirmActionReturn;

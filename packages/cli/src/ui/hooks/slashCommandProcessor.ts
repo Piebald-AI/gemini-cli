@@ -402,16 +402,6 @@ export const useSlashCommandProcessor = (
                       );
                     }
                   }
-                case 'load_history': {
-                  config
-                    ?.getGeminiClient()
-                    ?.setHistory(result.clientHistory, { stripThoughts: true });
-                  fullCommandContext.ui.clear();
-                  result.history.forEach((item, index) => {
-                    fullCommandContext.ui.addItem(item, index);
-                  });
-                  return { type: 'handled' };
-                }
                 case 'quit':
                   setQuittingMessages(result.messages);
                   setTimeout(async () => {

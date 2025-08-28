@@ -108,7 +108,6 @@ import ansiEscapes from 'ansi-escapes';
 import { OverflowProvider } from './contexts/OverflowContext.js';
 import { ShowMoreLines } from './components/ShowMoreLines.js';
 import { PrivacyNotice } from './privacy/PrivacyNotice.js';
-import type { LoadHistoryActionReturn } from './commands/types.js';
 import { useSettingsCommand } from './hooks/useSettingsCommand.js';
 import { SettingsDialog } from './components/SettingsDialog.js';
 import { setUpdateHandler } from '../utils/handleAutoUpdate.js';
@@ -328,7 +327,11 @@ const App = ({
   // Performs the actual resuming--loading the recorded conversation history into the UI and the
   // Gemini client, in their respective formats.
   const loadHistoryForResume = useCallback(
-    (history: LoadHistoryActionReturn) => {
+    (
+      uiHistory: HistoryItemWithoutId[],
+      clientHistory: Array<{ role: 'user' | 'model'; parts: any[] }>,
+      resumedSessionData: ResumedSessionData,
+    ) => {
       // Wait for the client.
       if (!config.getGeminiClient()?.isInitialized()) {
         return;
@@ -337,15 +340,13 @@ const App = ({
       // Now that we have the client, load the history into the UI and the client.
       setQuittingMessages(null);
       clearItems();
-      history.history.forEach((item, index) => {
+      uiHistory.forEach((item, index) => {
         addItem(item, index, true);
       });
       refreshStatic(); // Force Static component to re-render with the updated history.
 
       // Give the history to the Gemini client.
-      config
-        .getGeminiClient()
-        ?.resumeChat(history.clientHistory, history.resumedSessionData);
+      config.getGeminiClient()?.resumeChat(clientHistory, resumedSessionData);
     },
     [
       clearItems,
@@ -372,10 +373,11 @@ const App = ({
       const historyData = convertSessionToHistoryFormats(
         resumedSessionData.conversation.messages,
       );
-      loadHistoryForResume({
-        ...historyData,
+      loadHistoryForResume(
+        historyData.uiHistory,
+        historyData.clientHistory,
         resumedSessionData,
-      });
+      );
     }
   }, [resumedSessionData, isAuthenticating, loadHistoryForResume]);
 

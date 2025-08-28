@@ -6,17 +6,23 @@
 
 import { useState, useCallback } from 'react';
 import { Config } from '@google/gemini-cli-core';
-import type { LoadHistoryActionReturn } from '../commands/types.js';
 import type { HistoryItemWithoutId } from '../types.js';
 import * as fs from 'fs/promises';
 import path from 'path';
-import type { ConversationRecord } from '@google/gemini-cli-core';
+import type {
+  ConversationRecord,
+  ResumedSessionData,
+} from '@google/gemini-cli-core';
 import { partListUnionToString } from '@google/gemini-cli-core/dist/src/core/geminiRequest.js';
 import { MessageType, ToolCallStatus } from '../types.js';
 
 export const useSessionBrowser = (
   config: Config,
-  onLoadHistory: (result: LoadHistoryActionReturn) => void,
+  onLoadHistory: (
+    uiHistory: HistoryItemWithoutId[],
+    clientHistory: Array<{ role: 'user' | 'model'; parts: any[] }>,
+    resumedSessionData: ResumedSessionData,
+  ) => void,
 ) => {
   const [isSessionBrowserOpen, setIsSessionBrowserOpen] = useState(false);
 
@@ -62,10 +68,11 @@ export const useSessionBrowser = (
           const historyData = convertSessionToHistoryFormats(
             conversation.messages,
           );
-          onLoadHistory({
-            ...historyData,
+          onLoadHistory(
+            historyData.uiHistory,
+            historyData.clientHistory,
             resumedSessionData,
-          });
+          );
         } catch (error) {
           console.error('Error resuming session:', error);
           setIsSessionBrowserOpen(false);
@@ -101,7 +108,10 @@ export const useSessionBrowser = (
  */
 export function convertSessionToHistoryFormats(
   messages: ConversationRecord['messages'],
-): LoadHistoryActionReturn {
+): {
+  uiHistory: HistoryItemWithoutId[];
+  clientHistory: Array<{ role: 'user' | 'model'; parts: any[] }>;
+} {
   const uiHistory: HistoryItemWithoutId[] = [];
 
   for (const msg of messages) {
@@ -262,8 +272,7 @@ export function convertSessionToHistoryFormats(
   }
 
   return {
-    history: uiHistory,
+    uiHistory,
     clientHistory,
-    type: 'load_history',
   };
 }

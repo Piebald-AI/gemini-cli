@@ -247,7 +247,7 @@ vi.mock('./hooks/useSessionBrowser', () => ({
     handleDeleteSession: vi.fn(),
   })),
   convertSessionToHistoryFormats: vi.fn(() => ({
-    history: [],
+    uiHistory: [],
     clientHistory: [],
   })),
 }));
@@ -1193,10 +1193,12 @@ describe('App UI', () => {
 
       // Mock convertSessionToHistoryFormats to return proper format
       const mockHistoryData = {
-        history: [{ id: 1, type: 'user', content: 'Hello' }],
+        uiHistory: [{ id: 1, type: 'user', content: 'Hello' }],
         clientHistory: [{ role: 'user', parts: [{ text: 'Hello' }] }],
       };
-      vi.mocked(convertSessionToHistoryFormats).mockReturnValue(mockHistoryData);
+      vi.mocked(convertSessionToHistoryFormats).mockReturnValue(
+        mockHistoryData,
+      );
 
       const resumedSessionData = {
         conversation: {
@@ -1227,7 +1229,7 @@ describe('App UI', () => {
               id: 'msg-4',
               timestamp: '2024-01-01T10:00:03.000Z',
               type: 'gemini',
-              content: 'I\'ll list the files for you.',
+              content: "I'll list the files for you.",
               toolCalls: [
                 {
                   id: 'tool-call-1',
@@ -1240,13 +1242,15 @@ describe('App UI', () => {
               id: 'msg-5',
               timestamp: '2024-01-01T10:00:04.000Z',
               type: 'system',
-              content: 'Tool execution result: files: ["package.json", "src/", "README.md"]',
+              content:
+                'Tool execution result: files: ["package.json", "src/", "README.md"]',
             },
             {
               id: 'msg-6',
               timestamp: '2024-01-01T10:00:05.000Z',
               type: 'gemini',
-              content: 'I can see the files in your current directory:\n- package.json\n- src/\n- README.md',
+              content:
+                'I can see the files in your current directory:\n- package.json\n- src/\n- README.md',
             },
           ],
         },
