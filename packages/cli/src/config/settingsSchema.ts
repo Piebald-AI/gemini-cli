@@ -35,8 +35,6 @@ export interface SettingsSchema {
 export type MemoryImportFormat = 'tree' | 'flat';
 export type DnsResolutionOrder = 'ipv4first' | 'verbatim';
 
-
-
 /**
  * The canonical schema for all settings.
  * The structure of this object defines the structure of the `Settings` type.
@@ -144,7 +142,49 @@ export const SETTINGS_SCHEMA = {
         category: 'General',
         requiresRestart: false,
         default: undefined as SessionRetentionSettings | undefined,
-      }
+        properties: {
+          enabled: {
+            type: 'boolean',
+            label: 'Enable Session Cleanup',
+            category: 'General',
+            requiresRestart: false,
+            default: false,
+            description: 'Enable automatic session cleanup',
+            showInDialog: true,
+          },
+          maxAge: {
+            type: 'string',
+            label: 'Max Session Age',
+            category: 'General',
+            requiresRestart: false,
+            default: undefined as string | undefined,
+            description:
+              'Maximum age of sessions to keep (e.g., "30d", "7d", "24h", "1w")',
+            showInDialog: false,
+          },
+          maxCount: {
+            type: 'number',
+            label: 'Max Session Count',
+            category: 'General',
+            requiresRestart: false,
+            default: undefined as number | undefined,
+            description:
+              'Alternative: Maximum number of sessions to keep (most recent)',
+            showInDialog: false,
+          },
+          minRetention: {
+            type: 'string',
+            label: 'Min Retention Period',
+            category: 'General',
+            requiresRestart: false,
+            default: '1d',
+            description:
+              'Minimum retention period (safety limit, defaults to "1d")',
+            showInDialog: false,
+          },
+        },
+        description: 'Settings for automatic session cleanup.',
+      },
     },
   },
 
