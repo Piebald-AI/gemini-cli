@@ -112,19 +112,14 @@ export async function runNonInteractive(
       }
 
       if (toolCallRequests.length > 0) {
-        // Record tool calls (non-interactive mode handles tools directly, not via CoreToolScheduler)
-
         const toolResponseParts: Part[] = [];
-        for (let i = 0; i < toolCallRequests.length; ++i) {
-          const requestInfo = toolCallRequests[i];
-
+        for (const requestInfo of toolCallRequests) {
           const toolResponse = await executeToolCall(
             config,
             requestInfo,
             abortController.signal,
           );
 
-          // Tool call error handling.
           if (toolResponse.error) {
             console.error(
               `Error executing tool ${requestInfo.name}: ${toolResponse.resultDisplay || toolResponse.error.message}`,
@@ -135,8 +130,6 @@ export async function runNonInteractive(
             toolResponseParts.push(...toolResponse.responseParts);
           }
         }
-
-        // Record final tool call states after execution
         currentMessages = [{ role: 'user', parts: toolResponseParts }];
       } else {
         process.stdout.write('\n'); // Ensure a final newline

@@ -89,7 +89,6 @@ export const useGeminiStream = (
   onEditorClose: () => void,
   onCancelSubmit: () => void,
 ) => {
-  const chatRecordingService = geminiClient?.getChatRecordingService();
   const [initError, setInitError] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const turnCancelledRef = useRef(false);
@@ -640,7 +639,6 @@ export const useGeminiStream = (
       handleChatCompressionEvent,
       handleFinishedEvent,
       handleMaxSessionTurnsEvent,
-      chatRecordingService,
     ],
   );
 

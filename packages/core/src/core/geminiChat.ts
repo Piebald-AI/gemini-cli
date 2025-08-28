@@ -764,13 +764,6 @@ export class GeminiChat {
   }
 
   /**
-   * Records tool calls to the chat recording service.
-   */
-  public recordToolCalls(toolCalls: ToolCallRecord[]): void {
-    this.chatRecordingService.recordToolCalls(toolCalls);
-  }
-
-  /**
    * Gets the chat recording service instance.
    */
   public getChatRecordingService(): ChatRecordingService {
