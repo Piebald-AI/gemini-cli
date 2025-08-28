@@ -5,7 +5,7 @@
  */
 
 import { type ReactNode } from 'react';
-import type { Content } from '@google/genai';
+import type { Content, PartListUnion } from '@google/genai';
 import type { HistoryItemWithoutId, HistoryItem } from '../types.js';
 import type {
   Config,
@@ -134,7 +134,7 @@ export interface LoadHistoryActionReturn {
  */
 export interface SubmitPromptActionReturn {
   type: 'submit_prompt';
-  content: string;
+  content: PartListUnion;
 }
 
 /**
