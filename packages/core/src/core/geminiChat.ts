@@ -599,22 +599,35 @@ export class GeminiChat {
     userInput: Content,
   ): AsyncGenerator<GenerateContentResponse> {
     const modelResponseParts: Part[] = [];
-    let isStreamInvalid = false;
     let hasReceivedAnyChunk = false;
+    let hasToolCall = false;
+    let lastChunk: GenerateContentResponse | null = null;
+
+    let isStreamInvalid = false;
+    let firstInvalidChunkEncountered = false;
+    let validChunkAfterInvalidEncountered = false;
 
     for await (const chunk of streamResponse) {
       hasReceivedAnyChunk = true;
+      lastChunk = chunk;
+
       if (isValidResponse(chunk)) {
+        if (firstInvalidChunkEncountered) {
+          // A valid chunk appeared *after* an invalid one.
+          validChunkAfterInvalidEncountered = true;
+        }
+
         const content = chunk.candidates?.[0]?.content;
-        if (content) {
-          if (content.parts?.some((part) => part.thought)) {
+        if (content?.parts) {
+          if (content.parts.some((part) => part.thought)) {
             // Record thoughts
             this.recordThoughtFromContent(content);
           }
-          // Always add parts - thoughts will be filtered out later in recordHistory
-          if (content.parts) {
-            modelResponseParts.push(...content.parts);
+          if (content.parts.some((part) => part.functionCall)) {
+            hasToolCall = true;
           }
+          // Always add parts - thoughts will be filtered out later in recordHistory
+          modelResponseParts.push(...content.parts);
         }
       } else {
         logInvalidChunk(
@@ -622,6 +635,7 @@ export class GeminiChat {
           new InvalidChunkEvent('Invalid chunk received from stream.'),
         );
         isStreamInvalid = true;
+        firstInvalidChunkEncountered = true;
       }
 
       // Record token usage if this chunk has usageMetadata
@@ -632,10 +646,31 @@ export class GeminiChat {
       yield chunk; // Yield every chunk to the UI immediately.
     }
 
-    if (isStreamInvalid || !hasReceivedAnyChunk) {
-      throw new EmptyStreamError(
-        'Model stream was invalid or completed without valid content.',
-      );
+    if (!hasReceivedAnyChunk) {
+      throw new EmptyStreamError('Model stream completed without any chunks.');
+    }
+
+    // --- FIX: The entire validation block was restructured for clarity and correctness ---
+    // Only apply complex validation if an invalid chunk was actually found.
+    if (isStreamInvalid) {
+      // Fail immediately if an invalid chunk was not the absolute last chunk.
+      if (validChunkAfterInvalidEncountered) {
+        throw new EmptyStreamError(
+          'Model stream had invalid intermediate chunks without a tool call.',
+        );
+      }
+
+      if (!hasToolCall) {
+        // If the *only* invalid part was the last chunk, we still check its finish reason.
+        const finishReason = lastChunk?.candidates?.[0]?.finishReason;
+        const isSuccessfulFinish =
+          finishReason === 'STOP' || finishReason === 'MAX_TOKENS';
+        if (!isSuccessfulFinish) {
+          throw new EmptyStreamError(
+            'Model stream ended with an invalid chunk and a failed finish reason.',
+          );
+        }
+      }
     }
 
     // Record model response text from the collected parts
