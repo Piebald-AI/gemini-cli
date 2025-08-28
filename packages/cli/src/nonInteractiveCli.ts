@@ -7,7 +7,6 @@
 import type {
   Config,
   ToolCallRequestInfo,
-  ToolCallRecord,
   ResumedSessionData,
 } from '@google/gemini-cli-core';
 import {
@@ -91,7 +90,6 @@ export async function runNonInteractive(
           'Reached max session turns for this session. Increase the number of turns by specifying maxSessionTurns in settings.json.',
         );
       }
-      let fullResponseText = '';
       const toolCallRequests: ToolCallRequestInfo[] = [];
 
       const responseStream = geminiClient.sendMessageStream(
@@ -108,49 +106,23 @@ export async function runNonInteractive(
 
         if (event.type === GeminiEventType.Content) {
           process.stdout.write(event.value);
-          fullResponseText += event.value;
         } else if (event.type === GeminiEventType.ToolCallRequest) {
           toolCallRequests.push(event.value);
-        } else if (event.type === GeminiEventType.Finished) {
-          // Token recording now handled in GeminiChat
         }
       }
 
-      // Model response recording now handled in GeminiChat
-
       if (toolCallRequests.length > 0) {
         // Record tool calls (non-interactive mode handles tools directly, not via CoreToolScheduler)
-        const toolCallRecords: ToolCallRecord[] = toolCallRequests.map(
-          (tc) => ({
-            id: tc.callId ?? `${tc.name}-${Date.now()}`,
-            name: tc.name as string,
-            args: tc.args ?? {},
-            status: 'executing',
-            timestamp: new Date().toISOString(),
-            displayName: tc.name as string,
-          }),
-        );
 
         const toolResponseParts: Part[] = [];
         for (let i = 0; i < toolCallRequests.length; ++i) {
           const requestInfo = toolCallRequests[i];
-          const toolCallRecord = toolCallRecords[i];
 
           const toolResponse = await executeToolCall(
             config,
             requestInfo,
             abortController.signal,
           );
-
-          // Update the saved tool call record's status and other properties.
-          toolCallRecord.status = toolResponse.error ? 'error' : 'success';
-          toolCallRecord.result = toolResponse.error
-            ? undefined
-            : toolResponse.responseParts;
-          toolCallRecord.resultDisplay =
-            typeof toolResponse.resultDisplay === 'string'
-              ? toolResponse.resultDisplay
-              : undefined;
 
           // Tool call error handling.
           if (toolResponse.error) {
@@ -165,10 +137,6 @@ export async function runNonInteractive(
         }
 
         // Record final tool call states after execution
-        const chatRecordingService = geminiClient.getChatRecordingService();
-        if (chatRecordingService) {
-          chatRecordingService.recordToolCalls(toolCallRecords);
-        }
         currentMessages = [{ role: 'user', parts: toolResponseParts }];
       } else {
         process.stdout.write('\n'); // Ensure a final newline
