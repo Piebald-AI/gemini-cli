@@ -877,7 +877,26 @@ describe('convertSessionToHistoryFormats', () => {
               id: 'tool-2',
               name: 'bash',
               args: { command: 'ls' },
-              result: ['file1.txt', 'file2.txt'],
+              result: [
+                {
+                  functionResponse: {
+                    id: 'tool-2',
+                    name: 'bash',
+                    response: {
+                      output: 'file1.txt',
+                    },
+                  },
+                },
+                {
+                  functionResponse: {
+                    id: 'tool-2',
+                    name: 'bash', 
+                    response: {
+                      output: 'file2.txt',
+                    },
+                  },
+                },
+              ],
               status: 'success',
               timestamp: '2025-01-01T00:01:35Z',
             },
@@ -927,7 +946,14 @@ describe('convertSessionToHistoryFormats', () => {
             functionResponse: {
               id: 'tool-2',
               name: 'bash',
-              response: { output: 'file1.txtfile2.txt' },
+              response: { output: 'file1.txt' },
+            },
+          },
+          {
+            functionResponse: {
+              id: 'tool-2',
+              name: 'bash',
+              response: { output: 'file2.txt' },
             },
           },
         ],
@@ -946,7 +972,26 @@ describe('convertSessionToHistoryFormats', () => {
               id: 'tool-1',
               name: 'read_file',
               args: { path: 'test.txt' },
-              result: [{ text: 'Hello' }, { text: ' World' }],
+              result: [
+                {
+                  functionResponse: {
+                    id: 'tool-1',
+                    name: 'read_file',
+                    response: {
+                      output: 'Hello',
+                    },
+                  },
+                },
+                {
+                  functionResponse: {
+                    id: 'tool-1',
+                    name: 'read_file',
+                    response: {
+                      output: ' World',
+                    },
+                  },
+                },
+              ],
               status: 'success',
               timestamp: '2025-01-01T00:01:30Z',
             },
@@ -958,7 +1003,7 @@ describe('convertSessionToHistoryFormats', () => {
 
       expect(result.clientHistory).toHaveLength(2);
 
-      // Function response should extract and join text parts
+      // Function response should extract both function responses
       expect(result.clientHistory[1]).toEqual({
         role: 'user',
         parts: [
@@ -967,7 +1012,16 @@ describe('convertSessionToHistoryFormats', () => {
               id: 'tool-1',
               name: 'read_file',
               response: {
-                output: 'Hello World',
+                output: 'Hello',
+              },
+            },
+          },
+          {
+            functionResponse: {
+              id: 'tool-1',
+              name: 'read_file',
+              response: {
+                output: ' World',
               },
             },
           },

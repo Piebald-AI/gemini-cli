@@ -202,6 +202,7 @@ describe('CoreToolScheduler', () => {
       // Create mocked tool registry
       const mockConfig = {
         getToolRegistry: () => mockToolRegistry,
+        getGeminiClient: () => null, // No client needed for these tests
       } as unknown as Config;
       const mockToolRegistry = {
         getAllToolNames: () => ['list_files', 'read_file', 'write_file'],
@@ -873,6 +874,7 @@ describe('CoreToolScheduler request queueing', () => {
         model: 'test-model',
         authType: 'oauth-personal',
       }),
+      getGeminiClient: () => null, // No client needed for these tests
     } as unknown as Config;
 
     const scheduler = new CoreToolScheduler({
