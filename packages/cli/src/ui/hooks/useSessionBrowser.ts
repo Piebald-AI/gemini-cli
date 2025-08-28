@@ -228,18 +228,12 @@ export function convertSessionToHistoryFormats(
                 },
               };
             } else if (Array.isArray(toolCall.result)) {
-              // Extract text content from Part array
-              const textParts = toolCall.result
-                .map((part) => (typeof part == 'string' ? part : part.text))
-                .join('');
-              responseData = {
-                functionResponse: {
-                  id: toolCall.id,
-                  name: toolCall.name,
-                  response: textParts ? { output: textParts } : toolCall.result,
-                },
-              };
+              // toolCall.result is an array containing properly formatted
+              // function responses
+              functionResponseParts.push(...toolCall.result);
+              continue;
             } else {
+              // Fallback for non-array results
               responseData = toolCall.result;
             }
 
