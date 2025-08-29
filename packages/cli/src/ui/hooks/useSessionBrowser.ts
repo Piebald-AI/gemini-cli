@@ -241,7 +241,7 @@ export function convertSessionToHistoryFormats(
             } else if (Array.isArray(toolCall.result)) {
               // toolCall.result is an array containing properly formatted
               // function responses
-              functionResponseParts.push(...toolCall.result);
+              functionResponseParts.push(...(toolCall.result as Part[]));
               continue;
             } else {
               // Fallback for non-array results

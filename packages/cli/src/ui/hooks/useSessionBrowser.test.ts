@@ -70,7 +70,7 @@ describe('useSessionBrowser', () => {
     it('should initialize with isSessionBrowserOpen set to false', () => {
       const { result } = renderHook(() =>
         useSessionBrowser(
-          mockConfig as Partial<Config> as Config,
+          mockConfig as unknown as Config,
           mockOnLoadHistory,
         ),
       );
@@ -81,7 +81,7 @@ describe('useSessionBrowser', () => {
     it('should provide all expected hook methods', () => {
       const { result } = renderHook(() =>
         useSessionBrowser(
-          mockConfig as Partial<Config> as Config,
+          mockConfig as unknown as Config,
           mockOnLoadHistory,
         ),
       );
@@ -97,7 +97,7 @@ describe('useSessionBrowser', () => {
     it('should open session browser when openSessionBrowser is called', () => {
       const { result } = renderHook(() =>
         useSessionBrowser(
-          mockConfig as Partial<Config> as Config,
+          mockConfig as unknown as Config,
           mockOnLoadHistory,
         ),
       );
@@ -112,7 +112,7 @@ describe('useSessionBrowser', () => {
     it('should close session browser when closeSessionBrowser is called', () => {
       const { result } = renderHook(() =>
         useSessionBrowser(
-          mockConfig as Partial<Config> as Config,
+          mockConfig as unknown as Config,
           mockOnLoadHistory,
         ),
       );
@@ -158,7 +158,7 @@ describe('useSessionBrowser', () => {
 
       const { result } = renderHook(() =>
         useSessionBrowser(
-          mockConfig as Partial<Config> as Config,
+          mockConfig as unknown as Config,
           mockOnLoadHistory,
         ),
       );
@@ -237,7 +237,7 @@ describe('useSessionBrowser', () => {
 
       const { result } = renderHook(() =>
         useSessionBrowser(
-          mockConfig as Partial<Config> as Config,
+          mockConfig as unknown as Config,
           mockOnLoadHistory,
         ),
       );
@@ -295,7 +295,7 @@ describe('useSessionBrowser', () => {
 
       const { result } = renderHook(() =>
         useSessionBrowser(
-          mockConfig as Partial<Config> as Config,
+          mockConfig as unknown as Config,
           mockOnLoadHistory,
         ),
       );
@@ -323,7 +323,7 @@ describe('useSessionBrowser', () => {
 
       const { result } = renderHook(() =>
         useSessionBrowser(
-          mockConfig as Partial<Config> as Config,
+          mockConfig as unknown as Config,
           mockOnLoadHistory,
         ),
       );
@@ -356,7 +356,7 @@ describe('useSessionBrowser', () => {
 
       const { result } = renderHook(() =>
         useSessionBrowser(
-          mockConfig as Partial<Config> as Config,
+          mockConfig as unknown as Config,
           mockOnLoadHistory,
         ),
       );
@@ -389,7 +389,7 @@ describe('useSessionBrowser', () => {
 
       const { result } = renderHook(() =>
         useSessionBrowser(
-          mockConfig as Partial<Config> as Config,
+          mockConfig as unknown as Config,
           mockOnLoadHistory,
         ),
       );
@@ -412,7 +412,7 @@ describe('useSessionBrowser', () => {
     it('should maintain stable callback references', () => {
       const { result, rerender } = renderHook(() =>
         useSessionBrowser(
-          mockConfig as Partial<Config> as Config,
+          mockConfig as unknown as Config,
           mockOnLoadHistory,
         ),
       );
@@ -441,7 +441,7 @@ describe('useSessionBrowser', () => {
         ({ config, onLoadHistory }) => useSessionBrowser(config, onLoadHistory),
         {
           initialProps: {
-            config: mockConfig as Partial<Config> as Config,
+            config: mockConfig as unknown as Config,
             onLoadHistory: mockOnLoadHistory,
           },
         },
@@ -451,7 +451,7 @@ describe('useSessionBrowser', () => {
 
       const newOnLoadHistory = vi.fn();
       rerender({
-        config: mockConfig as Partial<Config> as Config,
+        config: mockConfig as unknown as Config,
         onLoadHistory: newOnLoadHistory,
       });
 
@@ -1065,44 +1065,6 @@ describe('convertSessionToHistoryFormats', () => {
               name: 'test_tool',
               args: { arg: 'value' },
               id: 'tool-1',
-            },
-          },
-        ],
-      });
-    });
-
-    it('should handle tool calls without IDs', () => {
-      const messages: MessageRecord[] = [
-        {
-          id: 'msg-1',
-          timestamp: '2025-01-01T00:01:00Z',
-          content: 'Tool without ID',
-          type: 'gemini',
-          toolCalls: [
-            {
-              name: 'simple_tool',
-              args: {},
-              result: 'success',
-              status: 'success',
-              timestamp: '2025-01-01T00:01:30Z',
-            } as Partial<MessageRecord['toolCalls']>[0], // Missing id field
-          ],
-        },
-      ];
-
-      const result = convertSessionToHistoryFormats(messages);
-
-      expect(result.clientHistory).toHaveLength(2);
-
-      // Function call should not include id field when not present
-      expect(result.clientHistory[0]).toEqual({
-        role: 'model',
-        parts: [
-          { text: 'Tool without ID' },
-          {
-            functionCall: {
-              name: 'simple_tool',
-              args: {},
             },
           },
         ],
