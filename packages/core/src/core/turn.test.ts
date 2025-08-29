@@ -539,7 +539,7 @@ describe('Turn', () => {
           type: GeminiEventType.Citation,
           value: 'Citations:\n(Source 1 Title) https://example.com/source1',
         },
-        { type: GeminiEventType.Finished, value: 'STOP' },
+        { type: GeminiEventType.Finished, value: { reason: 'STOP', usageMetadata: undefined } },
       ]);
     });
 
@@ -583,7 +583,7 @@ describe('Turn', () => {
           value:
             'Citations:\n(Title1) https://example.com/source1\n(Title2) https://example.com/source2',
         },
-        { type: GeminiEventType.Finished, value: 'STOP' },
+        { type: GeminiEventType.Finished, value: { reason: 'STOP', usageMetadata: undefined } },
       ]);
     });
 
@@ -618,8 +618,9 @@ describe('Turn', () => {
 
       expect(events).toEqual([
         { type: GeminiEventType.Content, value: 'Some text.' },
+        { type: GeminiEventType.Finished, value: { reason: undefined, usageMetadata: undefined } },
       ]);
-      // No Citation or Finished event
+      // No Citation event (but we do get a Finished event with undefined reason)
       expect(events.some((e) => e.type === GeminiEventType.Citation)).toBe(
         false,
       );
@@ -664,7 +665,7 @@ describe('Turn', () => {
           type: GeminiEventType.Citation,
           value: 'Citations:\n(Good Source) https://example.com/source1',
         },
-        { type: GeminiEventType.Finished, value: 'STOP' },
+        { type: GeminiEventType.Finished, value: { reason: 'STOP', usageMetadata: undefined } },
       ]);
     });
 
