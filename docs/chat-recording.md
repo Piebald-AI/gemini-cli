@@ -89,10 +89,12 @@ Configure automatic cleanup of old sessions via `settings.json`:
 
 ```json
 {
-  "sessionRetention": {
-    "enabled": true,
-    "maxAge": "7d", // Keep sessions for 7 days
-    "maxCount": 50 // Keep max 50 sessions
+  "general": {
+    "sessionRetention": {
+      "enabled": true,
+      "maxAge": "7d", // Keep sessions for 7 days
+      "maxCount": 50 // Keep max 50 sessions
+    }
   }
 }
 ```
