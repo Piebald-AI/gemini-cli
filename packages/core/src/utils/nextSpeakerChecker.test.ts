@@ -65,8 +65,12 @@ describe('checkNextSpeaker', () => {
     );
 
     // Mock the methods that ChatRecordingService needs
-    mockConfigInstance.getSessionId = vi.fn().mockReturnValue('test-session-id');
-    mockConfigInstance.getProjectRoot = vi.fn().mockReturnValue('/test/project/root');
+    mockConfigInstance.getSessionId = vi
+      .fn()
+      .mockReturnValue('test-session-id');
+    mockConfigInstance.getProjectRoot = vi
+      .fn()
+      .mockReturnValue('/test/project/root');
     mockConfigInstance.storage = {
       getProjectTempDir: vi.fn().mockReturnValue('/test/temp'),
     };

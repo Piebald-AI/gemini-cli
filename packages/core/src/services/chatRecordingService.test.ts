@@ -23,9 +23,9 @@ vi.mock('node:crypto', () => ({
   randomUUID: vi.fn(),
   createHash: vi.fn(() => ({
     update: vi.fn(() => ({
-      digest: vi.fn(() => 'mocked-hash')
-    }))
-  }))
+      digest: vi.fn(() => 'mocked-hash'),
+    })),
+  })),
 }));
 vi.mock('../utils/paths.js');
 
@@ -224,7 +224,14 @@ describe('ChatRecordingService', () => {
       ) as ConversationRecord;
       expect(conversation.messages[0]).toEqual({
         ...initialConversation.messages[0],
-        tokens: { input: 1, output: 2, total: 3, cached: 0, thoughts: 0, tool: 0 },
+        tokens: {
+          input: 1,
+          output: 2,
+          total: 3,
+          cached: 0,
+          thoughts: 0,
+          tool: 0,
+        },
       });
     });
 

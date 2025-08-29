@@ -136,16 +136,6 @@ vi.mock('./slashCommandProcessor.js', () => ({
   handleSlashCommand: vi.fn().mockReturnValue(false),
 }));
 
-// Create mock chat recording service
-const mockChatRecordingService = {
-  recordThought: vi.fn(),
-  initialize: vi.fn(),
-  recordMessage: vi.fn(),
-  recordMessageTokens: vi.fn(),
-  recordToolCalls: vi.fn(),
-  getConversationFile: vi.fn(),
-} as any;
-
 // --- END MOCKS ---
 
 // --- Tests for useGeminiStream Hook ---

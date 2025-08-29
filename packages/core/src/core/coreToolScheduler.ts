@@ -954,7 +954,9 @@ export class CoreToolScheduler {
     const allCallsAreTerminal = this.toolCalls.every(isToolCallTerminal);
 
     // Record all tool calls in their final state
-    const chatRecordingService = this.config.getGeminiClient()?.getChatRecordingService();
+    const chatRecordingService = this.config
+      .getGeminiClient()
+      ?.getChatRecordingService();
     if (chatRecordingService) {
       const toolRegistry = await this.toolRegistry;
 

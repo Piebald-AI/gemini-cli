@@ -251,7 +251,6 @@ function toPart(part: PartUnion): Part {
   return part;
 }
 
-
 function toVertexGenerationConfig(
   config?: GenerateContentConfig,
 ): VertexGenerationConfig | undefined {

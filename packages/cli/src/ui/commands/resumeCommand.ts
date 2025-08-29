@@ -18,10 +18,8 @@ export const resumeCommand: SlashCommand = {
   action: async (
     _context: CommandContext,
     _args: string,
-  ): Promise<OpenDialogActionReturn> => {
-    return {
-      type: 'dialog',
-      dialog: 'sessionBrowser',
-    };
-  },
+  ): Promise<OpenDialogActionReturn> => ({
+    type: 'dialog',
+    dialog: 'sessionBrowser',
+  }),
 };

@@ -7,13 +7,13 @@
 import { describe, it, expect } from 'vitest';
 import { cleanupExpiredSessions } from './sessionCleanup.js';
 import type { Settings } from '../config/settings.js';
-import { Config } from '@google/gemini-cli-core';
+import type { Config } from '@google/gemini-cli-core';
 
 // Create a mock config for integration testing
 function createTestConfig(): Config {
   return {
     storage: {
-      getProjectTempDir: () => '/tmp/nonexistent-test-dir'
+      getProjectTempDir: () => '/tmp/nonexistent-test-dir',
     },
     getSessionId: () => 'test-session-id',
     getDebugMode: () => false,
@@ -25,10 +25,12 @@ describe('Session Cleanup Integration', () => {
   it('should gracefully handle non-existent directories', async () => {
     const config = createTestConfig();
     const settings: Settings = {
-      sessionRetention: {
-        enabled: true,
-        maxAge: '30d'
-      }
+      general: {
+        sessionRetention: {
+          enabled: true,
+          maxAge: '30d',
+        },
+      },
     };
 
     const startTime = Date.now();
@@ -48,9 +50,11 @@ describe('Session Cleanup Integration', () => {
   it('should not impact startup when disabled', async () => {
     const config = createTestConfig();
     const settings: Settings = {
-      sessionRetention: {
-        enabled: false
-      }
+      general: {
+        sessionRetention: {
+          enabled: false,
+        },
+      },
     };
 
     const startTime = Date.now();
@@ -86,10 +90,12 @@ describe('Session Cleanup Integration', () => {
   it('should validate configuration and fail gracefully', async () => {
     const config = createTestConfig();
     const settings: Settings = {
-      sessionRetention: {
-        enabled: true,
-        maxAge: 'invalid-format'
-      }
+      general: {
+        sessionRetention: {
+          enabled: true,
+          maxAge: 'invalid-format',
+        },
+      },
     };
 
     const startTime = Date.now();

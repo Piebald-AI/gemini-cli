@@ -296,6 +296,7 @@ If you are experiencing performance issues with file searching (e.g., with `@` c
       "maxAge": "7d",
       "maxCount": 50
     }
+    ```
 
 - **`excludedProjectEnvVars`** (array of strings):
   - **Description:** Specifies environment variables that should be excluded from being loaded from project `.env` files. This prevents project-specific environment variables (like `DEBUG=true`) from interfering with gemini-cli behavior. Variables from `.gemini/.env` files are never excluded.

@@ -5,9 +5,9 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import * as fs from 'fs/promises';
-import * as path from 'path';
-import { Config } from '@google/gemini-cli-core';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+import type { Config } from '@google/gemini-cli-core';
 import type { Settings } from '../config/settings.js';
 import { cleanupExpiredSessions } from './sessionCleanup.js';
 import { type SessionInfo, getSessionFiles } from './sessionUtils.js';
@@ -107,7 +107,7 @@ describe('Session Cleanup', () => {
     it('should return early when cleanup is disabled', async () => {
       const config = createMockConfig();
       const settings: Settings = {
-        sessionRetention: { enabled: false },
+        general: { sessionRetention: { enabled: false } },
       };
 
       const result = await cleanupExpiredSessions(config, settings);
@@ -133,9 +133,11 @@ describe('Session Cleanup', () => {
         getDebugMode: vi.fn().mockReturnValue(true),
       });
       const settings: Settings = {
-        sessionRetention: {
-          enabled: true,
-          maxAge: 'invalid-format',
+        general: {
+          sessionRetention: {
+            enabled: true,
+            maxAge: 'invalid-format',
+          },
         },
       };
 
@@ -157,9 +159,11 @@ describe('Session Cleanup', () => {
     it('should delete sessions older than maxAge', async () => {
       const config = createMockConfig();
       const settings: Settings = {
-        sessionRetention: {
-          enabled: true,
-          maxAge: '10d', // 10 days
+        general: {
+          sessionRetention: {
+            enabled: true,
+            maxAge: '10d', // 10 days
+          },
         },
       };
 
@@ -186,9 +190,11 @@ describe('Session Cleanup', () => {
     it('should never delete current session', async () => {
       const config = createMockConfig();
       const settings: Settings = {
-        sessionRetention: {
-          enabled: true,
-          maxAge: '1d', // Very short retention
+        general: {
+          sessionRetention: {
+            enabled: true,
+            maxAge: '1d', // Very short retention
+          },
         },
       };
 
@@ -224,9 +230,11 @@ describe('Session Cleanup', () => {
     it('should handle count-based retention', async () => {
       const config = createMockConfig();
       const settings: Settings = {
-        sessionRetention: {
-          enabled: true,
-          maxCount: 2, // Keep only 2 most recent sessions
+        general: {
+          sessionRetention: {
+            enabled: true,
+            maxCount: 2, // Keep only 2 most recent sessions
+          },
         },
       };
 
@@ -252,9 +260,11 @@ describe('Session Cleanup', () => {
     it('should handle file system errors gracefully', async () => {
       const config = createMockConfig();
       const settings: Settings = {
-        sessionRetention: {
-          enabled: true,
-          maxAge: '1d',
+        general: {
+          sessionRetention: {
+            enabled: true,
+            maxAge: '1d',
+          },
         },
       };
 
@@ -281,9 +291,11 @@ describe('Session Cleanup', () => {
     it('should validate session file structure before deletion', async () => {
       const config = createMockConfig();
       const settings: Settings = {
-        sessionRetention: {
-          enabled: true,
-          maxAge: '1d',
+        general: {
+          sessionRetention: {
+            enabled: true,
+            maxAge: '1d',
+          },
         },
       };
 
@@ -307,9 +319,11 @@ describe('Session Cleanup', () => {
     it('should handle empty sessions directory', async () => {
       const config = createMockConfig();
       const settings: Settings = {
-        sessionRetention: {
-          enabled: true,
-          maxAge: '30d',
+        general: {
+          sessionRetention: {
+            enabled: true,
+            maxAge: '30d',
+          },
         },
       };
 
@@ -328,9 +342,11 @@ describe('Session Cleanup', () => {
         getDebugMode: vi.fn().mockReturnValue(true),
       });
       const settings: Settings = {
-        sessionRetention: {
-          enabled: true,
-          maxAge: '30d',
+        general: {
+          sessionRetention: {
+            enabled: true,
+            maxAge: '30d',
+          },
         },
       };
 
@@ -357,10 +373,12 @@ describe('Session Cleanup', () => {
     it('should respect minRetention configuration', async () => {
       const config = createMockConfig();
       const settings: Settings = {
-        sessionRetention: {
-          enabled: true,
-          maxAge: '12h', // Less than 1 day minimum
-          minRetention: '1d',
+        general: {
+          sessionRetention: {
+            enabled: true,
+            maxAge: '12h', // Less than 1 day minimum
+            minRetention: '1d',
+          },
         },
       };
 
@@ -376,9 +394,11 @@ describe('Session Cleanup', () => {
         getDebugMode: vi.fn().mockReturnValue(true),
       });
       const settings: Settings = {
-        sessionRetention: {
-          enabled: true,
-          maxAge: '10d',
+        general: {
+          sessionRetention: {
+            enabled: true,
+            maxAge: '10d',
+          },
         },
       };
 
@@ -415,9 +435,11 @@ describe('Session Cleanup', () => {
         getDebugMode: vi.fn().mockReturnValue(true),
       });
       const settings: Settings = {
-        sessionRetention: {
-          enabled: true,
-          // Neither maxAge nor maxCount specified
+        general: {
+          sessionRetention: {
+            enabled: true,
+            // Neither maxAge nor maxCount specified
+          },
         },
       };
 
@@ -438,9 +460,11 @@ describe('Session Cleanup', () => {
         getDebugMode: vi.fn().mockReturnValue(true),
       });
       const settings: Settings = {
-        sessionRetention: {
-          enabled: true,
-          maxCount: 0, // Invalid count
+        general: {
+          sessionRetention: {
+            enabled: true,
+            maxCount: 0, // Invalid count
+          },
         },
       };
 
@@ -461,9 +485,11 @@ describe('Session Cleanup', () => {
         getDebugMode: vi.fn().mockReturnValue(true),
       });
       const settings: Settings = {
-        sessionRetention: {
-          enabled: true,
-          maxCount: 1001, // Too high
+        general: {
+          sessionRetention: {
+            enabled: true,
+            maxCount: 1001, // Too high
+          },
         },
       };
 

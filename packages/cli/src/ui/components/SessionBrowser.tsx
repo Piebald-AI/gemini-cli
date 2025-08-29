@@ -4,20 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, {
-  useState,
-  useCallback,
-  useMemo,
-  useEffect,
-  useRef,
-} from 'react';
+import type React from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { Colors } from '../colors.js';
 import { useTerminalSize } from '../hooks/useTerminalSize.js';
-import * as fs from 'fs/promises';
-import path from 'path';
+import * as fs from 'node:fs/promises';
+import path from 'node:path';
 import type { Config, ConversationRecord } from '@google/gemini-cli-core';
-import { partListUnionToString } from '@google/gemini-cli-core/dist/src/core/geminiRequest.js';
+import { partListUnionToString } from '@google/gemini-cli-core';
 
 /**
  * Processed session information used for display and interaction.
@@ -145,9 +140,8 @@ const SESSIONS_PER_PAGE = 20;
  * @param fileName - The filename (e.g., "session-12345.json")
  * @returns The session ID without the .json extension
  */
-const extractSessionId = (fileName: string): string => {
-  return fileName.replace('.json', '');
-};
+const extractSessionId = (fileName: string): string =>
+  fileName.replace('.json', '');
 
 /**
  * Cleans and sanitizes message content for display by:
@@ -158,13 +152,12 @@ const extractSessionId = (fileName: string): string => {
  * @param message - The raw message content to clean
  * @returns Sanitized message suitable for display
  */
-const cleanMessage = (message: string): string => {
-  return message
+const cleanMessage = (message: string): string =>
+  message
     .replace(/\n+/g, ' ')
     .replace(/\s+/g, ' ')
     .replace(/[^\x20-\x7E]+/g, '') // Non-printable.
     .trim();
-};
 
 /**
  * Extracts and cleans the first user message from a conversation.
@@ -209,7 +202,7 @@ const getSessionFiles = async (
       .filter((f) => f.startsWith('session-') && f.endsWith('.json'))
       .sort(); // Initial sort by filename, which includes timestamp
 
-    const sessionPromises = sessionFiles.map(async (file, index) => {
+    const sessionPromises = sessionFiles.map(async (file) => {
       const filePath = path.join(chatsDir, file);
       try {
         const content: ConversationRecord = JSON.parse(
@@ -283,10 +276,8 @@ const SessionBrowserLoading = (): React.JSX.Element => (
  */
 const SessionBrowserError = ({
   state,
-  onExit,
 }: {
   state: SessionBrowserState;
-  onExit: () => void;
 }): React.JSX.Element => (
   <Box flexDirection="column" paddingX={1}>
     <Text color={Colors.AccentRed}>Error: {state.error}</Text>
@@ -297,11 +288,7 @@ const SessionBrowserError = ({
 /**
  * Empty state component displayed when no sessions are found.
  */
-const SessionBrowserEmpty = ({
-  onExit,
-}: {
-  onExit: () => void;
-}): React.JSX.Element => (
+const SessionBrowserEmpty = (): React.JSX.Element => (
   <Box flexDirection="column" paddingX={1}>
     <Text color={Colors.Gray}>No auto-saved conversations found.</Text>
     <Text color={Colors.Gray}>Press q to exit</Text>
@@ -380,7 +367,7 @@ const findTextMatches = (
       const contextStart = Math.max(0, matchIndex - 10);
       const contextEnd = Math.min(m.length, matchIndex + query.length + 10);
 
-      let snippet = m.slice(contextStart, contextEnd);
+      const snippet = m.slice(contextStart, contextEnd);
       const relativeMatchStart = matchIndex - contextStart;
       const relativeMatchEnd = relativeMatchStart + query.length;
 
@@ -548,7 +535,7 @@ const NoResultsDisplay = ({
 }): React.JSX.Element => (
   <Box marginTop={1}>
     <Text color={Colors.Gray} dimColor>
-      No sessions found matching '{state.searchQuery}'.
+      No sessions found matching &apos;{state.searchQuery}&apos;.
     </Text>
   </Box>
 );
@@ -641,7 +628,7 @@ const SessionItem = ({
 
   const truncatedMessage =
     matchDisplay ||
-    (session.displayName.length == 0 ? (
+    (session.displayName.length === 0 ? (
       <Text color={textColor(Colors.Gray)} dimColor>
         (No messages)
       </Text>
@@ -784,6 +771,7 @@ const useSessionBrowserState = (): SessionBrowserState => {
   const filteredAndSortedSessions = useMemo(() => {
     const filtered = filterSessions(sessions, searchQuery);
     return sortSessions(filtered, sortOrder, sortReverse);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessions.length, searchQuery, sortOrder, sortReverse]);
 
   // Reset full content flag when search is cleared
@@ -861,8 +849,8 @@ const useLoadSessions = (config: Config, state: SessionBrowserState) => {
 /**
  * Hook to handle selection movement.
  */
-const useMoveSelection = (state: SessionBrowserState) => {
-  return useCallback(
+const useMoveSelection = (state: SessionBrowserState) =>
+  useCallback(
     (delta: number) => {
       const newIndex = Math.max(
         0,
@@ -879,14 +867,13 @@ const useMoveSelection = (state: SessionBrowserState) => {
     },
     [state],
   );
-};
 
 /**
  * Hook to handle sort order cycling.
  */
-const useCycleSortOrder = (state: SessionBrowserState) => {
-  return useCallback(() => {
-    const orders: ('date' | 'messages' | 'name')[] = [
+const useCycleSortOrder = (state: SessionBrowserState) =>
+  useCallback(() => {
+    const orders: Array<'date' | 'messages' | 'name'> = [
       'date',
       'messages',
       'name',
@@ -895,7 +882,6 @@ const useCycleSortOrder = (state: SessionBrowserState) => {
     const nextIndex = (currentIndex + 1) % orders.length;
     state.setSortOrder(orders[nextIndex]);
   }, [state]);
-};
 
 /**
  * Hook to handle SessionBrowser input.
@@ -1036,11 +1022,11 @@ export function SessionBrowser({
   }
 
   if (state.error) {
-    return <SessionBrowserError state={state} onExit={onExit} />;
+    return <SessionBrowserError state={state} />;
   }
 
   if (state.sessions.length === 0) {
-    return <SessionBrowserEmpty onExit={onExit} />;
+    return <SessionBrowserEmpty />;
   }
   return (
     <Box flexDirection="column" paddingX={1}>

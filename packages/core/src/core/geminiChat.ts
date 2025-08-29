@@ -31,7 +31,6 @@ import {
 } from '../telemetry/loggers.js';
 import {
   ChatRecordingService,
-  type ToolCallRecord,
   type ResumedSessionData,
 } from '../services/chatRecordingService.js';
 import {
@@ -801,7 +800,7 @@ export class GeminiChat {
   /**
    * Gets the chat recording service instance.
    */
-  public getChatRecordingService(): ChatRecordingService {
+  getChatRecordingService(): ChatRecordingService {
     return this.chatRecordingService;
   }
 

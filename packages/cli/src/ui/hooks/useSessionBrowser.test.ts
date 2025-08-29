@@ -9,10 +9,11 @@ import {
   useSessionBrowser,
   convertSessionToHistoryFormats,
 } from './useSessionBrowser.js';
-import * as fs from 'fs/promises';
-import path from 'path';
+import * as fs from 'node:fs/promises';
+import path from 'node:path';
 import { MessageType, ToolCallStatus } from '../types.js';
 import type {
+  Config,
   ConversationRecord,
   MessageRecord,
 } from '@google/gemini-cli-core';
@@ -68,7 +69,10 @@ describe('useSessionBrowser', () => {
   describe('hook initialization', () => {
     it('should initialize with isSessionBrowserOpen set to false', () => {
       const { result } = renderHook(() =>
-        useSessionBrowser(mockConfig as any, mockOnLoadHistory),
+        useSessionBrowser(
+          mockConfig as Partial<Config> as Config,
+          mockOnLoadHistory,
+        ),
       );
 
       expect(result.current.isSessionBrowserOpen).toBe(false);
@@ -76,7 +80,10 @@ describe('useSessionBrowser', () => {
 
     it('should provide all expected hook methods', () => {
       const { result } = renderHook(() =>
-        useSessionBrowser(mockConfig as any, mockOnLoadHistory),
+        useSessionBrowser(
+          mockConfig as Partial<Config> as Config,
+          mockOnLoadHistory,
+        ),
       );
 
       expect(result.current).toHaveProperty('isSessionBrowserOpen');
@@ -89,7 +96,10 @@ describe('useSessionBrowser', () => {
   describe('session browser open/close functionality', () => {
     it('should open session browser when openSessionBrowser is called', () => {
       const { result } = renderHook(() =>
-        useSessionBrowser(mockConfig as any, mockOnLoadHistory),
+        useSessionBrowser(
+          mockConfig as Partial<Config> as Config,
+          mockOnLoadHistory,
+        ),
       );
 
       act(() => {
@@ -101,7 +111,10 @@ describe('useSessionBrowser', () => {
 
     it('should close session browser when closeSessionBrowser is called', () => {
       const { result } = renderHook(() =>
-        useSessionBrowser(mockConfig as any, mockOnLoadHistory),
+        useSessionBrowser(
+          mockConfig as Partial<Config> as Config,
+          mockOnLoadHistory,
+        ),
       );
 
       // First open it
@@ -144,7 +157,10 @@ describe('useSessionBrowser', () => {
       mockedFs.readFile.mockResolvedValue(JSON.stringify(mockConversation));
 
       const { result } = renderHook(() =>
-        useSessionBrowser(mockConfig as any, mockOnLoadHistory),
+        useSessionBrowser(
+          mockConfig as Partial<Config> as Config,
+          mockOnLoadHistory,
+        ),
       );
 
       await act(async () => {
@@ -220,7 +236,10 @@ describe('useSessionBrowser', () => {
       mockedFs.readFile.mockResolvedValue(JSON.stringify(mockConversation));
 
       const { result } = renderHook(() =>
-        useSessionBrowser(mockConfig as any, mockOnLoadHistory),
+        useSessionBrowser(
+          mockConfig as Partial<Config> as Config,
+          mockOnLoadHistory,
+        ),
       );
 
       await act(async () => {
@@ -275,7 +294,10 @@ describe('useSessionBrowser', () => {
       mockedFs.readFile.mockResolvedValue(JSON.stringify(mockConversation));
 
       const { result } = renderHook(() =>
-        useSessionBrowser(mockConfig as any, mockOnLoadHistory),
+        useSessionBrowser(
+          mockConfig as Partial<Config> as Config,
+          mockOnLoadHistory,
+        ),
       );
 
       await act(async () => {
@@ -300,7 +322,10 @@ describe('useSessionBrowser', () => {
         .mockImplementation(() => {});
 
       const { result } = renderHook(() =>
-        useSessionBrowser(mockConfig as any, mockOnLoadHistory),
+        useSessionBrowser(
+          mockConfig as Partial<Config> as Config,
+          mockOnLoadHistory,
+        ),
       );
 
       // Open session browser first
@@ -330,7 +355,10 @@ describe('useSessionBrowser', () => {
         .mockImplementation(() => {});
 
       const { result } = renderHook(() =>
-        useSessionBrowser(mockConfig as any, mockOnLoadHistory),
+        useSessionBrowser(
+          mockConfig as Partial<Config> as Config,
+          mockOnLoadHistory,
+        ),
       );
 
       act(() => {
@@ -360,7 +388,10 @@ describe('useSessionBrowser', () => {
       mockedFs.readFile.mockResolvedValue(JSON.stringify(mockConversation));
 
       const { result } = renderHook(() =>
-        useSessionBrowser(mockConfig as any, mockOnLoadHistory),
+        useSessionBrowser(
+          mockConfig as Partial<Config> as Config,
+          mockOnLoadHistory,
+        ),
       );
 
       act(() => {
@@ -380,7 +411,10 @@ describe('useSessionBrowser', () => {
   describe('callback stability', () => {
     it('should maintain stable callback references', () => {
       const { result, rerender } = renderHook(() =>
-        useSessionBrowser(mockConfig as any, mockOnLoadHistory),
+        useSessionBrowser(
+          mockConfig as Partial<Config> as Config,
+          mockOnLoadHistory,
+        ),
       );
 
       const initialCallbacks = {
@@ -407,7 +441,7 @@ describe('useSessionBrowser', () => {
         ({ config, onLoadHistory }) => useSessionBrowser(config, onLoadHistory),
         {
           initialProps: {
-            config: mockConfig as any,
+            config: mockConfig as Partial<Config> as Config,
             onLoadHistory: mockOnLoadHistory,
           },
         },
@@ -417,7 +451,7 @@ describe('useSessionBrowser', () => {
 
       const newOnLoadHistory = vi.fn();
       rerender({
-        config: mockConfig as any,
+        config: mockConfig as Partial<Config> as Config,
         onLoadHistory: newOnLoadHistory,
       });
 
@@ -583,7 +617,7 @@ describe('convertSessionToHistoryFormats', () => {
     expect(result.uiHistory[1].type).toBe('tool_group');
     // This if-statement is only necessary because TypeScript can't tell that the toBe() assertion
     // protects the .tools access below.
-    if (result.uiHistory[1].type == 'tool_group') {
+    if (result.uiHistory[1].type === 'tool_group') {
       expect(result.uiHistory[1].tools).toHaveLength(2);
       expect(result.uiHistory[1].tools[0]).toEqual({
         callId: 'tool-1',
@@ -643,7 +677,7 @@ describe('convertSessionToHistoryFormats', () => {
             timestamp: '2025-01-01T00:01:30Z',
           },
         ],
-      } as any,
+      } as MessageRecord,
     ];
 
     const result = convertSessionToHistoryFormats(messages);
@@ -1051,7 +1085,7 @@ describe('convertSessionToHistoryFormats', () => {
               result: 'success',
               status: 'success',
               timestamp: '2025-01-01T00:01:30Z',
-            } as any, // Missing id field
+            } as Partial<MessageRecord['toolCalls']>[0], // Missing id field
           ],
         },
       ];

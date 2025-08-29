@@ -28,7 +28,11 @@ import process from 'node:process';
 import { useGeminiStream } from './hooks/useGeminiStream.js';
 import { useConsoleMessages } from './hooks/useConsoleMessages.js';
 import { convertSessionToHistoryFormats } from './hooks/useSessionBrowser.js';
-import type { ConsoleMessageItem } from './types.js';
+import type {
+  ConsoleMessageItem,
+  HistoryItem,
+  HistoryItemWithoutId,
+} from './types.js';
 import { StreamingState } from './types.js';
 import { Tips } from './components/Tips.js';
 import type { UpdateObject } from './utils/updateCheck.js';
@@ -223,12 +227,12 @@ vi.mock('./hooks/useGeminiStream', () => ({
   })),
 }));
 
-const mockHistory: any[] = [];
+const mockHistory: HistoryItem[] = [];
 
 vi.mock('./hooks/useHistoryManager', () => ({
   useHistory: vi.fn(() => ({
     history: mockHistory,
-    addItem: vi.fn((item: any) => {
+    addItem: vi.fn((item: HistoryItemWithoutId) => {
       mockHistory.push({ ...item, id: mockHistory.length });
     }),
     clearItems: vi.fn(() => {

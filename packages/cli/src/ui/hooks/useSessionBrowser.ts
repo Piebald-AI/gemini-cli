@@ -5,22 +5,23 @@
  */
 
 import { useState, useCallback } from 'react';
-import { Config } from '@google/gemini-cli-core';
 import type { HistoryItemWithoutId } from '../types.js';
-import * as fs from 'fs/promises';
-import path from 'path';
+import * as fs from 'node:fs/promises';
+import path from 'node:path';
 import type {
+  Config,
   ConversationRecord,
   ResumedSessionData,
 } from '@google/gemini-cli-core';
-import { partListUnionToString } from '@google/gemini-cli-core/dist/src/core/geminiRequest.js';
+import type { Part } from '@google/genai';
+import { partListUnionToString } from '@google/gemini-cli-core';
 import { MessageType, ToolCallStatus } from '../types.js';
 
 export const useSessionBrowser = (
   config: Config,
   onLoadHistory: (
     uiHistory: HistoryItemWithoutId[],
-    clientHistory: Array<{ role: 'user' | 'model'; parts: any[] }>,
+    clientHistory: Array<{ role: 'user' | 'model'; parts: Part[] }>,
     resumedSessionData: ResumedSessionData,
   ) => void,
 ) => {
@@ -110,7 +111,7 @@ export function convertSessionToHistoryFormats(
   messages: ConversationRecord['messages'],
 ): {
   uiHistory: HistoryItemWithoutId[];
-  clientHistory: Array<{ role: 'user' | 'model'; parts: any[] }>;
+  clientHistory: Array<{ role: 'user' | 'model'; parts: Part[] }>;
 } {
   const uiHistory: HistoryItemWithoutId[] = [];
 
@@ -166,7 +167,7 @@ export function convertSessionToHistoryFormats(
   }
 
   // Convert to Gemini client history format
-  const clientHistory: Array<{ role: 'user' | 'model'; parts: any[] }> = [];
+  const clientHistory: Array<{ role: 'user' | 'model'; parts: Part[] }> = [];
 
   for (const msg of messages) {
     // Skip system/error messages and user slash commands
@@ -196,7 +197,7 @@ export function convertSessionToHistoryFormats(
 
       if (hasToolCalls) {
         // Create model message with function calls
-        const modelParts: any[] = [];
+        const modelParts: Part[] = [];
 
         // Add text content if present
         const contentString = partListUnionToString(msg.content);
@@ -221,11 +222,11 @@ export function convertSessionToHistoryFormats(
         });
 
         // Create single function response message with all tool call responses
-        const functionResponseParts: any[] = [];
+        const functionResponseParts: Part[] = [];
         for (const toolCall of msg.toolCalls!) {
           if (toolCall.result) {
             // Convert PartListUnion result to function response format
-            let responseData: any;
+            let responseData: Part;
 
             if (typeof toolCall.result === 'string') {
               responseData = {

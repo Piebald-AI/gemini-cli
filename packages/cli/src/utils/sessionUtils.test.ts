@@ -10,10 +10,10 @@ import {
   extractFirstUserMessage,
   formatRelativeTime,
 } from './sessionUtils.js';
-import { Config } from '@google/gemini-cli-core';
-import * as fs from 'fs/promises';
-import path from 'path';
-import { randomUUID } from 'crypto';
+import type { Config, MessageRecord } from '@google/gemini-cli-core';
+import * as fs from 'node:fs/promises';
+import path from 'node:path';
+import { randomUUID } from 'node:crypto';
 
 describe('SessionSelector', () => {
   let tmpDir: string;
@@ -30,14 +30,14 @@ describe('SessionSelector', () => {
         getProjectTempDir: () => tmpDir,
       },
       getSessionId: () => 'current-session-id',
-    } as any;
+    } as Partial<Config> as Config;
   });
 
   afterEach(async () => {
     // Clean up test files
     try {
       await fs.rm(tmpDir, { recursive: true, force: true });
-    } catch (error) {
+    } catch (_error) {
       // Ignore cleanup errors
     }
   });
@@ -290,7 +290,7 @@ describe('extractFirstUserMessage', () => {
         id: 'msg2',
         timestamp: '2024-01-01T10:01:00.000Z',
       },
-    ] as any;
+    ] as MessageRecord[];
 
     expect(extractFirstUserMessage(messages)).toBe('Hello world');
   });
@@ -304,7 +304,7 @@ describe('extractFirstUserMessage', () => {
         id: 'msg1',
         timestamp: '2024-01-01T10:00:00.000Z',
       },
-    ] as any;
+    ] as MessageRecord[];
 
     const result = extractFirstUserMessage(messages);
     expect(result).toBe('a'.repeat(97) + '...');
@@ -319,7 +319,7 @@ describe('extractFirstUserMessage', () => {
         id: 'msg1',
         timestamp: '2024-01-01T10:00:00.000Z',
       },
-    ] as any;
+    ] as MessageRecord[];
 
     expect(extractFirstUserMessage(messages)).toBe('Empty conversation');
   });

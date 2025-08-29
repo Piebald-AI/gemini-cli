@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as fs from 'fs/promises';
-import * as path from 'path';
-import { Config } from '@google/gemini-cli-core';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+import type { Config } from '@google/gemini-cli-core';
 import type { Settings, SessionRetentionSettings } from '../config/settings.js';
 import { getSessionFiles, type SessionInfo } from './sessionUtils.js';
 
@@ -36,11 +36,11 @@ export async function cleanupExpiredSessions(
 
   try {
     // Early exit if cleanup is disabled
-    if (!settings.sessionRetention?.enabled) {
+    if (!settings.general?.sessionRetention?.enabled) {
       return result;
     }
 
-    const retentionConfig = settings.sessionRetention;
+    const retentionConfig = settings.general.sessionRetention;
     const chatsDir = path.join(config.storage.getProjectTempDir(), 'chats');
 
     // Validate retention configuration

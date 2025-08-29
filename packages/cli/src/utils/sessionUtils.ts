@@ -9,9 +9,9 @@ import type {
   ConversationRecord,
   MessageRecord,
 } from '@google/gemini-cli-core';
-import { partListUnionToString } from '@google/gemini-cli-core/dist/src/core/geminiRequest.js';
-import * as fs from 'fs/promises';
-import path from 'path';
+import { partListUnionToString } from '@google/gemini-cli-core';
+import * as fs from 'node:fs/promises';
+import path from 'node:path';
 
 /**
  * Session information for display and selection purposes.

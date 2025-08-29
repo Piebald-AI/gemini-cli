@@ -68,6 +68,7 @@ import type {
   IdeContext,
   ResumedSessionData,
 } from '@google/gemini-cli-core';
+import type { Part } from '@google/genai';
 import {
   ApprovalMode,
   getAllGeminiMdFilenames,
@@ -326,14 +327,15 @@ const App = ({
 
   // Performs the actual resuming--loading the recorded conversation history into the UI and the
   // Gemini client, in their respective formats.
+  const isGeminiClientInitialized = config.getGeminiClient()?.isInitialized();
   const loadHistoryForResume = useCallback(
     (
       uiHistory: HistoryItemWithoutId[],
-      clientHistory: Array<{ role: 'user' | 'model'; parts: any[] }>,
+      clientHistory: Array<{ role: 'user' | 'model'; parts: Part[] }>,
       resumedSessionData: ResumedSessionData,
     ) => {
       // Wait for the client.
-      if (!config.getGeminiClient()?.isInitialized()) {
+      if (!isGeminiClientInitialized) {
         return;
       }
 
@@ -348,13 +350,7 @@ const App = ({
       // Give the history to the Gemini client.
       config.getGeminiClient()?.resumeChat(clientHistory, resumedSessionData);
     },
-    [
-      clearItems,
-      addItem,
-      config,
-      refreshStatic,
-      config.getGeminiClient()?.isInitialized(),
-    ],
+    [clearItems, addItem, config, refreshStatic, isGeminiClientInitialized],
   );
 
   // Setup the interactive session browser.  Calls loadHistoryForResume when a session is selected.
