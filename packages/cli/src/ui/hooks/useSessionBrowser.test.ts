@@ -69,10 +69,7 @@ describe('useSessionBrowser', () => {
   describe('hook initialization', () => {
     it('should initialize with isSessionBrowserOpen set to false', () => {
       const { result } = renderHook(() =>
-        useSessionBrowser(
-          mockConfig as unknown as Config,
-          mockOnLoadHistory,
-        ),
+        useSessionBrowser(mockConfig as unknown as Config, mockOnLoadHistory),
       );
 
       expect(result.current.isSessionBrowserOpen).toBe(false);
@@ -80,10 +77,7 @@ describe('useSessionBrowser', () => {
 
     it('should provide all expected hook methods', () => {
       const { result } = renderHook(() =>
-        useSessionBrowser(
-          mockConfig as unknown as Config,
-          mockOnLoadHistory,
-        ),
+        useSessionBrowser(mockConfig as unknown as Config, mockOnLoadHistory),
       );
 
       expect(result.current).toHaveProperty('isSessionBrowserOpen');
@@ -96,10 +90,7 @@ describe('useSessionBrowser', () => {
   describe('session browser open/close functionality', () => {
     it('should open session browser when openSessionBrowser is called', () => {
       const { result } = renderHook(() =>
-        useSessionBrowser(
-          mockConfig as unknown as Config,
-          mockOnLoadHistory,
-        ),
+        useSessionBrowser(mockConfig as unknown as Config, mockOnLoadHistory),
       );
 
       act(() => {
@@ -111,10 +102,7 @@ describe('useSessionBrowser', () => {
 
     it('should close session browser when closeSessionBrowser is called', () => {
       const { result } = renderHook(() =>
-        useSessionBrowser(
-          mockConfig as unknown as Config,
-          mockOnLoadHistory,
-        ),
+        useSessionBrowser(mockConfig as unknown as Config, mockOnLoadHistory),
       );
 
       // First open it
@@ -157,10 +145,7 @@ describe('useSessionBrowser', () => {
       mockedFs.readFile.mockResolvedValue(JSON.stringify(mockConversation));
 
       const { result } = renderHook(() =>
-        useSessionBrowser(
-          mockConfig as unknown as Config,
-          mockOnLoadHistory,
-        ),
+        useSessionBrowser(mockConfig as unknown as Config, mockOnLoadHistory),
       );
 
       await act(async () => {
@@ -236,10 +221,7 @@ describe('useSessionBrowser', () => {
       mockedFs.readFile.mockResolvedValue(JSON.stringify(mockConversation));
 
       const { result } = renderHook(() =>
-        useSessionBrowser(
-          mockConfig as unknown as Config,
-          mockOnLoadHistory,
-        ),
+        useSessionBrowser(mockConfig as unknown as Config, mockOnLoadHistory),
       );
 
       await act(async () => {
@@ -294,10 +276,7 @@ describe('useSessionBrowser', () => {
       mockedFs.readFile.mockResolvedValue(JSON.stringify(mockConversation));
 
       const { result } = renderHook(() =>
-        useSessionBrowser(
-          mockConfig as unknown as Config,
-          mockOnLoadHistory,
-        ),
+        useSessionBrowser(mockConfig as unknown as Config, mockOnLoadHistory),
       );
 
       await act(async () => {
@@ -322,10 +301,7 @@ describe('useSessionBrowser', () => {
         .mockImplementation(() => {});
 
       const { result } = renderHook(() =>
-        useSessionBrowser(
-          mockConfig as unknown as Config,
-          mockOnLoadHistory,
-        ),
+        useSessionBrowser(mockConfig as unknown as Config, mockOnLoadHistory),
       );
 
       // Open session browser first
@@ -355,10 +331,7 @@ describe('useSessionBrowser', () => {
         .mockImplementation(() => {});
 
       const { result } = renderHook(() =>
-        useSessionBrowser(
-          mockConfig as unknown as Config,
-          mockOnLoadHistory,
-        ),
+        useSessionBrowser(mockConfig as unknown as Config, mockOnLoadHistory),
       );
 
       act(() => {
@@ -388,10 +361,7 @@ describe('useSessionBrowser', () => {
       mockedFs.readFile.mockResolvedValue(JSON.stringify(mockConversation));
 
       const { result } = renderHook(() =>
-        useSessionBrowser(
-          mockConfig as unknown as Config,
-          mockOnLoadHistory,
-        ),
+        useSessionBrowser(mockConfig as unknown as Config, mockOnLoadHistory),
       );
 
       act(() => {
@@ -411,10 +381,7 @@ describe('useSessionBrowser', () => {
   describe('callback stability', () => {
     it('should maintain stable callback references', () => {
       const { result, rerender } = renderHook(() =>
-        useSessionBrowser(
-          mockConfig as unknown as Config,
-          mockOnLoadHistory,
-        ),
+        useSessionBrowser(mockConfig as unknown as Config, mockOnLoadHistory),
       );
 
       const initialCallbacks = {
