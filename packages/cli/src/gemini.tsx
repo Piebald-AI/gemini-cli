@@ -24,7 +24,11 @@ import { getUserStartupWarnings } from './utils/userStartupWarnings.js';
 import { ConsolePatcher } from './ui/utils/ConsolePatcher.js';
 import { runNonInteractive } from './nonInteractiveCli.js';
 import { loadExtensions } from './config/extension.js';
-import { cleanupCheckpoints, registerCleanup } from './utils/cleanup.js';
+import {
+  cleanupCheckpoints,
+  registerCleanup,
+  runExitCleanup,
+} from './utils/cleanup.js';
 import { getCliVersion } from './utils/version.js';
 import type { Config, ResumedSessionData } from '@google/gemini-cli-core';
 import {
@@ -36,6 +40,7 @@ import {
   IdeConnectionEvent,
   IdeConnectionType,
   FatalConfigError,
+  uiTelemetryService,
 } from '@google/gemini-cli-core';
 import { validateAuthMethod } from './config/auth.js';
 import { setMaxSizedBoxDebugging } from './ui/components/shared/MaxSizedBox.js';
@@ -52,6 +57,7 @@ import {
   SessionSelector,
 } from './utils/sessionUtils.js';
 import { SettingsContext } from './ui/contexts/SettingsContext.js';
+import { writeFileSync } from 'node:fs';
 
 export function validateDnsResolutionOrder(
   order: string | undefined,
@@ -317,6 +323,16 @@ export async function main() {
     argv,
   );
 
+  if (argv.sessionSummary) {
+    registerCleanup(() => {
+      const metrics = uiTelemetryService.getMetrics();
+      writeFileSync(
+        argv.sessionSummary!,
+        JSON.stringify({ sessionMetrics: metrics }, null, 2),
+      );
+    });
+  }
+
   const consolePatcher = new ConsolePatcher({
     stderr: true,
     debugMode: config.getDebugMode(),
@@ -364,14 +380,6 @@ export async function main() {
         AuthType.CLOUD_SHELL,
       );
     }
-  }
-  // Empty key causes issues with the GoogleGenAI package.
-  if (process.env['GEMINI_API_KEY']?.trim() === '') {
-    delete process.env['GEMINI_API_KEY'];
-  }
-
-  if (process.env['GOOGLE_API_KEY']?.trim() === '') {
-    delete process.env['GOOGLE_API_KEY'];
   }
 
   setMaxSizedBoxDebugging(config.getDebugMode());
@@ -573,12 +581,9 @@ export async function main() {
     console.log('Session ID: %s', sessionId);
   }
 
-  await runNonInteractive(
-    nonInteractiveConfig,
-    input,
-    prompt_id,
-    resumedSessionData,
-  );
+  await runNonInteractive(nonInteractiveConfig, input, prompt_id, resumedSessionData);
+  // Call cleanup before process.exit, which causes cleanup to not run
+  await runExitCleanup();
   process.exit(0);
 }
 
