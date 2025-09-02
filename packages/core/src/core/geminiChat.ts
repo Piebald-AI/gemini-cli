@@ -24,6 +24,7 @@ import type { Config } from '../config/config.js';
 import { DEFAULT_GEMINI_FLASH_MODEL } from '../config/models.js';
 import { hasCycleInSchema } from '../tools/tools.js';
 import type { StructuredError } from './turn.js';
+import type { CompletedToolCall } from './coreToolScheduler.js';
 import {
   logContentRetry,
   logContentRetryFailure,
@@ -250,7 +251,7 @@ export class GeminiChat {
     const userContent = createUserContent(params.message);
 
     // Record user input - capture complete message with all parts (text, files, images, etc.)
-    // but skip recording function responses (tool call results) as they should be stored in tool call records
+    // For function responses, extract and record the tool call information
     if (!isFunctionResponse(userContent)) {
       const userMessage = Array.isArray(params.message)
         ? params.message
@@ -375,7 +376,7 @@ export class GeminiChat {
     const userContent = createUserContent(params.message);
 
     // Record user input - capture complete message with all parts (text, files, images, etc.)
-    // but skip recording function responses (tool call results) as they should be stored in tool call records
+    // For function responses, extract and record the tool call information
     if (!isFunctionResponse(userContent)) {
       const userMessage = Array.isArray(params.message)
         ? params.message
@@ -802,6 +803,30 @@ export class GeminiChat {
    */
   getChatRecordingService(): ChatRecordingService {
     return this.chatRecordingService;
+  }
+
+  /**
+   * Records completed tool calls with full metadata.
+   * This is called by external components when tool calls complete, before sending responses to Gemini.
+   */
+  recordCompletedToolCalls(toolCalls: CompletedToolCall[]): void {
+    const toolCallRecords = toolCalls.map((call) => {
+      const resultDisplayRaw = call.response?.resultDisplay;
+      const resultDisplay =
+        typeof resultDisplayRaw === 'string' ? resultDisplayRaw : undefined;
+
+      return {
+        id: call.request.callId,
+        name: call.request.name,
+        args: call.request.args,
+        result: call.response?.responseParts || null,
+        status: call.status as 'error' | 'success' | 'cancelled',
+        timestamp: new Date().toISOString(),
+        resultDisplay,
+      };
+    });
+
+    this.chatRecordingService.recordToolCalls(toolCallRecords);
   }
 
   /**

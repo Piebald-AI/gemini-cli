@@ -581,7 +581,12 @@ export async function main() {
     console.log('Session ID: %s', sessionId);
   }
 
-  await runNonInteractive(nonInteractiveConfig, input, prompt_id, resumedSessionData);
+  await runNonInteractive(
+    nonInteractiveConfig,
+    input,
+    prompt_id,
+    resumedSessionData,
+  );
   // Call cleanup before process.exit, which causes cleanup to not run
   await runExitCleanup();
   process.exit(0);
