@@ -947,11 +947,12 @@ export class CoreToolScheduler {
   }
 
   private async checkAndNotifyCompletion(): Promise<void> {
-    const isToolCallTerminal = (call: ToolCall) =>
-      call.status === 'success' ||
-      call.status === 'error' ||
-      call.status === 'cancelled';
-    const allCallsAreTerminal = this.toolCalls.every(isToolCallTerminal);
+    const allCallsAreTerminal = this.toolCalls.every(
+      (call) =>
+        call.status === 'success' ||
+        call.status === 'error' ||
+        call.status === 'cancelled',
+    );
 
     if (this.toolCalls.length > 0 && allCallsAreTerminal) {
       const completedCalls = [...this.toolCalls] as CompletedToolCall[];

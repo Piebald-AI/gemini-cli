@@ -251,7 +251,7 @@ export class GeminiChat {
     const userContent = createUserContent(params.message);
 
     // Record user input - capture complete message with all parts (text, files, images, etc.)
-    // For function responses, extract and record the tool call information
+    // but skip recording function responses (tool call results) as they should be stored in tool call records
     if (!isFunctionResponse(userContent)) {
       const userMessage = Array.isArray(params.message)
         ? params.message
@@ -376,7 +376,7 @@ export class GeminiChat {
     const userContent = createUserContent(params.message);
 
     // Record user input - capture complete message with all parts (text, files, images, etc.)
-    // For function responses, extract and record the tool call information
+    // but skip recording function responses (tool call results) as they should be stored in tool call records
     if (!isFunctionResponse(userContent)) {
       const userMessage = Array.isArray(params.message)
         ? params.message
