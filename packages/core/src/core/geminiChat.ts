@@ -30,6 +30,7 @@ import {
   logContentRetryFailure,
   logInvalidChunk,
 } from '../telemetry/loggers.js';
+import { ChatRecordingService } from '../services/chatRecordingService.js';
 import {
   ChatRecordingService,
   type ResumedSessionData,

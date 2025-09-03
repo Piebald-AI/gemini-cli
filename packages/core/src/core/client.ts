@@ -30,6 +30,7 @@ import { retryWithBackoff } from '../utils/retry.js';
 import { getErrorMessage } from '../utils/errors.js';
 import { isFunctionResponse } from '../utils/messageInspectors.js';
 import { tokenLimit } from './tokenLimits.js';
+import type { ChatRecordingService } from '../services/chatRecordingService.js';
 import type {
   ChatRecordingService,
   ResumedSessionData,
