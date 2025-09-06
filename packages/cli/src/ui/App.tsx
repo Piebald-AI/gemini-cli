@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+<<<<<<< HEAD
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import {
   Box,
@@ -1050,117 +1051,33 @@ const App = ({
         ))}
       </Box>
     );
+=======
+import { Box } from 'ink';
+import { StreamingContext } from './contexts/StreamingContext.js';
+import { Notifications } from './components/Notifications.js';
+import { MainContent } from './components/MainContent.js';
+import { DialogManager } from './components/DialogManager.js';
+import { Composer } from './components/Composer.js';
+import { useUIState } from './contexts/UIStateContext.js';
+import { QuittingDisplay } from './components/QuittingDisplay.js';
+
+export const App = () => {
+  const uiState = useUIState();
+
+  if (uiState.quittingMessages) {
+    return <QuittingDisplay />;
+>>>>>>> main
   }
 
-  const mainAreaWidth = Math.floor(terminalWidth * 0.9);
-  const debugConsoleMaxHeight = Math.floor(Math.max(terminalHeight * 0.2, 5));
-  // Arbitrary threshold to ensure that items in the static area are large
-  // enough but not too large to make the terminal hard to use.
-  const staticAreaMaxItemHeight = Math.max(terminalHeight * 4, 100);
-  const placeholder = vimModeEnabled
-    ? "  Press 'i' for INSERT mode and 'Esc' for NORMAL mode."
-    : '  Type your message or @path/to/file';
-
-  const hideContextSummary = settings.merged.ui?.hideContextSummary ?? false;
-
   return (
-    <StreamingContext.Provider value={streamingState}>
+    <StreamingContext.Provider value={uiState.streamingState}>
       <Box flexDirection="column" width="90%">
-        {/*
-         * The Static component is an Ink intrinsic in which there can only be 1 per application.
-         * Because of this restriction we're hacking it slightly by having a 'header' item here to
-         * ensure that it's statically rendered.
-         *
-         * Background on the Static Item: Anything in the Static component is written a single time
-         * to the console. Think of it like doing a console.log and then never using ANSI codes to
-         * clear that content ever again. Effectively it has a moving frame that every time new static
-         * content is set it'll flush content to the terminal and move the area which it's "clearing"
-         * down a notch. Without Static the area which gets erased and redrawn continuously grows.
-         */}
-        <Static
-          key={staticKey}
-          items={[
-            <Box flexDirection="column" key="header">
-              {!(
-                settings.merged.ui?.hideBanner || config.getScreenReader()
-              ) && <Header version={version} nightly={nightly} />}
-              {!(settings.merged.ui?.hideTips || config.getScreenReader()) && (
-                <Tips config={config} />
-              )}
-            </Box>,
-            ...history.map((h) => (
-              <HistoryItemDisplay
-                terminalWidth={mainAreaWidth}
-                availableTerminalHeight={staticAreaMaxItemHeight}
-                key={h.id}
-                item={h}
-                isPending={false}
-                config={config}
-                commands={slashCommands}
-              />
-            )),
-          ]}
-        >
-          {(item) => item}
-        </Static>
-        <OverflowProvider>
-          <Box ref={pendingHistoryItemRef} flexDirection="column">
-            {pendingHistoryItems.map((item, i) => (
-              <HistoryItemDisplay
-                key={i}
-                availableTerminalHeight={
-                  constrainHeight ? availableTerminalHeight : undefined
-                }
-                terminalWidth={mainAreaWidth}
-                // TODO(taehykim): It seems like references to ids aren't necessary in
-                // HistoryItemDisplay. Refactor later. Use a fake id for now.
-                item={{ ...item, id: 0 }}
-                isPending={true}
-                config={config}
-                isFocused={!isEditorDialogOpen}
-              />
-            ))}
-            <ShowMoreLines constrainHeight={constrainHeight} />
-          </Box>
-        </OverflowProvider>
+        <MainContent />
 
-        <Box flexDirection="column" ref={mainControlsRef}>
-          {/* Move UpdateNotification to render update notification above input area */}
-          {updateInfo && <UpdateNotification message={updateInfo.message} />}
-          {startupWarnings.length > 0 && (
-            <Box
-              borderStyle="round"
-              borderColor={Colors.AccentYellow}
-              paddingX={1}
-              marginY={1}
-              flexDirection="column"
-            >
-              {startupWarnings.map((warning, index) => (
-                <Text key={index} color={Colors.AccentYellow}>
-                  {warning}
-                </Text>
-              ))}
-            </Box>
-          )}
-          {showWorkspaceMigrationDialog ? (
-            <WorkspaceMigrationDialog
-              workspaceExtensions={workspaceExtensions}
-              onOpen={onWorkspaceMigrationDialogOpen}
-              onClose={onWorkspaceMigrationDialogClose}
-            />
-          ) : shouldShowIdePrompt && currentIDE ? (
-            <IdeIntegrationNudge
-              ide={currentIDE}
-              onComplete={handleIdePromptComplete}
-            />
-          ) : isProQuotaDialogOpen ? (
-            <ProQuotaDialog
-              currentModel={config.getModel()}
-              fallbackModel={DEFAULT_GEMINI_FLASH_MODEL}
-              onChoice={(choice) => {
-                setIsProQuotaDialogOpen(false);
-                if (!proQuotaDialogResolver) return;
+        <Box flexDirection="column" ref={uiState.mainControlsRef}>
+          <Notifications />
 
+<<<<<<< HEAD
                 const resolveValue = choice !== 'auth';
                 proQuotaDialogResolver(resolveValue);
                 setProQuotaDialogResolver(null);
@@ -1475,6 +1392,9 @@ const App = ({
               hideModelInfo={settings.merged.ui?.footer?.hideModelInfo}
             />
           )}
+=======
+          {uiState.dialogsVisible ? <DialogManager /> : <Composer />}
+>>>>>>> main
         </Box>
       </Box>
     </StreamingContext.Provider>

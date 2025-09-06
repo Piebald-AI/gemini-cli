@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { themeManager } from '../themes/theme-manager.js';
 import type { LoadedSettings, SettingScope } from '../../config/settings.js'; // Import LoadedSettings, AppSettings, MergedSetting
 import { MessageType } from '../types.js';
@@ -25,19 +25,10 @@ export const useThemeCommand = (
   loadedSettings: LoadedSettings,
   setThemeError: (error: string | null) => void,
   addItem: UseHistoryManagerReturn['addItem'],
+  initialThemeError: string | null,
 ): UseThemeCommandReturn => {
-  const [isThemeDialogOpen, setIsThemeDialogOpen] = useState(false);
-
-  // Check for invalid theme configuration on startup
-  useEffect(() => {
-    const effectiveTheme = loadedSettings.merged.ui?.theme;
-    if (effectiveTheme && !themeManager.findThemeByName(effectiveTheme)) {
-      setIsThemeDialogOpen(true);
-      setThemeError(`Theme "${effectiveTheme}" not found.`);
-    } else {
-      setThemeError(null);
-    }
-  }, [loadedSettings.merged.ui?.theme, setThemeError]);
+  const [isThemeDialogOpen, setIsThemeDialogOpen] =
+    useState(!!initialThemeError);
 
   const openThemeDialog = useCallback(() => {
     if (process.env['NO_COLOR']) {

@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+<<<<<<< HEAD
 import type { Mock } from 'vitest';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { waitFor } from '@testing-library/react';
@@ -33,106 +34,29 @@ import type {
   HistoryItem,
   HistoryItemWithoutId,
 } from './types.js';
+=======
+import { describe, it, expect, vi } from 'vitest';
+import { render } from 'ink-testing-library';
+import { Text } from 'ink';
+import { App } from './App.js';
+import { UIStateContext, type UIState } from './contexts/UIStateContext.js';
+>>>>>>> main
 import { StreamingState } from './types.js';
-import { Tips } from './components/Tips.js';
-import type { UpdateObject } from './utils/updateCheck.js';
-import { checkForUpdates } from './utils/updateCheck.js';
-import { EventEmitter } from 'node:events';
-import { updateEventEmitter } from '../utils/updateEventEmitter.js';
-import * as auth from '../config/auth.js';
-import * as useTerminalSize from './hooks/useTerminalSize.js';
 
-// Define a more complete mock server config based on actual Config
-interface MockServerConfig {
-  apiKey: string;
-  model: string;
-  sandbox?: SandboxConfig;
-  targetDir: string;
-  debugMode: boolean;
-  question?: string;
-  fullContext: boolean;
-  coreTools?: string[];
-  toolDiscoveryCommand?: string;
-  toolCallCommand?: string;
-  mcpServerCommand?: string;
-  mcpServers?: Record<string, MCPServerConfig>; // Use imported MCPServerConfig
-  userAgent: string;
-  userMemory: string;
-  geminiMdFileCount: number;
-  approvalMode: ApprovalMode;
-  vertexai?: boolean;
-  showMemoryUsage?: boolean;
-  accessibility?: AccessibilitySettings;
-  embeddingModel: string;
+// Mock components to isolate App component testing
+vi.mock('./components/MainContent.js', () => ({
+  MainContent: () => <Text>MainContent</Text>,
+}));
 
-  getApiKey: Mock<() => string>;
-  getModel: Mock<() => string>;
-  getSandbox: Mock<() => SandboxConfig | undefined>;
-  getTargetDir: Mock<() => string>;
-  getToolRegistry: Mock<() => ToolRegistry>; // Use imported ToolRegistry type
-  getDebugMode: Mock<() => boolean>;
-  getQuestion: Mock<() => string | undefined>;
-  getFullContext: Mock<() => boolean>;
-  getCoreTools: Mock<() => string[] | undefined>;
-  getToolDiscoveryCommand: Mock<() => string | undefined>;
-  getToolCallCommand: Mock<() => string | undefined>;
-  getMcpServerCommand: Mock<() => string | undefined>;
-  getMcpServers: Mock<() => Record<string, MCPServerConfig> | undefined>;
-  getExtensions: Mock<
-    () => Array<{ name: string; version: string; isActive: boolean }>
-  >;
-  getBlockedMcpServers: Mock<
-    () => Array<{ name: string; extensionName: string }>
-  >;
-  getUserAgent: Mock<() => string>;
-  getUserMemory: Mock<() => string>;
-  setUserMemory: Mock<(newUserMemory: string) => void>;
-  getGeminiMdFileCount: Mock<() => number>;
-  setGeminiMdFileCount: Mock<(count: number) => void>;
-  getApprovalMode: Mock<() => ApprovalMode>;
-  setApprovalMode: Mock<(skip: ApprovalMode) => void>;
-  getVertexAI: Mock<() => boolean | undefined>;
-  getShowMemoryUsage: Mock<() => boolean>;
-  getAccessibility: Mock<() => AccessibilitySettings>;
-  getProjectRoot: Mock<() => string | undefined>;
-  getAllGeminiMdFilenames: Mock<() => string[]>;
-  getGeminiClient: Mock<() => GeminiClient | undefined>;
-  getUserTier: Mock<() => Promise<string | undefined>>;
-  getIdeClient: Mock<() => { getCurrentIde: Mock<() => string | undefined> }>;
-  getScreenReader: Mock<() => boolean>;
-}
+vi.mock('./components/DialogManager.js', () => ({
+  DialogManager: () => <Text>DialogManager</Text>,
+}));
 
-// Mock @google/gemini-cli-core and its Config class
-vi.mock('@google/gemini-cli-core', async (importOriginal) => {
-  const actualCore =
-    await importOriginal<typeof import('@google/gemini-cli-core')>();
-  const ConfigClassMock = vi
-    .fn()
-    .mockImplementation((optionsPassedToConstructor) => {
-      const opts = { ...optionsPassedToConstructor }; // Clone
-      // Basic mock structure, will be extended by the instance in tests
-      return {
-        apiKey: opts.apiKey || 'test-key',
-        model: opts.model || 'test-model-in-mock-factory',
-        sandbox: opts.sandbox,
-        targetDir: opts.targetDir || '/test/dir',
-        debugMode: opts.debugMode || false,
-        question: opts.question,
-        fullContext: opts.fullContext ?? false,
-        coreTools: opts.coreTools,
-        toolDiscoveryCommand: opts.toolDiscoveryCommand,
-        toolCallCommand: opts.toolCallCommand,
-        mcpServerCommand: opts.mcpServerCommand,
-        mcpServers: opts.mcpServers,
-        userAgent: opts.userAgent || 'test-agent',
-        userMemory: opts.userMemory || '',
-        geminiMdFileCount: opts.geminiMdFileCount || 0,
-        approvalMode: opts.approvalMode ?? ApprovalMode.DEFAULT,
-        vertexai: opts.vertexai,
-        showMemoryUsage: opts.showMemoryUsage ?? false,
-        accessibility: opts.accessibility ?? {},
-        embeddingModel: opts.embeddingModel || 'test-embedding-model',
+vi.mock('./components/Composer.js', () => ({
+  Composer: () => <Text>Composer</Text>,
+}));
 
+<<<<<<< HEAD
         getApiKey: vi.fn(() => opts.apiKey || 'test-key'),
         getModel: vi.fn(() => opts.model || 'test-model-in-mock-factory'),
         getSandbox: vi.fn(() => opts.sandbox),
@@ -202,12 +126,25 @@ vi.mock('@google/gemini-cli-core', async (importOriginal) => {
         getFolderTrust: vi.fn(() => false),
       };
     });
+=======
+vi.mock('./components/Notifications.js', () => ({
+  Notifications: () => <Text>Notifications</Text>,
+}));
+>>>>>>> main
 
-  const ideContextMock = {
-    getIdeContext: vi.fn(),
-    subscribeToIdeContext: vi.fn(() => vi.fn()), // subscribe returns an unsubscribe function
+vi.mock('./components/QuittingDisplay.js', () => ({
+  QuittingDisplay: () => <Text>Quitting...</Text>,
+}));
+
+describe('App', () => {
+  const mockUIState: Partial<UIState> = {
+    streamingState: StreamingState.Idle,
+    quittingMessages: null,
+    dialogsVisible: false,
+    mainControlsRef: { current: null },
   };
 
+<<<<<<< HEAD
   return {
     ...actualCore,
     Config: ConfigClassMock,
@@ -400,9 +337,16 @@ describe('App UI', () => {
       [],
       true,
       new Set(),
+=======
+  it('should render main content and composer when not quitting', () => {
+    const { lastFrame } = render(
+      <UIStateContext.Provider value={mockUIState as UIState}>
+        <App />
+      </UIStateContext.Provider>,
+>>>>>>> main
     );
-  };
 
+<<<<<<< HEAD
   beforeEach(() => {
     // Clear mock history before each test
     mockHistory.length = 0;
@@ -443,229 +387,41 @@ describe('App UI', () => {
       }));
     }
     vi.mocked(ideContext.getIdeContext).mockReturnValue(undefined);
+=======
+    expect(lastFrame()).toContain('MainContent');
+    expect(lastFrame()).toContain('Notifications');
+    expect(lastFrame()).toContain('Composer');
+>>>>>>> main
   });
 
-  afterEach(() => {
-    if (currentUnmount) {
-      currentUnmount();
-      currentUnmount = undefined;
-    }
-    vi.clearAllMocks(); // Clear mocks after each test
-  });
+  it('should render quitting display when quittingMessages is set', () => {
+    const quittingUIState = {
+      ...mockUIState,
+      quittingMessages: [{ id: 1, type: 'user', text: 'test' }],
+    } as UIState;
 
-  describe('handleAutoUpdate', () => {
-    let spawnEmitter: EventEmitter;
-
-    beforeEach(async () => {
-      const { spawn } = await import('node:child_process');
-      spawnEmitter = new EventEmitter();
-      spawnEmitter.stdout = new EventEmitter();
-      spawnEmitter.stderr = new EventEmitter();
-      (spawn as vi.Mock).mockReturnValue(spawnEmitter);
-    });
-
-    afterEach(() => {
-      delete process.env.GEMINI_CLI_DISABLE_AUTOUPDATER;
-    });
-
-    it('should not start the update process when running from git', async () => {
-      mockedIsGitRepository.mockResolvedValue(true);
-      const info: UpdateObject = {
-        update: {
-          name: '@google/gemini-cli',
-          latest: '1.1.0',
-          current: '1.0.0',
-        },
-        message: 'Gemini CLI update available!',
-      };
-      mockedCheckForUpdates.mockResolvedValue(info);
-      const { spawn } = await import('node:child_process');
-
-      const { unmount } = renderWithProviders(
-        <App
-          config={mockConfig as unknown as ServerConfig}
-          settings={mockSettings}
-          version={mockVersion}
-        />,
-      );
-      currentUnmount = unmount;
-
-      // Wait for any potential async operations to complete
-      await waitFor(() => {
-        expect(spawn).not.toHaveBeenCalled();
-      });
-    });
-
-    it('should show a success message when update succeeds', async () => {
-      mockedIsGitRepository.mockResolvedValue(false);
-      const info: UpdateObject = {
-        update: {
-          name: '@google/gemini-cli',
-          latest: '1.1.0',
-          current: '1.0.0',
-        },
-        message: 'Update available',
-      };
-      mockedCheckForUpdates.mockResolvedValue(info);
-
-      const { lastFrame, unmount } = renderWithProviders(
-        <App
-          config={mockConfig as unknown as ServerConfig}
-          settings={mockSettings}
-          version={mockVersion}
-        />,
-      );
-      currentUnmount = unmount;
-
-      updateEventEmitter.emit('update-success', info);
-
-      // Wait for the success message to appear
-      await waitFor(() => {
-        expect(lastFrame()).toContain(
-          'Update successful! The new version will be used on your next run.',
-        );
-      });
-    });
-
-    it('should show an error message when update fails', async () => {
-      mockedIsGitRepository.mockResolvedValue(false);
-      const info: UpdateObject = {
-        update: {
-          name: '@google/gemini-cli',
-          latest: '1.1.0',
-          current: '1.0.0',
-        },
-        message: 'Update available',
-      };
-      mockedCheckForUpdates.mockResolvedValue(info);
-
-      const { lastFrame, unmount } = renderWithProviders(
-        <App
-          config={mockConfig as unknown as ServerConfig}
-          settings={mockSettings}
-          version={mockVersion}
-        />,
-      );
-      currentUnmount = unmount;
-
-      updateEventEmitter.emit('update-failed', info);
-
-      // Wait for the error message to appear
-      await waitFor(() => {
-        expect(lastFrame()).toContain(
-          'Automatic update failed. Please try updating manually',
-        );
-      });
-    });
-
-    it('should show an error message when spawn fails', async () => {
-      mockedIsGitRepository.mockResolvedValue(false);
-      const info: UpdateObject = {
-        update: {
-          name: '@google/gemini-cli',
-          latest: '1.1.0',
-          current: '1.0.0',
-        },
-        message: 'Update available',
-      };
-      mockedCheckForUpdates.mockResolvedValue(info);
-
-      const { lastFrame, unmount } = renderWithProviders(
-        <App
-          config={mockConfig as unknown as ServerConfig}
-          settings={mockSettings}
-          version={mockVersion}
-        />,
-      );
-      currentUnmount = unmount;
-
-      // We are testing the App's reaction to an `update-failed` event,
-      // which is what should be emitted when a spawn error occurs elsewhere.
-      updateEventEmitter.emit('update-failed', info);
-
-      // Wait for the error message to appear
-      await waitFor(() => {
-        expect(lastFrame()).toContain(
-          'Automatic update failed. Please try updating manually',
-        );
-      });
-    });
-
-    it('should not auto-update if GEMINI_CLI_DISABLE_AUTOUPDATER is true', async () => {
-      mockedIsGitRepository.mockResolvedValue(false);
-      process.env.GEMINI_CLI_DISABLE_AUTOUPDATER = 'true';
-      const info: UpdateObject = {
-        update: {
-          name: '@google/gemini-cli',
-          latest: '1.1.0',
-          current: '1.0.0',
-        },
-        message: 'Update available',
-      };
-      mockedCheckForUpdates.mockResolvedValue(info);
-      const { spawn } = await import('node:child_process');
-
-      const { unmount } = renderWithProviders(
-        <App
-          config={mockConfig as unknown as ServerConfig}
-          settings={mockSettings}
-          version={mockVersion}
-        />,
-      );
-      currentUnmount = unmount;
-
-      // Wait for any potential async operations to complete
-      await waitFor(() => {
-        expect(spawn).not.toHaveBeenCalled();
-      });
-    });
-  });
-
-  it('should display active file when available', async () => {
-    vi.mocked(ideContext.getIdeContext).mockReturnValue({
-      workspaceState: {
-        openFiles: [
-          {
-            path: '/path/to/my-file.ts',
-            isActive: true,
-            selectedText: 'hello',
-            timestamp: 0,
-          },
-        ],
-      },
-    });
-
-    const { lastFrame, unmount } = renderWithProviders(
-      <App
-        config={mockConfig as unknown as ServerConfig}
-        settings={mockSettings}
-        version={mockVersion}
-      />,
+    const { lastFrame } = render(
+      <UIStateContext.Provider value={quittingUIState}>
+        <App />
+      </UIStateContext.Provider>,
     );
-    currentUnmount = unmount;
-    await Promise.resolve();
-    expect(lastFrame()).toContain('1 open file (ctrl+g to view)');
+
+    expect(lastFrame()).toContain('Quitting...');
   });
 
-  it('should not display any files when not available', async () => {
-    vi.mocked(ideContext.getIdeContext).mockReturnValue({
-      workspaceState: {
-        openFiles: [],
-      },
-    });
+  it('should render dialog manager when dialogs are visible', () => {
+    const dialogUIState = {
+      ...mockUIState,
+      dialogsVisible: true,
+    } as UIState;
 
-    const { lastFrame, unmount } = renderWithProviders(
-      <App
-        config={mockConfig as unknown as ServerConfig}
-        settings={mockSettings}
-        version={mockVersion}
-      />,
+    const { lastFrame } = render(
+      <UIStateContext.Provider value={dialogUIState}>
+        <App />
+      </UIStateContext.Provider>,
     );
-    currentUnmount = unmount;
-    await Promise.resolve();
-    expect(lastFrame()).not.toContain('Open File');
-  });
 
+<<<<<<< HEAD
   it('should display active file and other open files', async () => {
     vi.mocked(ideContext.getIdeContext).mockReturnValue({
       workspaceState: {
@@ -1921,5 +1677,10 @@ describe('App UI', () => {
         expect(lastFrame()).not.toContain('some text');
       });
     });
+=======
+    expect(lastFrame()).toContain('MainContent');
+    expect(lastFrame()).toContain('Notifications');
+    expect(lastFrame()).toContain('DialogManager');
+>>>>>>> main
   });
 });
