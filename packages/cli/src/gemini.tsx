@@ -303,19 +303,7 @@ export async function startInteractiveUI(
 
   const instance = render(
     <React.StrictMode>
-<<<<<<< HEAD
-      <SettingsContext.Provider value={settings}>
-        <AppWrapper
-          config={config}
-          settings={settings}
-          startupWarnings={startupWarnings}
-          version={version}
-
-        />
-      </SettingsContext.Provider>
-=======
       <AppWrapper />
->>>>>>> main
     </React.StrictMode>,
     {
       exitOnCtrlC: false,

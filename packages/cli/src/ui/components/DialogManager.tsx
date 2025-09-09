@@ -17,6 +17,7 @@ import { EditorSettingsDialog } from './EditorSettingsDialog.js';
 import { PrivacyNotice } from '../privacy/PrivacyNotice.js';
 import { WorkspaceMigrationDialog } from './WorkspaceMigrationDialog.js';
 import { ProQuotaDialog } from './ProQuotaDialog.js';
+import { SessionBrowser } from './SessionBrowser.js';
 import { Colors } from '../colors.js';
 import { useUIState } from '../contexts/UIStateContext.js';
 import { useUIActions } from '../contexts/UIActionsContext.js';
@@ -176,6 +177,16 @@ export const DialogManager = () => {
       <PrivacyNotice
         onExit={() => uiActions.exitPrivacyNotice()}
         config={config}
+      />
+    );
+  }
+  if (uiState.isSessionBrowserOpen) {
+    return (
+      <SessionBrowser
+        config={config}
+        onResumeSession={uiActions.handleResumeSession}
+        onDeleteSession={uiActions.handleDeleteSession}
+        onExit={uiActions.closeSessionBrowser}
       />
     );
   }

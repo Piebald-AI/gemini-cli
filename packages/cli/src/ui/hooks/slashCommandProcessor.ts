@@ -40,6 +40,7 @@ interface SlashCommandProcessorActions {
   openEditorDialog: () => void;
   openPrivacyNotice: () => void;
   openSettingsDialog: () => void;
+  openSessionBrowser: () => void;
   quit: (messages: HistoryItem[]) => void;
   setDebugMessage: (message: string) => void;
   toggleCorgiMode: () => void;
@@ -55,18 +56,6 @@ export const useSlashCommandProcessor = (
   clearItems: UseHistoryManagerReturn['clearItems'],
   loadHistory: UseHistoryManagerReturn['loadHistory'],
   refreshStatic: () => void,
-<<<<<<< HEAD
-  onDebugMessage: (message: string) => void,
-  openThemeDialog: () => void,
-  openAuthDialog: () => void,
-  openEditorDialog: () => void,
-  toggleCorgiMode: () => void,
-  setQuittingMessages: (message: HistoryItem[]) => void,
-  openPrivacyNotice: () => void,
-  openSessionBrowser: () => void,
-  openSettingsDialog: () => void,
-=======
->>>>>>> main
   toggleVimEnabled: () => Promise<boolean>,
   setIsProcessing: (isProcessing: boolean) => void,
   setGeminiMdFileCount: (count: number) => void,
@@ -407,7 +396,7 @@ export const useSlashCommandProcessor = (
                       actions.openPrivacyNotice();
                       return { type: 'handled' };
                     case 'sessionBrowser':
-                      openSessionBrowser();
+                      actions.openSessionBrowser();
                       return { type: 'handled' };
                     case 'settings':
                       actions.openSettingsDialog();
@@ -567,15 +556,6 @@ export const useSlashCommandProcessor = (
       commands,
       commandContext,
       addMessage,
-<<<<<<< HEAD
-      openThemeDialog,
-      openPrivacyNotice,
-      openEditorDialog,
-      setQuittingMessages,
-      openSessionBrowser,
-      openSettingsDialog,
-=======
->>>>>>> main
       setShellConfirmationRequest,
       setSessionShellAllowlist,
       setIsProcessing,

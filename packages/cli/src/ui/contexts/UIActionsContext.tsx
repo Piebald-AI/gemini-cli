@@ -43,6 +43,10 @@ export interface UIActions {
   onWorkspaceMigrationDialogOpen: () => void;
   onWorkspaceMigrationDialogClose: () => void;
   handleProQuotaChoice: (choice: 'auth' | 'continue') => void;
+  openSessionBrowser: () => void;
+  closeSessionBrowser: () => void;
+  handleResumeSession: (sessionId: string) => Promise<void>;
+  handleDeleteSession: (sessionId: string) => Promise<void>;
 }
 
 export const UIActionsContext = createContext<UIActions | null>(null);

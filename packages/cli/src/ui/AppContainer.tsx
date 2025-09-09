@@ -39,6 +39,7 @@ import {
   clearCachedCredentialFile,
   type ResumedSessionData,
 } from '@google/gemini-cli-core';
+import type { Part } from '@google/genai';
 import { validateAuthMethod } from '../config/auth.js';
 import { loadHierarchicalGeminiMemory } from '../config/config.js';
 import process from 'node:process';
@@ -78,6 +79,10 @@ import { useAutoAcceptIndicator } from './hooks/useAutoAcceptIndicator.js';
 import { useWorkspaceMigration } from './hooks/useWorkspaceMigration.js';
 import { useSessionStats } from './contexts/SessionContext.js';
 import { useGitBranchName } from './hooks/useGitBranchName.js';
+import {
+  convertSessionToHistoryFormats,
+  useSessionBrowser,
+} from './hooks/useSessionBrowser.js';
 
 const CTRL_EXIT_PROMPT_DURATION_MS = 1000;
 
@@ -98,11 +103,11 @@ interface AppContainerProps {
   startupWarnings?: string[];
   version: string;
   initializationResult: InitializationResult;
-  resumedSessionData: ResumedSessionData;
+  resumedSessionData?: ResumedSessionData;
 }
 
 export const AppContainer = (props: AppContainerProps) => {
-  const { settings, config, initializationResult } = props;
+  const { settings, config, initializationResult, resumedSessionData } = props;
   const historyManager = useHistory();
   const [corgiMode, setCorgiMode] = useState(false);
   const [debugMessage, setDebugMessage] = useState<string>('');
@@ -279,6 +284,71 @@ export const AppContainer = (props: AppContainerProps) => {
   const isAuthDialogOpen = authState === AuthState.Updating;
   const isAuthenticating = authState === AuthState.Unauthenticated;
 
+  // Session browser for /resume command
+  const isGeminiClientInitialized = config.getGeminiClient()?.isInitialized();
+
+  const loadHistoryForResume = useCallback(
+    (
+      uiHistory: HistoryItemWithoutId[],
+      clientHistory: Array<{ role: 'user' | 'model'; parts: Part[] }>,
+      resumedData: ResumedSessionData,
+    ) => {
+      // Wait for the client.
+      if (!isGeminiClientInitialized) {
+        return;
+      }
+
+      // Now that we have the client, load the history into the UI and the client.
+      setQuittingMessages(null);
+      historyManager.clearItems();
+      uiHistory.forEach((item, index) => {
+        historyManager.addItem(item, index, true);
+      });
+      refreshStatic(); // Force Static component to re-render with the updated history.
+
+      // Give the history to the Gemini client.
+      config.getGeminiClient()?.resumeChat(clientHistory, resumedData);
+    },
+    [
+      historyManager,
+      config,
+      refreshStatic,
+      isGeminiClientInitialized,
+      setQuittingMessages,
+    ],
+  );
+
+  const {
+    isSessionBrowserOpen,
+    openSessionBrowser,
+    closeSessionBrowser,
+    handleResumeSession,
+    handleDeleteSession: handleDeleteSessionSync,
+  } = useSessionBrowser(config, loadHistoryForResume);
+
+  // Wrap handleDeleteSession to return a Promise for UIActions interface
+  const handleDeleteSession = useCallback(
+    async (sessionId: string): Promise<void> => {
+      handleDeleteSessionSync(sessionId);
+    },
+    [handleDeleteSessionSync],
+  );
+
+  // Handle interactive resume from the command line (-r/--resume without -p/--prompt-interactive).
+  // Only if we're not authenticating, though.
+  useEffect(() => {
+    if (resumedSessionData && !isAuthenticating) {
+      const historyData = convertSessionToHistoryFormats(
+        resumedSessionData.conversation.messages,
+      );
+      loadHistoryForResume(
+        historyData.uiHistory,
+        historyData.clientHistory,
+        resumedSessionData,
+      );
+    }
+  }, [resumedSessionData, isAuthenticating, loadHistoryForResume]);
+
   // Create handleAuthSelect wrapper for backward compatibility
   const handleAuthSelect = useCallback(
     async (authType: AuthType | undefined, scope: SettingScope) => {
@@ -378,6 +448,7 @@ Logging in with Google... Please restart Gemini CLI to continue.
       openEditorDialog,
       openPrivacyNotice: () => setShowPrivacyNotice(true),
       openSettingsDialog,
+      openSessionBrowser,
       quit: (messages: HistoryItem[]) => {
         setQuittingMessages(messages);
         setTimeout(async () => {
@@ -393,6 +464,7 @@ Logging in with Google... Please restart Gemini CLI to continue.
       openThemeDialog,
       openEditorDialog,
       openSettingsDialog,
+      openSessionBrowser,
       setQuittingMessages,
       setDebugMessage,
       setShowPrivacyNotice,
@@ -1018,7 +1090,8 @@ Logging in with Google... Please restart Gemini CLI to continue.
       isAuthDialogOpen ||
       isEditorDialogOpen ||
       showPrivacyNotice ||
-      isProQuotaDialogOpen,
+      isProQuotaDialogOpen ||
+      isSessionBrowserOpen,
     [
       showWorkspaceMigrationDialog,
       shouldShowIdePrompt,
@@ -1032,6 +1105,7 @@ Logging in with Google... Please restart Gemini CLI to continue.
       isEditorDialogOpen,
       showPrivacyNotice,
       isProQuotaDialogOpen,
+      isSessionBrowserOpen,
     ],
   );
 
@@ -1055,6 +1129,7 @@ Logging in with Google... Please restart Gemini CLI to continue.
       debugMessage,
       quittingMessages,
       isSettingsDialogOpen,
+      isSessionBrowserOpen,
       slashCommands,
       pendingSlashCommandHistoryItems,
       commandContext,
@@ -1128,6 +1203,7 @@ Logging in with Google... Please restart Gemini CLI to continue.
       debugMessage,
       quittingMessages,
       isSettingsDialogOpen,
+      isSessionBrowserOpen,
       slashCommands,
       pendingSlashCommandHistoryItems,
       commandContext,
@@ -1213,6 +1289,10 @@ Logging in with Google... Please restart Gemini CLI to continue.
       onWorkspaceMigrationDialogOpen,
       onWorkspaceMigrationDialogClose,
       handleProQuotaChoice,
+      openSessionBrowser,
+      closeSessionBrowser,
+      handleResumeSession,
+      handleDeleteSession,
     }),
     [
       handleThemeSelect,
@@ -1235,6 +1315,10 @@ Logging in with Google... Please restart Gemini CLI to continue.
       onWorkspaceMigrationDialogOpen,
       onWorkspaceMigrationDialogClose,
       handleProQuotaChoice,
+      openSessionBrowser,
+      closeSessionBrowser,
+      handleResumeSession,
+      handleDeleteSession,
     ],
   );
 

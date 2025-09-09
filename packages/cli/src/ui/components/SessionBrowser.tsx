@@ -198,6 +198,7 @@ const getSessionFiles = async (
 ): Promise<SessionInfo[]> => {
   try {
     const files = await fs.readdir(chatsDir);
+
     const sessionFiles = files
       .filter((f) => f.startsWith('session-') && f.endsWith('.json'))
       .sort(); // Initial sort by filename, which includes timestamp
@@ -210,6 +211,7 @@ const getSessionFiles = async (
         );
 
         const firstUserMessage = extractFirstUserMessage(content.messages);
+
         const fullContent = loadFullContent
           ? content.messages.map((msg) => msg.content).join(' ')
           : undefined;
@@ -242,7 +244,7 @@ const getSessionFiles = async (
           messages,
           index: sessionFiles.length - sessionFiles.indexOf(file),
         } as SessionInfo;
-      } catch {
+      } catch (error) {
         return null;
       }
     });
@@ -251,7 +253,7 @@ const getSessionFiles = async (
     return results.filter(
       (session): session is SessionInfo => session !== null,
     );
-  } catch {
+  } catch (error) {
     return [];
   }
 };
