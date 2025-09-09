@@ -6,9 +6,10 @@
 
 import type React from 'react';
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { Box, Text, useInput } from 'ink';
+import { Box, Text } from 'ink';
 import { Colors } from '../colors.js';
 import { useTerminalSize } from '../hooks/useTerminalSize.js';
+import { useKeypress } from '../hooks/useKeypress.js';
 import * as fs from 'node:fs/promises';
 import path from 'node:path';
 import type { Config, ConversationRecord } from '@google/gemini-cli-core';
@@ -244,7 +245,7 @@ const getSessionFiles = async (
           messages,
           index: sessionFiles.length - sessionFiles.indexOf(file),
         } as SessionInfo;
-      } catch (error) {
+      } catch {
         return null;
       }
     });
@@ -253,7 +254,7 @@ const getSessionFiles = async (
     return results.filter(
       (session): session is SessionInfo => session !== null,
     );
-  } catch (error) {
+  } catch {
     return [];
   }
 };
@@ -896,105 +897,120 @@ const useSessionBrowserInput = (
   onDeleteSession: ((sessionId: string) => void) | undefined,
   onExit: () => void,
 ) => {
-  useInput((input, key) => {
-    if (state.isSearchMode) {
-      // Search-specific input handling.  Only control/symbols here.
-      if (key.escape) {
-        state.setIsSearchMode(false);
-        state.setSearchQuery('');
-        state.setActiveIndex(0);
-        state.setScrollOffset(0);
-      } else if (key.backspace) {
-        state.setSearchQuery((prev) => prev.slice(0, -1));
-        state.setActiveIndex(0);
-        state.setScrollOffset(0);
-      } else if (input && !key.ctrl && !key.meta && input.length === 1) {
-        state.setSearchQuery((prev) => prev + input);
-        state.setActiveIndex(0);
-        state.setScrollOffset(0);
-      }
-    } else {
-      // Navigation mode input handling.  We're keeping the letter-based controls for non-search
-      // mode only, because the letters need to act as input for the search.
-      if (input === 'g') {
-        state.setActiveIndex(0);
-        state.setScrollOffset(0);
-      } else if (input === 'G') {
-        state.setActiveIndex(state.totalSessions - 1);
-        state.setScrollOffset(
-          Math.max(0, state.totalSessions - SESSIONS_PER_PAGE),
-        );
-      }
-      // Sorting controls.
-      else if (input === 's') {
-        cycleSortOrder();
-      } else if (input === 'r') {
-        state.setSortReverse(!state.sortReverse);
-      }
-      // Searching and exit controls.
-      else if (input === '/') {
-        state.setIsSearchMode(true);
-      } else if (input === 'q' || input === 'Q' || key.escape) {
-        onExit();
-      }
-      // Delete session control.
-      else if (input === 'x' || input === 'X') {
-        const selectedSession =
-          state.filteredAndSortedSessions[state.activeIndex];
-        if (
-          selectedSession &&
-          !selectedSession.isCurrentSession &&
-          onDeleteSession
+  useKeypress(
+    (key) => {
+      if (state.isSearchMode) {
+        // Search-specific input handling.  Only control/symbols here.
+        if (key.name === 'escape') {
+          state.setIsSearchMode(false);
+          state.setSearchQuery('');
+          state.setActiveIndex(0);
+          state.setScrollOffset(0);
+        } else if (key.name === 'backspace') {
+          state.setSearchQuery((prev) => prev.slice(0, -1));
+          state.setActiveIndex(0);
+          state.setScrollOffset(0);
+        } else if (
+          key.sequence &&
+          !key.ctrl &&
+          !key.meta &&
+          key.sequence.length === 1
         ) {
-          try {
-            onDeleteSession(selectedSession.file);
-            // Remove the session from the state
-            state.setSessions(
-              state.sessions.filter((s) => s.id !== selectedSession.id),
-            );
+          state.setSearchQuery((prev) => prev + key.sequence);
+          state.setActiveIndex(0);
+          state.setScrollOffset(0);
+        }
+      } else {
+        // Navigation mode input handling.  We're keeping the letter-based controls for non-search
+        // mode only, because the letters need to act as input for the search.
+        if (key.sequence === 'g') {
+          state.setActiveIndex(0);
+          state.setScrollOffset(0);
+        } else if (key.sequence === 'G') {
+          state.setActiveIndex(state.totalSessions - 1);
+          state.setScrollOffset(
+            Math.max(0, state.totalSessions - SESSIONS_PER_PAGE),
+          );
+        }
+        // Sorting controls.
+        else if (key.sequence === 's') {
+          cycleSortOrder();
+        } else if (key.sequence === 'r') {
+          state.setSortReverse(!state.sortReverse);
+        }
+        // Searching and exit controls.
+        else if (key.sequence === '/') {
+          state.setIsSearchMode(true);
+        } else if (
+          key.sequence === 'q' ||
+          key.sequence === 'Q' ||
+          key.name === 'escape'
+        ) {
+          onExit();
+        }
+        // Delete session control.
+        else if (key.sequence === 'x' || key.sequence === 'X') {
+          const selectedSession =
+            state.filteredAndSortedSessions[state.activeIndex];
+          if (
+            selectedSession &&
+            !selectedSession.isCurrentSession &&
+            onDeleteSession
+          ) {
+            try {
+              onDeleteSession(selectedSession.file);
+              // Remove the session from the state
+              state.setSessions(
+                state.sessions.filter((s) => s.id !== selectedSession.id),
+              );
 
-            // Adjust active index if needed
-            if (
-              state.activeIndex >=
-              state.filteredAndSortedSessions.length - 1
-            ) {
-              state.setActiveIndex(
-                Math.max(0, state.filteredAndSortedSessions.length - 2),
+              // Adjust active index if needed
+              if (
+                state.activeIndex >=
+                state.filteredAndSortedSessions.length - 1
+              ) {
+                state.setActiveIndex(
+                  Math.max(0, state.filteredAndSortedSessions.length - 2),
+                );
+              }
+            } catch (error) {
+              state.setError(
+                `Failed to delete session: ${error instanceof Error ? error.message : 'Unknown error'}`,
               );
             }
-          } catch (error) {
-            state.setError(
-              `Failed to delete session: ${error instanceof Error ? error.message : 'Unknown error'}`,
-            );
           }
         }
+        // less-like u/d controls.
+        else if (key.sequence === 'd') {
+          moveSelection(-Math.round(SESSIONS_PER_PAGE / 2));
+        } else if (key.sequence === 'u') {
+          moveSelection(Math.round(SESSIONS_PER_PAGE / 2));
+        }
       }
-      // less-like u/d controls.
-      else if (input === 'd') {
-        moveSelection(-Math.round(SESSIONS_PER_PAGE / 2));
-      } else if (input === 'u') {
-        moveSelection(Math.round(SESSIONS_PER_PAGE / 2));
-      }
-    }
 
-    // Handling regardless of search mode.
-    if (key.return && state.filteredAndSortedSessions[state.activeIndex]) {
-      const selectedSession =
-        state.filteredAndSortedSessions[state.activeIndex];
-      // Don't allow resuming the current session
-      if (!selectedSession.isCurrentSession) {
-        onResumeSession(selectedSession.id);
+      // Handling regardless of search mode.
+      if (
+        key.name === 'return' &&
+        state.filteredAndSortedSessions[state.activeIndex]
+      ) {
+        const selectedSession =
+          state.filteredAndSortedSessions[state.activeIndex];
+        // Don't allow resuming the current session
+        if (!selectedSession.isCurrentSession) {
+          onResumeSession(selectedSession.id);
+        }
+      } else if (key.name === 'up') {
+        moveSelection(-1);
+      } else if (key.name === 'down') {
+        moveSelection(1);
+      } else if (key.name === 'pageup') {
+        moveSelection(-SESSIONS_PER_PAGE);
+      } else if (key.name === 'pagedown') {
+        moveSelection(SESSIONS_PER_PAGE);
       }
-    } else if (key.upArrow) {
-      moveSelection(-1);
-    } else if (key.downArrow) {
-      moveSelection(1);
-    } else if (key.pageUp) {
-      moveSelection(-SESSIONS_PER_PAGE);
-    } else if (key.pageDown) {
-      moveSelection(SESSIONS_PER_PAGE);
-    }
-  });
+    },
+    { isActive: true },
+  );
 };
 
 export function SessionBrowser({
