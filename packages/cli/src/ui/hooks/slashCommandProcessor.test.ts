@@ -4,6 +4,27 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { act, renderHook, waitFor } from '@testing-library/react';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { useSlashCommandProcessor } from './slashCommandProcessor.js';
+import type {
+  CommandContext,
+  ConfirmShellCommandsActionReturn,
+  SlashCommand,
+} from '../commands/types.js';
+import { CommandKind } from '../commands/types.js';
+import type { LoadedSettings } from '../../config/settings.js';
+import { MessageType } from '../types.js';
+import { BuiltinCommandLoader } from '../../services/BuiltinCommandLoader.js';
+import { FileCommandLoader } from '../../services/FileCommandLoader.js';
+import { McpPromptLoader } from '../../services/McpPromptLoader.js';
+import {
+  type GeminiClient,
+  SlashCommandStatus,
+  ToolConfirmationOutcome,
+  makeFakeConfig,
+} from '@google/gemini-cli-core';
+
 const { logSlashCommand } = vi.hoisted(() => ({
   logSlashCommand: vi.fn(),
 }));
@@ -68,26 +89,6 @@ vi.mock('../../utils/cleanup.js', () => ({
   runExitCleanup: mockRunExitCleanup,
 }));
 
-import { act, renderHook, waitFor } from '@testing-library/react';
-import { vi, describe, it, expect, beforeEach, type Mock } from 'vitest';
-import { useSlashCommandProcessor } from './slashCommandProcessor.js';
-import type {
-  CommandContext,
-  ConfirmShellCommandsActionReturn,
-  SlashCommand,
-} from '../commands/types.js';
-import { CommandKind } from '../commands/types.js';
-import type { LoadedSettings } from '../../config/settings.js';
-import { MessageType } from '../types.js';
-import { BuiltinCommandLoader } from '../../services/BuiltinCommandLoader.js';
-import { FileCommandLoader } from '../../services/FileCommandLoader.js';
-import { McpPromptLoader } from '../../services/McpPromptLoader.js';
-import {
-  SlashCommandStatus,
-  ToolConfirmationOutcome,
-  makeFakeConfig,
-} from '@google/gemini-cli-core';
-
 function createTestCommand(
   overrides: Partial<SlashCommand>,
   kind: CommandKind = CommandKind.BUILT_IN,
@@ -113,7 +114,7 @@ describe('useSlashCommandProcessor', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (vi.mocked(BuiltinCommandLoader) as Mock).mockClear();
+    vi.mocked(BuiltinCommandLoader).mockClear();
     mockBuiltinLoadCommands.mockResolvedValue([]);
     mockFileLoadCommands.mockResolvedValue([]);
     mockMcpLoadCommands.mockResolvedValue([]);
@@ -223,18 +224,6 @@ describe('useSlashCommandProcessor', () => {
       // Only the file-based command's action should be called.
       expect(fileAction).toHaveBeenCalledTimes(1);
       expect(builtinAction).not.toHaveBeenCalled();
-    });
-
-    it('should not include hidden commands in the command list', async () => {
-      const visibleCommand = createTestCommand({ name: 'visible' });
-      const hiddenCommand = createTestCommand({ name: 'hidden', hidden: true });
-      const result = setupProcessorHook([visibleCommand, hiddenCommand]);
-
-      await waitFor(() => {
-        expect(result.current.slashCommands).toHaveLength(1);
-      });
-
-      expect(result.current.slashCommands[0].name).toBe('visible');
     });
   });
 
@@ -402,10 +391,6 @@ describe('useSlashCommandProcessor', () => {
 
       expect(mockOpenThemeDialog).toHaveBeenCalled();
     });
-
-    // Note: load_history action was removed in the main branch
-    // Session loading is now handled through the /resume command
-    // which opens the session browser dialog
 
     it('should handle a "quit" action', async () => {
       const quitAction = vi

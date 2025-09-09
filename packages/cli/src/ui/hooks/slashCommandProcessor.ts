@@ -413,7 +413,6 @@ export const useSlashCommandProcessor = (
                 case 'quit':
                   actions.quit(result.messages);
                   return { type: 'handled' };
-
                 case 'submit_prompt':
                   return {
                     type: 'submit_prompt',
