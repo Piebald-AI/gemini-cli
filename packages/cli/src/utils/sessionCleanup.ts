@@ -63,8 +63,7 @@ export async function cleanupExpiredSessions(
     // Determine which sessions to delete
     const sessionsToDelete = await identifyExpiredSessions(
       sessionFiles,
-      retentionConfig,
-      config.getSessionId(),
+      retentionConfig
     );
 
     // Perform cleanup
@@ -106,8 +105,7 @@ export async function cleanupExpiredSessions(
  */
 async function identifyExpiredSessions(
   sessions: SessionInfo[],
-  retentionConfig: SessionRetentionSettings,
-  currentSessionId: string,
+  retentionConfig: SessionRetentionSettings
 ): Promise<SessionInfo[]> {
   const now = new Date();
   const expiredSessions: SessionInfo[] = [];
@@ -127,13 +125,19 @@ async function identifyExpiredSessions(
       new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime(),
   );
 
-  for (let i = 0; i < sortedSessions.length; i++) {
-    const session = sortedSessions[i];
+  // Separate deletable sessions from the active session
+  const deletableSessions = sortedSessions.filter(
+    (session) => !session.isCurrentSession,
+  );
 
-    // Never delete the current active session
-    if (isActiveSession(session, currentSessionId)) {
-      continue;
-    }
+  // Calculate how many deletable sessions to keep (accounting for the active session)
+  const hasActiveSession = sortedSessions.some(s => s.isCurrentSession);
+  const maxDeletableSessions = retentionConfig.maxCount && hasActiveSession
+    ? Math.max(0, retentionConfig.maxCount - 1)
+    : retentionConfig.maxCount;
+
+  for (let i = 0; i < deletableSessions.length; i++) {
+    const session = deletableSessions[i];
 
     let shouldDelete = false;
 
@@ -142,8 +146,8 @@ async function identifyExpiredSessions(
       shouldDelete = true;
     }
 
-    // Count-based retention check (keep only N most recent)
-    if (retentionConfig.maxCount && i >= retentionConfig.maxCount) {
+    // Count-based retention check (keep only N most recent deletable sessions)
+    if (maxDeletableSessions !== undefined && i >= maxDeletableSessions) {
       shouldDelete = true;
     }
 
@@ -153,20 +157,6 @@ async function identifyExpiredSessions(
   }
 
   return expiredSessions;
-}
-
-/**
- * Checks if a session is currently active and should not be deleted
- */
-function isActiveSession(
-  session: SessionInfo,
-  currentSessionId: string,
-): boolean {
-  return (
-    session.id === currentSessionId ||
-    session.isCurrentSession ||
-    session.id === currentSessionId.slice(0, 8) // Handle shortened IDs
-  );
 }
 
 /**
@@ -255,10 +245,13 @@ function validateRetentionConfig(config: SessionRetentionSettings): {
       return { valid: false, error: `Invalid maxAge format: ${config.maxAge}` };
     }
 
-    // Enforce minimum retention period (1 day)
-    const minRetentionMs = 24 * 60 * 60 * 1000; // 1 day
-    if (maxAgeMs < minRetentionMs) {
-      return { valid: false, error: 'maxAge cannot be less than 1 day' };
+    // Enforce minimum retention period
+    const minRetentionMs = parseRetentionPeriod(config.minRetention || '1d');
+    if (minRetentionMs > 0 && maxAgeMs < minRetentionMs) {
+      return {
+        valid: false,
+        error: `maxAge cannot be less than minRetention (${config.minRetention || '1d'})`,
+      };
     }
   }
 
