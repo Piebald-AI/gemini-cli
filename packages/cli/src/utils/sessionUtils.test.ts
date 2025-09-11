@@ -11,6 +11,7 @@ import {
   formatRelativeTime,
 } from './sessionUtils.js';
 import type { Config, MessageRecord } from '@google/gemini-cli-core';
+import { SESSION_FILE_PREFIX } from '@google/gemini-cli-core';
 import * as fs from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
@@ -83,7 +84,7 @@ describe('SessionSelector', () => {
     await fs.writeFile(
       path.join(
         chatsDir,
-        `session-2024-01-01T10-00-${sessionId1.slice(0, 8)}.json`,
+        `${SESSION_FILE_PREFIX}2024-01-01T10-00-${sessionId1.slice(0, 8)}.json`,
       ),
       JSON.stringify(session1, null, 2),
     );
@@ -91,7 +92,7 @@ describe('SessionSelector', () => {
     await fs.writeFile(
       path.join(
         chatsDir,
-        `session-2024-01-01T11-00-${sessionId2.slice(0, 8)}.json`,
+        `${SESSION_FILE_PREFIX}2024-01-01T11-00-${sessionId2.slice(0, 8)}.json`,
       ),
       JSON.stringify(session2, null, 2),
     );
@@ -149,7 +150,7 @@ describe('SessionSelector', () => {
     await fs.writeFile(
       path.join(
         chatsDir,
-        `session-2024-01-01T10-00-${sessionId1.slice(0, 8)}.json`,
+        `${SESSION_FILE_PREFIX}2024-01-01T10-00-${sessionId1.slice(0, 8)}.json`,
       ),
       JSON.stringify(session1, null, 2),
     );
@@ -157,7 +158,7 @@ describe('SessionSelector', () => {
     await fs.writeFile(
       path.join(
         chatsDir,
-        `session-2024-01-01T11-00-${sessionId2.slice(0, 8)}.json`,
+        `${SESSION_FILE_PREFIX}2024-01-01T11-00-${sessionId2.slice(0, 8)}.json`,
       ),
       JSON.stringify(session2, null, 2),
     );
@@ -213,7 +214,7 @@ describe('SessionSelector', () => {
     await fs.writeFile(
       path.join(
         chatsDir,
-        `session-2024-01-01T10-00-${sessionId1.slice(0, 8)}.json`,
+        `${SESSION_FILE_PREFIX}2024-01-01T10-00-${sessionId1.slice(0, 8)}.json`,
       ),
       JSON.stringify(session1, null, 2),
     );
@@ -221,7 +222,7 @@ describe('SessionSelector', () => {
     await fs.writeFile(
       path.join(
         chatsDir,
-        `session-2024-01-01T11-00-${sessionId2.slice(0, 8)}.json`,
+        `${SESSION_FILE_PREFIX}2024-01-01T11-00-${sessionId2.slice(0, 8)}.json`,
       ),
       JSON.stringify(session2, null, 2),
     );
@@ -258,7 +259,7 @@ describe('SessionSelector', () => {
     await fs.writeFile(
       path.join(
         chatsDir,
-        `session-2024-01-01T10-00-${sessionId1.slice(0, 8)}.json`,
+        `${SESSION_FILE_PREFIX}2024-01-01T10-00-${sessionId1.slice(0, 8)}.json`,
       ),
       JSON.stringify(session1, null, 2),
     );

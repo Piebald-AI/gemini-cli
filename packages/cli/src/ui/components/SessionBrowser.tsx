@@ -13,7 +13,10 @@ import { useKeypress } from '../hooks/useKeypress.js';
 import * as fs from 'node:fs/promises';
 import path from 'node:path';
 import type { Config, ConversationRecord } from '@google/gemini-cli-core';
-import { partListUnionToString } from '@google/gemini-cli-core';
+import {
+  partListUnionToString,
+  SESSION_FILE_PREFIX,
+} from '@google/gemini-cli-core';
 
 /**
  * Processed session information used for display and interaction.
@@ -201,7 +204,7 @@ const getSessionFiles = async (
     const files = await fs.readdir(chatsDir);
 
     const sessionFiles = files
-      .filter((f) => f.startsWith('session-') && f.endsWith('.json'))
+      .filter((f) => f.startsWith(SESSION_FILE_PREFIX) && f.endsWith('.json'))
       .sort(); // Initial sort by filename, which includes timestamp
 
     const sessionPromises = sessionFiles.map(async (file) => {
