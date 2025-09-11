@@ -10,16 +10,16 @@ import * as path from 'node:path';
 import { SESSION_FILE_PREFIX, type Config } from '@google/gemini-cli-core';
 import type { Settings } from '../config/settings.js';
 import { cleanupExpiredSessions } from './sessionCleanup.js';
-import { type SessionInfo, getSessionFiles } from './sessionUtils.js';
+import { type SessionInfo, getAllSessionFiles } from './sessionUtils.js';
 
 // Mock the fs module
 vi.mock('fs/promises');
 vi.mock('./sessionUtils.js', () => ({
-  getSessionFiles: vi.fn(),
+  getAllSessionFiles: vi.fn(),
 }));
 
 const mockFs = vi.mocked(fs);
-const mockGetSessionFiles = vi.mocked(getSessionFiles);
+const mockGetAllSessionFiles = vi.mocked(getAllSessionFiles);
 
 // Create mock config
 function createMockConfig(overrides: Partial<Config> = {}): Config {
@@ -96,7 +96,14 @@ function createTestSessions(): SessionInfo[] {
 describe('Session Cleanup', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetSessionFiles.mockResolvedValue(createTestSessions());
+    // By default, return all test sessions as valid
+    const sessions = createTestSessions();
+    mockGetAllSessionFiles.mockResolvedValue(
+      sessions.map((session) => ({
+        fileName: session.fileName,
+        sessionInfo: session,
+      })),
+    );
   });
 
   afterEach(() => {
@@ -306,7 +313,7 @@ describe('Session Cleanup', () => {
         },
       };
 
-      mockGetSessionFiles.mockResolvedValue([]);
+      mockGetAllSessionFiles.mockResolvedValue([]);
 
       const result = await cleanupExpiredSessions(config, settings);
 
@@ -331,7 +338,7 @@ describe('Session Cleanup', () => {
       };
 
       // Mock getSessionFiles to throw an error
-      mockGetSessionFiles.mockRejectedValue(
+      mockGetAllSessionFiles.mockRejectedValue(
         new Error('Directory access failed'),
       );
 
@@ -480,7 +487,12 @@ describe('Session Cleanup', () => {
         },
       ];
 
-      mockGetSessionFiles.mockResolvedValue(testSessions);
+      mockGetAllSessionFiles.mockResolvedValue(
+        testSessions.map((session) => ({
+          fileName: session.fileName,
+          sessionInfo: session,
+        })),
+      );
 
       // Mock successful file operations
       mockFs.access.mockResolvedValue(undefined);
@@ -597,7 +609,12 @@ describe('Session Cleanup', () => {
         },
       ];
 
-      mockGetSessionFiles.mockResolvedValue(testSessions);
+      mockGetAllSessionFiles.mockResolvedValue(
+        testSessions.map((session) => ({
+          fileName: session.fileName,
+          sessionInfo: session,
+        })),
+      );
 
       // Mock successful file operations
       mockFs.access.mockResolvedValue(undefined);
@@ -669,7 +686,12 @@ describe('Session Cleanup', () => {
         });
       }
 
-      mockGetSessionFiles.mockResolvedValue(sessions);
+      mockGetAllSessionFiles.mockResolvedValue(
+        sessions.map((session) => ({
+          fileName: session.fileName,
+          sessionInfo: session,
+        })),
+      );
 
       // Mock successful file operations
       mockFs.access.mockResolvedValue(undefined);
@@ -821,7 +843,12 @@ describe('Session Cleanup', () => {
         },
       ];
 
-      mockGetSessionFiles.mockResolvedValue(testSessions);
+      mockGetAllSessionFiles.mockResolvedValue(
+        testSessions.map((session) => ({
+          fileName: session.fileName,
+          sessionInfo: session,
+        })),
+      );
 
       // Mock successful file operations
       mockFs.access.mockResolvedValue(undefined);
@@ -918,7 +945,7 @@ describe('Session Cleanup', () => {
         },
       };
 
-      mockGetSessionFiles.mockResolvedValue([]);
+      mockGetAllSessionFiles.mockResolvedValue([]);
 
       // If it parses correctly, cleanup should proceed without error
       const result = await cleanupExpiredSessions(config, settings);
@@ -1009,7 +1036,7 @@ describe('Session Cleanup', () => {
         },
       };
 
-      mockGetSessionFiles.mockResolvedValue([]);
+      mockGetAllSessionFiles.mockResolvedValue([]);
 
       const result = await cleanupExpiredSessions(config, settings);
       expect(result.disabled).toBe(false);
@@ -1030,7 +1057,7 @@ describe('Session Cleanup', () => {
         },
       };
 
-      mockGetSessionFiles.mockResolvedValue([]);
+      mockGetAllSessionFiles.mockResolvedValue([]);
 
       // Should fall back to default minRetention and proceed
       const result = await cleanupExpiredSessions(config, settings);
@@ -1247,7 +1274,7 @@ describe('Session Cleanup', () => {
           },
         };
 
-        mockGetSessionFiles.mockResolvedValue([]);
+        mockGetAllSessionFiles.mockResolvedValue([]);
 
         const result = await cleanupExpiredSessions(config, settings);
 
@@ -1268,7 +1295,7 @@ describe('Session Cleanup', () => {
           },
         };
 
-        mockGetSessionFiles.mockResolvedValue([]);
+        mockGetAllSessionFiles.mockResolvedValue([]);
 
         const result = await cleanupExpiredSessions(config, settings);
 
@@ -1289,7 +1316,7 @@ describe('Session Cleanup', () => {
           },
         };
 
-        mockGetSessionFiles.mockResolvedValue([]);
+        mockGetAllSessionFiles.mockResolvedValue([]);
 
         const result = await cleanupExpiredSessions(config, settings);
 
@@ -1310,7 +1337,7 @@ describe('Session Cleanup', () => {
           },
         };
 
-        mockGetSessionFiles.mockResolvedValue([]);
+        mockGetAllSessionFiles.mockResolvedValue([]);
 
         const result = await cleanupExpiredSessions(config, settings);
 
@@ -1395,7 +1422,7 @@ describe('Session Cleanup', () => {
           },
         };
 
-        mockGetSessionFiles.mockResolvedValue([]);
+        mockGetAllSessionFiles.mockResolvedValue([]);
 
         const result = await cleanupExpiredSessions(config, settings);
 
@@ -1417,7 +1444,7 @@ describe('Session Cleanup', () => {
           },
         };
 
-        mockGetSessionFiles.mockResolvedValue([]);
+        mockGetAllSessionFiles.mockResolvedValue([]);
 
         const result = await cleanupExpiredSessions(config, settings);
 
@@ -1441,7 +1468,7 @@ describe('Session Cleanup', () => {
           },
         };
 
-        mockGetSessionFiles.mockResolvedValue([]);
+        mockGetAllSessionFiles.mockResolvedValue([]);
 
         // When minRetention is invalid, it should default to 1d
         // Since maxAge (5d) > default minRetention (1d), this should be valid
@@ -1466,7 +1493,7 @@ describe('Session Cleanup', () => {
           },
         };
 
-        mockGetSessionFiles.mockResolvedValue([]);
+        mockGetAllSessionFiles.mockResolvedValue([]);
 
         const result = await cleanupExpiredSessions(config, settings);
 
@@ -1487,7 +1514,7 @@ describe('Session Cleanup', () => {
           },
         };
 
-        mockGetSessionFiles.mockResolvedValue([]);
+        mockGetAllSessionFiles.mockResolvedValue([]);
 
         const result = await cleanupExpiredSessions(config, settings);
 
@@ -1536,7 +1563,7 @@ describe('Session Cleanup', () => {
           },
         };
 
-        mockGetSessionFiles.mockResolvedValue([]);
+        mockGetAllSessionFiles.mockResolvedValue([]);
 
         const result = await cleanupExpiredSessions(config, settings);
 
@@ -1560,7 +1587,7 @@ describe('Session Cleanup', () => {
           },
         };
 
-        mockGetSessionFiles.mockResolvedValue([]);
+        mockGetAllSessionFiles.mockResolvedValue([]);
 
         const result = await cleanupExpiredSessions(config, settings);
 
@@ -1644,7 +1671,7 @@ describe('Session Cleanup', () => {
       };
 
       // Mock getSessionFiles to throw an error
-      mockGetSessionFiles.mockRejectedValue(
+      mockGetAllSessionFiles.mockRejectedValue(
         new Error('Failed to read directory'),
       );
 
@@ -1656,6 +1683,49 @@ describe('Session Cleanup', () => {
       expect(result.errors).toHaveLength(1);
       expect(result.errors[0].sessionId).toBe('global');
       expect(result.errors[0].error).toContain('Failed to read directory');
+    });
+
+    it('should delete corrupted session files', async () => {
+      const config = createMockConfig();
+      const settings: Settings = {
+        general: {
+          sessionRetention: {
+            enabled: true,
+            maxAge: '30d',
+          },
+        },
+      };
+
+      // Mock getAllSessionFiles to return both valid and corrupted files
+      const validSession = createTestSessions()[0];
+      mockGetAllSessionFiles.mockResolvedValue([
+        { fileName: validSession.fileName, sessionInfo: validSession },
+        {
+          fileName: `${SESSION_FILE_PREFIX}2025-01-02T10-00-00-corrupt1.json`,
+          sessionInfo: null,
+        },
+        {
+          fileName: `${SESSION_FILE_PREFIX}2025-01-03T10-00-00-corrupt2.json`,
+          sessionInfo: null,
+        },
+      ]);
+
+      mockFs.unlink.mockResolvedValue(undefined);
+
+      const result = await cleanupExpiredSessions(config, settings);
+
+      expect(result.disabled).toBe(false);
+      expect(result.scanned).toBe(3); // 1 valid + 2 corrupted
+      expect(result.deleted).toBe(2); // Should delete the 2 corrupted files
+      expect(result.skipped).toBe(1); // The valid session is kept
+
+      // Verify corrupted files were deleted
+      expect(mockFs.unlink).toHaveBeenCalledWith(
+        expect.stringContaining('corrupt1.json'),
+      );
+      expect(mockFs.unlink).toHaveBeenCalledWith(
+        expect.stringContaining('corrupt2.json'),
+      );
     });
 
     it('should handle unexpected errors without throwing', async () => {
@@ -1670,7 +1740,7 @@ describe('Session Cleanup', () => {
       };
 
       // Mock getSessionFiles to throw a non-Error object
-      mockGetSessionFiles.mockRejectedValue('String error');
+      mockGetAllSessionFiles.mockRejectedValue('String error');
 
       // Should not throw, should return a result with errors
       const result = await cleanupExpiredSessions(config, settings);

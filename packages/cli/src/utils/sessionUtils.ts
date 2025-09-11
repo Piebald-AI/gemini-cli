@@ -43,6 +43,16 @@ export interface SessionInfo {
 }
 
 /**
+ * Represents a session file, which may be valid or corrupted.
+ */
+export interface SessionFileEntry {
+  /** Full filename including .json extension */
+  fileName: string;
+  /** Parsed session info if valid, null if corrupted */
+  sessionInfo: SessionInfo | null;
+}
+
+/**
  * Result of resolving a session selection argument.
  */
 export interface SessionSelectionResult {
@@ -93,67 +103,100 @@ export const formatRelativeTime = (timestamp: string): string => {
 };
 
 /**
- * Loads all session files from the chats directory and converts them to SessionInfo.
+ * Loads all session files (including corrupted ones) from the chats directory.
+ * @returns Array of session file entries, with sessionInfo null for corrupted files
  */
-export const getSessionFiles = async (
+export const getAllSessionFiles = async (
   chatsDir: string,
   currentSessionId?: string,
-): Promise<SessionInfo[]> => {
+): Promise<SessionFileEntry[]> => {
   try {
     const files = await fs.readdir(chatsDir);
     const sessionFiles = files
       .filter((f) => f.startsWith(SESSION_FILE_PREFIX) && f.endsWith('.json'))
       .sort(); // Sort by filename, which includes timestamp
 
-    const sessionPromises = sessionFiles.map(async (file) => {
-      const filePath = path.join(chatsDir, file);
-      try {
-        const content: ConversationRecord = JSON.parse(
-          await fs.readFile(filePath, 'utf8'),
-        );
+    const sessionPromises = sessionFiles.map(
+      async (file): Promise<SessionFileEntry> => {
+        const filePath = path.join(chatsDir, file);
+        try {
+          const content: ConversationRecord = JSON.parse(
+            await fs.readFile(filePath, 'utf8'),
+          );
 
-        const firstUserMessage = extractFirstUserMessage(content.messages);
-        const isCurrentSession = currentSessionId
-          ? file.includes(currentSessionId.slice(0, 8))
-          : false;
+          // Validate required fields
+          if (
+            !content.sessionId ||
+            !content.messages ||
+            !Array.isArray(content.messages) ||
+            !content.startTime ||
+            !content.lastUpdated
+          ) {
+            // Missing required fields - treat as corrupted
+            return { fileName: file, sessionInfo: null };
+          }
 
-        return {
-          id: content.sessionId, // Use full UUID instead of extracted 8-char version
-          file: file.replace('.json', ''),
-          fileName: file,
-          startTime: content.startTime,
-          lastUpdated: content.lastUpdated,
-          messageCount: content.messages.length,
-          displayName: firstUserMessage,
-          firstUserMessage,
-          isCurrentSession,
-          index: 0, // Will be set after sorting
-        } as SessionInfo;
-      } catch {
-        return null; // Skip corrupted files
-      }
-    });
+          const firstUserMessage = extractFirstUserMessage(content.messages);
+          const isCurrentSession = currentSessionId
+            ? file.includes(currentSessionId.slice(0, 8))
+            : false;
 
-    const results = await Promise.all(sessionPromises);
-    const filteredResults = results.filter(
-      (session): session is SessionInfo => session !== null,
+          const sessionInfo: SessionInfo = {
+            id: content.sessionId,
+            file: file.replace('.json', ''),
+            fileName: file,
+            startTime: content.startTime,
+            lastUpdated: content.lastUpdated,
+            messageCount: content.messages.length,
+            displayName: firstUserMessage,
+            firstUserMessage,
+            isCurrentSession,
+            index: 0, // Will be set after sorting valid sessions
+          };
+
+          return { fileName: file, sessionInfo };
+        } catch {
+          // File is corrupted (can't read or parse JSON)
+          return { fileName: file, sessionInfo: null };
+        }
+      },
     );
 
-    // Sort by startTime (oldest first) for stable session numbering
-    filteredResults.sort(
-      (a, b) =>
-        new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
-    );
-
-    // Set the correct 1-based indexes after sorting
-    filteredResults.forEach((session, index) => {
-      session.index = index + 1;
-    });
-
-    return filteredResults;
+    return await Promise.all(sessionPromises);
   } catch {
     return []; // Return empty array if directory doesn't exist or can't be read
   }
+};
+
+/**
+ * Loads all valid session files from the chats directory and converts them to SessionInfo.
+ * Corrupted files are automatically filtered out.
+ */
+export const getSessionFiles = async (
+  chatsDir: string,
+  currentSessionId?: string,
+): Promise<SessionInfo[]> => {
+  const allFiles = await getAllSessionFiles(chatsDir, currentSessionId);
+
+  // Filter out corrupted files and extract SessionInfo
+  const validSessions = allFiles
+    .filter(
+      (entry): entry is { fileName: string; sessionInfo: SessionInfo } =>
+        entry.sessionInfo !== null,
+    )
+    .map((entry) => entry.sessionInfo);
+
+  // Sort by startTime (oldest first) for stable session numbering
+  validSessions.sort(
+    (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
+  );
+
+  // Set the correct 1-based indexes after sorting
+  validSessions.forEach((session, index) => {
+    session.index = index + 1;
+  });
+
+  return validSessions;
 };
 
 /**
