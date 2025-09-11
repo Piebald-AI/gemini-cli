@@ -112,6 +112,7 @@ describe('Session Cleanup', () => {
 
       const result = await cleanupExpiredSessions(config, settings);
 
+      expect(result.disabled).toBe(true);
       expect(result.scanned).toBe(0);
       expect(result.deleted).toBe(0);
       expect(result.skipped).toBe(0);
@@ -124,6 +125,7 @@ describe('Session Cleanup', () => {
 
       const result = await cleanupExpiredSessions(config, settings);
 
+      expect(result.disabled).toBe(true);
       expect(result.scanned).toBe(0);
       expect(result.deleted).toBe(0);
     });
@@ -145,6 +147,7 @@ describe('Session Cleanup', () => {
 
       const result = await cleanupExpiredSessions(config, settings);
 
+      expect(result.disabled).toBe(true);
       expect(result.scanned).toBe(0);
       expect(result.deleted).toBe(0);
       expect(debugSpy).toHaveBeenCalledWith(
@@ -181,6 +184,7 @@ describe('Session Cleanup', () => {
 
       const result = await cleanupExpiredSessions(config, settings);
 
+      expect(result.disabled).toBe(false);
       expect(result.scanned).toBe(4);
       expect(result.deleted).toBe(2); // Should delete the 2-week-old and 1-month-old sessions
       expect(result.skipped).toBe(2); // Current session + recent session should be skipped
@@ -213,6 +217,7 @@ describe('Session Cleanup', () => {
       const result = await cleanupExpiredSessions(config, settings);
 
       // Should delete all sessions except the current one
+      expect(result.disabled).toBe(false);
       expect(result.deleted).toBe(3);
 
       // Verify that unlink was never called with the current session file
@@ -252,6 +257,7 @@ describe('Session Cleanup', () => {
 
       const result = await cleanupExpiredSessions(config, settings);
 
+      expect(result.disabled).toBe(false);
       expect(result.scanned).toBe(4);
       expect(result.deleted).toBe(2); // Should delete 2 oldest sessions (after skipping the current one)
       expect(result.skipped).toBe(2); // Current session + 1 recent session should be kept
@@ -282,6 +288,7 @@ describe('Session Cleanup', () => {
 
       const result = await cleanupExpiredSessions(config, settings);
 
+      expect(result.disabled).toBe(false);
       expect(result.scanned).toBe(4);
       expect(result.deleted).toBe(0);
       expect(result.errors.length).toBeGreaterThan(0);
@@ -310,6 +317,7 @@ describe('Session Cleanup', () => {
 
       const result = await cleanupExpiredSessions(config, settings);
 
+      expect(result.disabled).toBe(false);
       expect(result.errors.length).toBeGreaterThan(0);
       expect(result.errors[0].error).toContain(
         'Invalid session file structure',
@@ -331,6 +339,7 @@ describe('Session Cleanup', () => {
 
       const result = await cleanupExpiredSessions(config, settings);
 
+      expect(result.disabled).toBe(false);
       expect(result.scanned).toBe(0);
       expect(result.deleted).toBe(0);
       expect(result.skipped).toBe(0);
@@ -359,6 +368,7 @@ describe('Session Cleanup', () => {
 
       const result = await cleanupExpiredSessions(config, settings);
 
+      expect(result.disabled).toBe(false);
       expect(result.errors).toHaveLength(1);
       expect(result.errors[0].sessionId).toBe('global');
       expect(result.errors[0].error).toContain('Directory access failed');
@@ -385,6 +395,7 @@ describe('Session Cleanup', () => {
       const result = await cleanupExpiredSessions(config, settings);
 
       // Should disable cleanup due to minRetention violation
+      expect(result.disabled).toBe(true);
       expect(result.scanned).toBe(0);
       expect(result.deleted).toBe(0);
     });
@@ -515,6 +526,7 @@ describe('Session Cleanup', () => {
       const result = await cleanupExpiredSessions(config, settings);
 
       // Should delete sessions older than 7 days (8d and 15d sessions)
+      expect(result.disabled).toBe(false);
       expect(result.scanned).toBe(4);
       expect(result.deleted).toBe(2);
       expect(result.skipped).toBe(2); // Current + 5d session
@@ -631,6 +643,7 @@ describe('Session Cleanup', () => {
       const result = await cleanupExpiredSessions(config, settings);
 
       // Should NOT delete any sessions as all are within 14 days
+      expect(result.disabled).toBe(false);
       expect(result.scanned).toBe(4);
       expect(result.deleted).toBe(0);
       expect(result.skipped).toBe(4);
@@ -702,6 +715,7 @@ describe('Session Cleanup', () => {
       const result = await cleanupExpiredSessions(config, settings);
 
       // Should keep current + 2 most recent (1d and 2d), delete 3d, 4d, 5d
+      expect(result.disabled).toBe(false);
       expect(result.scanned).toBe(6);
       expect(result.deleted).toBe(3);
       expect(result.skipped).toBe(3);
@@ -855,6 +869,7 @@ describe('Session Cleanup', () => {
       // Should delete:
       // - session12d (exceeds maxAge of 10d)
       // - session7d and session5d (exceed maxCount of 2, keeping current + 3d)
+      expect(result.disabled).toBe(false);
       expect(result.scanned).toBe(5);
       expect(result.deleted).toBe(3);
       expect(result.skipped).toBe(2); // Current + 3d session
@@ -926,6 +941,8 @@ describe('Session Cleanup', () => {
           sessionRetention: {
             enabled: true,
             maxAge: input,
+            // Set minRetention to 1h to allow testing of hour-based maxAge values
+            minRetention: '1h',
           },
         },
       };
@@ -934,6 +951,7 @@ describe('Session Cleanup', () => {
 
       // If it parses correctly, cleanup should proceed without error
       const result = await cleanupExpiredSessions(config, settings);
+      expect(result.disabled).toBe(false);
       expect(result.errors).toHaveLength(0);
     });
 
@@ -967,6 +985,7 @@ describe('Session Cleanup', () => {
 
       const result = await cleanupExpiredSessions(config, settings);
 
+      expect(result.disabled).toBe(true);
       expect(result.scanned).toBe(0);
       expect(debugSpy).toHaveBeenCalledWith(
         expect.stringContaining(
@@ -997,6 +1016,7 @@ describe('Session Cleanup', () => {
 
       const result = await cleanupExpiredSessions(config, settings);
 
+      expect(result.disabled).toBe(true);
       expect(result.scanned).toBe(0);
       // Empty string means no valid retention method specified
       expect(debugSpy).toHaveBeenCalledWith(
@@ -1021,6 +1041,7 @@ describe('Session Cleanup', () => {
       mockGetSessionFiles.mockResolvedValue([]);
 
       const result = await cleanupExpiredSessions(config, settings);
+      expect(result.disabled).toBe(false);
       expect(result.errors).toHaveLength(0);
     });
 
@@ -1044,6 +1065,7 @@ describe('Session Cleanup', () => {
       const result = await cleanupExpiredSessions(config, settings);
 
       // Since maxAge (5d) > default minRetention (1d), this should succeed
+      expect(result.disabled).toBe(false);
       expect(result.errors).toHaveLength(0);
     });
   });
@@ -1066,6 +1088,7 @@ describe('Session Cleanup', () => {
 
       const result = await cleanupExpiredSessions(config, settings);
 
+      expect(result.disabled).toBe(true);
       expect(result.scanned).toBe(0);
       expect(debugSpy).toHaveBeenCalledWith(
         expect.stringContaining('Either maxAge or maxCount must be specified'),
@@ -1091,6 +1114,7 @@ describe('Session Cleanup', () => {
 
       const result = await cleanupExpiredSessions(config, settings);
 
+      expect(result.disabled).toBe(true);
       expect(result.scanned).toBe(0);
       expect(debugSpy).toHaveBeenCalledWith(
         expect.stringContaining('maxCount must be at least 1'),
@@ -1119,6 +1143,7 @@ describe('Session Cleanup', () => {
 
         const result = await cleanupExpiredSessions(config, settings);
 
+        expect(result.disabled).toBe(true);
         expect(result.scanned).toBe(0);
         expect(debugSpy).toHaveBeenCalledWith(
           expect.stringContaining('Invalid retention period format: 30'),
@@ -1146,6 +1171,7 @@ describe('Session Cleanup', () => {
 
         const result = await cleanupExpiredSessions(config, settings);
 
+        expect(result.disabled).toBe(true);
         expect(result.scanned).toBe(0);
         expect(debugSpy).toHaveBeenCalledWith(
           expect.stringContaining('Invalid retention period format: 30x'),
@@ -1173,6 +1199,7 @@ describe('Session Cleanup', () => {
 
         const result = await cleanupExpiredSessions(config, settings);
 
+        expect(result.disabled).toBe(true);
         expect(result.scanned).toBe(0);
         expect(debugSpy).toHaveBeenCalledWith(
           expect.stringContaining('Invalid retention period format: d'),
@@ -1200,6 +1227,7 @@ describe('Session Cleanup', () => {
 
         const result = await cleanupExpiredSessions(config, settings);
 
+        expect(result.disabled).toBe(true);
         expect(result.scanned).toBe(0);
         expect(debugSpy).toHaveBeenCalledWith(
           expect.stringContaining('Invalid retention period format: 1.5d'),
@@ -1227,6 +1255,7 @@ describe('Session Cleanup', () => {
 
         const result = await cleanupExpiredSessions(config, settings);
 
+        expect(result.disabled).toBe(true);
         expect(result.scanned).toBe(0);
         expect(debugSpy).toHaveBeenCalledWith(
           expect.stringContaining('Invalid retention period format: -5d'),
@@ -1252,6 +1281,7 @@ describe('Session Cleanup', () => {
         const result = await cleanupExpiredSessions(config, settings);
 
         // Should not reject the configuration
+        expect(result.disabled).toBe(false);
         expect(result.scanned).toBe(0);
         expect(result.errors).toHaveLength(0);
       });
@@ -1272,6 +1302,7 @@ describe('Session Cleanup', () => {
         const result = await cleanupExpiredSessions(config, settings);
 
         // Should not reject the configuration
+        expect(result.disabled).toBe(false);
         expect(result.scanned).toBe(0);
         expect(result.errors).toHaveLength(0);
       });
@@ -1292,6 +1323,7 @@ describe('Session Cleanup', () => {
         const result = await cleanupExpiredSessions(config, settings);
 
         // Should not reject the configuration
+        expect(result.disabled).toBe(false);
         expect(result.scanned).toBe(0);
         expect(result.errors).toHaveLength(0);
       });
@@ -1312,6 +1344,7 @@ describe('Session Cleanup', () => {
         const result = await cleanupExpiredSessions(config, settings);
 
         // Should not reject the configuration
+        expect(result.disabled).toBe(false);
         expect(result.scanned).toBe(0);
         expect(result.errors).toHaveLength(0);
       });
@@ -1337,6 +1370,7 @@ describe('Session Cleanup', () => {
 
         const result = await cleanupExpiredSessions(config, settings);
 
+        expect(result.disabled).toBe(true);
         expect(result.scanned).toBe(0);
         expect(debugSpy).toHaveBeenCalledWith(
           expect.stringContaining(
@@ -1367,6 +1401,7 @@ describe('Session Cleanup', () => {
 
         const result = await cleanupExpiredSessions(config, settings);
 
+        expect(result.disabled).toBe(true);
         expect(result.scanned).toBe(0);
         expect(debugSpy).toHaveBeenCalledWith(
           expect.stringContaining(
@@ -1394,6 +1429,7 @@ describe('Session Cleanup', () => {
         const result = await cleanupExpiredSessions(config, settings);
 
         // Should not reject the configuration
+        expect(result.disabled).toBe(false);
         expect(result.scanned).toBe(0);
         expect(result.errors).toHaveLength(0);
       });
@@ -1415,6 +1451,7 @@ describe('Session Cleanup', () => {
         const result = await cleanupExpiredSessions(config, settings);
 
         // Should not reject the configuration
+        expect(result.disabled).toBe(false);
         expect(result.scanned).toBe(0);
         expect(result.errors).toHaveLength(0);
       });
@@ -1440,6 +1477,7 @@ describe('Session Cleanup', () => {
         const result = await cleanupExpiredSessions(config, settings);
 
         // Should not reject due to minRetention (falls back to default)
+        expect(result.disabled).toBe(false);
         expect(result.scanned).toBe(0);
         expect(result.errors).toHaveLength(0);
       });
@@ -1462,6 +1500,7 @@ describe('Session Cleanup', () => {
         const result = await cleanupExpiredSessions(config, settings);
 
         // Should accept the configuration
+        expect(result.disabled).toBe(false);
         expect(result.scanned).toBe(0);
         expect(result.errors).toHaveLength(0);
       });
@@ -1482,6 +1521,7 @@ describe('Session Cleanup', () => {
         const result = await cleanupExpiredSessions(config, settings);
 
         // Should accept the configuration
+        expect(result.disabled).toBe(false);
         expect(result.scanned).toBe(0);
         expect(result.errors).toHaveLength(0);
       });
@@ -1505,6 +1545,7 @@ describe('Session Cleanup', () => {
 
         const result = await cleanupExpiredSessions(config, settings);
 
+        expect(result.disabled).toBe(true);
         expect(result.scanned).toBe(0);
         expect(debugSpy).toHaveBeenCalledWith(
           expect.stringContaining('maxCount must be at least 1'),
@@ -1529,6 +1570,7 @@ describe('Session Cleanup', () => {
         const result = await cleanupExpiredSessions(config, settings);
 
         // Should accept the configuration
+        expect(result.disabled).toBe(false);
         expect(result.scanned).toBe(0);
         expect(result.errors).toHaveLength(0);
       });
@@ -1552,6 +1594,7 @@ describe('Session Cleanup', () => {
         const result = await cleanupExpiredSessions(config, settings);
 
         // Should accept the configuration
+        expect(result.disabled).toBe(false);
         expect(result.scanned).toBe(0);
         expect(result.errors).toHaveLength(0);
       });
@@ -1576,6 +1619,7 @@ describe('Session Cleanup', () => {
 
         const result = await cleanupExpiredSessions(config, settings);
 
+        expect(result.disabled).toBe(true);
         expect(result.scanned).toBe(0);
         // Should fail on first validation error (maxAge format)
         expect(debugSpy).toHaveBeenCalledWith(
@@ -1607,6 +1651,7 @@ describe('Session Cleanup', () => {
         const result = await cleanupExpiredSessions(config, settings);
 
         // Should reject due to invalid maxAge format
+        expect(result.disabled).toBe(true);
         expect(result.scanned).toBe(0);
         expect(debugSpy).toHaveBeenCalledWith(
           expect.stringContaining('Invalid retention period format'),
