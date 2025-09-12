@@ -123,7 +123,7 @@ describe('Session Cleanup', () => {
       expect(result.scanned).toBe(0);
       expect(result.deleted).toBe(0);
       expect(result.skipped).toBe(0);
-      expect(result.errors).toHaveLength(0);
+      expect(result.failed).toBe(0);
     });
 
     it('should return early when sessionRetention is not configured', async () => {
@@ -150,20 +150,20 @@ describe('Session Cleanup', () => {
         },
       };
 
-      const debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
       const result = await cleanupExpiredSessions(config, settings);
 
       expect(result.disabled).toBe(true);
       expect(result.scanned).toBe(0);
       expect(result.deleted).toBe(0);
-      expect(debugSpy).toHaveBeenCalledWith(
+      expect(errorSpy).toHaveBeenCalledWith(
         expect.stringContaining(
           'Session cleanup disabled: Error: Invalid retention period format',
         ),
       );
 
-      debugSpy.mockRestore();
+      errorSpy.mockRestore();
     });
 
     it('should delete sessions older than maxAge', async () => {
@@ -195,7 +195,7 @@ describe('Session Cleanup', () => {
       expect(result.scanned).toBe(4);
       expect(result.deleted).toBe(2); // Should delete the 2-week-old and 1-month-old sessions
       expect(result.skipped).toBe(2); // Current session + recent session should be skipped
-      expect(result.errors).toHaveLength(0);
+      expect(result.failed).toBe(0);
     });
 
     it('should never delete current session', async () => {
@@ -298,8 +298,7 @@ describe('Session Cleanup', () => {
       expect(result.disabled).toBe(false);
       expect(result.scanned).toBe(4);
       expect(result.deleted).toBe(0);
-      expect(result.errors.length).toBeGreaterThan(0);
-      expect(result.errors[0].error).toContain('Permission denied');
+      expect(result.failed).toBeGreaterThan(0);
     });
 
     it('should handle empty sessions directory', async () => {
@@ -321,13 +320,11 @@ describe('Session Cleanup', () => {
       expect(result.scanned).toBe(0);
       expect(result.deleted).toBe(0);
       expect(result.skipped).toBe(0);
-      expect(result.errors).toHaveLength(0);
+      expect(result.failed).toBe(0);
     });
 
     it('should handle global errors gracefully', async () => {
-      const config = createMockConfig({
-        getDebugMode: vi.fn().mockReturnValue(true),
-      });
+      const config = createMockConfig();
       const settings: Settings = {
         general: {
           sessionRetention: {
@@ -337,25 +334,22 @@ describe('Session Cleanup', () => {
         },
       };
 
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
       // Mock getSessionFiles to throw an error
       mockGetAllSessionFiles.mockRejectedValue(
         new Error('Directory access failed'),
       );
 
-      const debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
-
       const result = await cleanupExpiredSessions(config, settings);
 
       expect(result.disabled).toBe(false);
-      expect(result.errors).toHaveLength(1);
-      expect(result.errors[0].sessionId).toBe('global');
-      expect(result.errors[0].error).toContain('Directory access failed');
-      expect(debugSpy).toHaveBeenCalledWith(
-        'Session cleanup failed:',
-        expect.any(Error),
+      expect(result.failed).toBe(1);
+      expect(errorSpy).toHaveBeenCalledWith(
+        'Session cleanup failed: Directory access failed',
       );
 
-      debugSpy.mockRestore();
+      errorSpy.mockRestore();
     });
 
     it('should respect minRetention configuration', async () => {
@@ -635,7 +629,7 @@ describe('Session Cleanup', () => {
       expect(result.scanned).toBe(4);
       expect(result.deleted).toBe(0);
       expect(result.skipped).toBe(4);
-      expect(result.errors).toHaveLength(0);
+      expect(result.failed).toBe(0);
 
       // Verify no files were deleted
       expect(mockFs.unlink).not.toHaveBeenCalled();
@@ -950,7 +944,7 @@ describe('Session Cleanup', () => {
       // If it parses correctly, cleanup should proceed without error
       const result = await cleanupExpiredSessions(config, settings);
       expect(result.disabled).toBe(false);
-      expect(result.errors).toHaveLength(0);
+      expect(result.failed).toBe(0);
     });
 
     // Test invalid formats
@@ -979,13 +973,13 @@ describe('Session Cleanup', () => {
         },
       };
 
-      const debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
       const result = await cleanupExpiredSessions(config, settings);
 
       expect(result.disabled).toBe(true);
       expect(result.scanned).toBe(0);
-      expect(debugSpy).toHaveBeenCalledWith(
+      expect(errorSpy).toHaveBeenCalledWith(
         expect.stringContaining(
           input === '0d'
             ? 'Invalid retention period: 0d. Value must be greater than 0'
@@ -993,7 +987,7 @@ describe('Session Cleanup', () => {
         ),
       );
 
-      debugSpy.mockRestore();
+      errorSpy.mockRestore();
     });
 
     // Test special case - empty string
@@ -1010,18 +1004,18 @@ describe('Session Cleanup', () => {
         },
       };
 
-      const debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
       const result = await cleanupExpiredSessions(config, settings);
 
       expect(result.disabled).toBe(true);
       expect(result.scanned).toBe(0);
       // Empty string means no valid retention method specified
-      expect(debugSpy).toHaveBeenCalledWith(
+      expect(errorSpy).toHaveBeenCalledWith(
         expect.stringContaining('Either maxAge or maxCount must be specified'),
       );
 
-      debugSpy.mockRestore();
+      errorSpy.mockRestore();
     });
 
     // Test edge cases
@@ -1040,7 +1034,7 @@ describe('Session Cleanup', () => {
 
       const result = await cleanupExpiredSessions(config, settings);
       expect(result.disabled).toBe(false);
-      expect(result.errors).toHaveLength(0);
+      expect(result.failed).toBe(0);
     });
 
     it('should validate minRetention format', async () => {
@@ -1064,7 +1058,7 @@ describe('Session Cleanup', () => {
 
       // Since maxAge (5d) > default minRetention (1d), this should succeed
       expect(result.disabled).toBe(false);
-      expect(result.errors).toHaveLength(0);
+      expect(result.failed).toBe(0);
     });
   });
 
@@ -1082,17 +1076,17 @@ describe('Session Cleanup', () => {
         },
       };
 
-      const debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
       const result = await cleanupExpiredSessions(config, settings);
 
       expect(result.disabled).toBe(true);
       expect(result.scanned).toBe(0);
-      expect(debugSpy).toHaveBeenCalledWith(
+      expect(errorSpy).toHaveBeenCalledWith(
         expect.stringContaining('Either maxAge or maxCount must be specified'),
       );
 
-      debugSpy.mockRestore();
+      errorSpy.mockRestore();
     });
 
     it('should validate maxCount range', async () => {
@@ -1108,17 +1102,17 @@ describe('Session Cleanup', () => {
         },
       };
 
-      const debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
       const result = await cleanupExpiredSessions(config, settings);
 
       expect(result.disabled).toBe(true);
       expect(result.scanned).toBe(0);
-      expect(debugSpy).toHaveBeenCalledWith(
+      expect(errorSpy).toHaveBeenCalledWith(
         expect.stringContaining('maxCount must be at least 1'),
       );
 
-      debugSpy.mockRestore();
+      errorSpy.mockRestore();
     });
 
     describe('maxAge format validation', () => {
@@ -1135,19 +1129,19 @@ describe('Session Cleanup', () => {
           },
         };
 
-        const debugSpy = vi
-          .spyOn(console, 'debug')
+        const errorSpy = vi
+          .spyOn(console, 'error')
           .mockImplementation(() => {});
 
         const result = await cleanupExpiredSessions(config, settings);
 
         expect(result.disabled).toBe(true);
         expect(result.scanned).toBe(0);
-        expect(debugSpy).toHaveBeenCalledWith(
+        expect(errorSpy).toHaveBeenCalledWith(
           expect.stringContaining('Invalid retention period format: 30'),
         );
 
-        debugSpy.mockRestore();
+        errorSpy.mockRestore();
       });
 
       it('should reject invalid maxAge format - invalid unit', async () => {
@@ -1163,19 +1157,19 @@ describe('Session Cleanup', () => {
           },
         };
 
-        const debugSpy = vi
-          .spyOn(console, 'debug')
+        const errorSpy = vi
+          .spyOn(console, 'error')
           .mockImplementation(() => {});
 
         const result = await cleanupExpiredSessions(config, settings);
 
         expect(result.disabled).toBe(true);
         expect(result.scanned).toBe(0);
-        expect(debugSpy).toHaveBeenCalledWith(
+        expect(errorSpy).toHaveBeenCalledWith(
           expect.stringContaining('Invalid retention period format: 30x'),
         );
 
-        debugSpy.mockRestore();
+        errorSpy.mockRestore();
       });
 
       it('should reject invalid maxAge format - no number', async () => {
@@ -1191,19 +1185,19 @@ describe('Session Cleanup', () => {
           },
         };
 
-        const debugSpy = vi
-          .spyOn(console, 'debug')
+        const errorSpy = vi
+          .spyOn(console, 'error')
           .mockImplementation(() => {});
 
         const result = await cleanupExpiredSessions(config, settings);
 
         expect(result.disabled).toBe(true);
         expect(result.scanned).toBe(0);
-        expect(debugSpy).toHaveBeenCalledWith(
+        expect(errorSpy).toHaveBeenCalledWith(
           expect.stringContaining('Invalid retention period format: d'),
         );
 
-        debugSpy.mockRestore();
+        errorSpy.mockRestore();
       });
 
       it('should reject invalid maxAge format - decimal number', async () => {
@@ -1219,19 +1213,19 @@ describe('Session Cleanup', () => {
           },
         };
 
-        const debugSpy = vi
-          .spyOn(console, 'debug')
+        const errorSpy = vi
+          .spyOn(console, 'error')
           .mockImplementation(() => {});
 
         const result = await cleanupExpiredSessions(config, settings);
 
         expect(result.disabled).toBe(true);
         expect(result.scanned).toBe(0);
-        expect(debugSpy).toHaveBeenCalledWith(
+        expect(errorSpy).toHaveBeenCalledWith(
           expect.stringContaining('Invalid retention period format: 1.5d'),
         );
 
-        debugSpy.mockRestore();
+        errorSpy.mockRestore();
       });
 
       it('should reject invalid maxAge format - negative number', async () => {
@@ -1247,19 +1241,19 @@ describe('Session Cleanup', () => {
           },
         };
 
-        const debugSpy = vi
-          .spyOn(console, 'debug')
+        const errorSpy = vi
+          .spyOn(console, 'error')
           .mockImplementation(() => {});
 
         const result = await cleanupExpiredSessions(config, settings);
 
         expect(result.disabled).toBe(true);
         expect(result.scanned).toBe(0);
-        expect(debugSpy).toHaveBeenCalledWith(
+        expect(errorSpy).toHaveBeenCalledWith(
           expect.stringContaining('Invalid retention period format: -5d'),
         );
 
-        debugSpy.mockRestore();
+        errorSpy.mockRestore();
       });
 
       it('should accept valid maxAge format - hours', async () => {
@@ -1281,7 +1275,7 @@ describe('Session Cleanup', () => {
         // Should not reject the configuration
         expect(result.disabled).toBe(false);
         expect(result.scanned).toBe(0);
-        expect(result.errors).toHaveLength(0);
+        expect(result.failed).toBe(0);
       });
 
       it('should accept valid maxAge format - days', async () => {
@@ -1302,7 +1296,7 @@ describe('Session Cleanup', () => {
         // Should not reject the configuration
         expect(result.disabled).toBe(false);
         expect(result.scanned).toBe(0);
-        expect(result.errors).toHaveLength(0);
+        expect(result.failed).toBe(0);
       });
 
       it('should accept valid maxAge format - weeks', async () => {
@@ -1323,7 +1317,7 @@ describe('Session Cleanup', () => {
         // Should not reject the configuration
         expect(result.disabled).toBe(false);
         expect(result.scanned).toBe(0);
-        expect(result.errors).toHaveLength(0);
+        expect(result.failed).toBe(0);
       });
 
       it('should accept valid maxAge format - months', async () => {
@@ -1344,7 +1338,7 @@ describe('Session Cleanup', () => {
         // Should not reject the configuration
         expect(result.disabled).toBe(false);
         expect(result.scanned).toBe(0);
-        expect(result.errors).toHaveLength(0);
+        expect(result.failed).toBe(0);
       });
     });
 
@@ -1362,21 +1356,21 @@ describe('Session Cleanup', () => {
           },
         };
 
-        const debugSpy = vi
-          .spyOn(console, 'debug')
+        const errorSpy = vi
+          .spyOn(console, 'error')
           .mockImplementation(() => {});
 
         const result = await cleanupExpiredSessions(config, settings);
 
         expect(result.disabled).toBe(true);
         expect(result.scanned).toBe(0);
-        expect(debugSpy).toHaveBeenCalledWith(
+        expect(errorSpy).toHaveBeenCalledWith(
           expect.stringContaining(
             'maxAge cannot be less than minRetention (1d)',
           ),
         );
 
-        debugSpy.mockRestore();
+        errorSpy.mockRestore();
       });
 
       it('should reject maxAge less than custom minRetention', async () => {
@@ -1393,21 +1387,21 @@ describe('Session Cleanup', () => {
           },
         };
 
-        const debugSpy = vi
-          .spyOn(console, 'debug')
+        const errorSpy = vi
+          .spyOn(console, 'error')
           .mockImplementation(() => {});
 
         const result = await cleanupExpiredSessions(config, settings);
 
         expect(result.disabled).toBe(true);
         expect(result.scanned).toBe(0);
-        expect(debugSpy).toHaveBeenCalledWith(
+        expect(errorSpy).toHaveBeenCalledWith(
           expect.stringContaining(
             'maxAge cannot be less than minRetention (3d)',
           ),
         );
 
-        debugSpy.mockRestore();
+        errorSpy.mockRestore();
       });
 
       it('should accept maxAge equal to minRetention', async () => {
@@ -1429,7 +1423,7 @@ describe('Session Cleanup', () => {
         // Should not reject the configuration
         expect(result.disabled).toBe(false);
         expect(result.scanned).toBe(0);
-        expect(result.errors).toHaveLength(0);
+        expect(result.failed).toBe(0);
       });
 
       it('should accept maxAge greater than minRetention', async () => {
@@ -1451,7 +1445,7 @@ describe('Session Cleanup', () => {
         // Should not reject the configuration
         expect(result.disabled).toBe(false);
         expect(result.scanned).toBe(0);
-        expect(result.errors).toHaveLength(0);
+        expect(result.failed).toBe(0);
       });
 
       it('should handle invalid minRetention format gracefully', async () => {
@@ -1477,7 +1471,7 @@ describe('Session Cleanup', () => {
         // Should not reject due to minRetention (falls back to default)
         expect(result.disabled).toBe(false);
         expect(result.scanned).toBe(0);
-        expect(result.errors).toHaveLength(0);
+        expect(result.failed).toBe(0);
       });
     });
 
@@ -1500,7 +1494,7 @@ describe('Session Cleanup', () => {
         // Should accept the configuration
         expect(result.disabled).toBe(false);
         expect(result.scanned).toBe(0);
-        expect(result.errors).toHaveLength(0);
+        expect(result.failed).toBe(0);
       });
 
       it('should accept maxCount = 1000 (maximum valid)', async () => {
@@ -1521,7 +1515,7 @@ describe('Session Cleanup', () => {
         // Should accept the configuration
         expect(result.disabled).toBe(false);
         expect(result.scanned).toBe(0);
-        expect(result.errors).toHaveLength(0);
+        expect(result.failed).toBe(0);
       });
 
       it('should reject negative maxCount', async () => {
@@ -1537,19 +1531,19 @@ describe('Session Cleanup', () => {
           },
         };
 
-        const debugSpy = vi
-          .spyOn(console, 'debug')
+        const errorSpy = vi
+          .spyOn(console, 'error')
           .mockImplementation(() => {});
 
         const result = await cleanupExpiredSessions(config, settings);
 
         expect(result.disabled).toBe(true);
         expect(result.scanned).toBe(0);
-        expect(debugSpy).toHaveBeenCalledWith(
+        expect(errorSpy).toHaveBeenCalledWith(
           expect.stringContaining('maxCount must be at least 1'),
         );
 
-        debugSpy.mockRestore();
+        errorSpy.mockRestore();
       });
 
       it('should accept valid maxCount in normal range', async () => {
@@ -1570,7 +1564,7 @@ describe('Session Cleanup', () => {
         // Should accept the configuration
         expect(result.disabled).toBe(false);
         expect(result.scanned).toBe(0);
-        expect(result.errors).toHaveLength(0);
+        expect(result.failed).toBe(0);
       });
     });
 
@@ -1594,7 +1588,7 @@ describe('Session Cleanup', () => {
         // Should accept the configuration
         expect(result.disabled).toBe(false);
         expect(result.scanned).toBe(0);
-        expect(result.errors).toHaveLength(0);
+        expect(result.failed).toBe(0);
       });
 
       it('should reject if both maxAge and maxCount are invalid', async () => {
@@ -1611,8 +1605,8 @@ describe('Session Cleanup', () => {
           },
         };
 
-        const debugSpy = vi
-          .spyOn(console, 'debug')
+        const errorSpy = vi
+          .spyOn(console, 'error')
           .mockImplementation(() => {});
 
         const result = await cleanupExpiredSessions(config, settings);
@@ -1620,11 +1614,11 @@ describe('Session Cleanup', () => {
         expect(result.disabled).toBe(true);
         expect(result.scanned).toBe(0);
         // Should fail on first validation error (maxAge format)
-        expect(debugSpy).toHaveBeenCalledWith(
+        expect(errorSpy).toHaveBeenCalledWith(
           expect.stringContaining('Invalid retention period format'),
         );
 
-        debugSpy.mockRestore();
+        errorSpy.mockRestore();
       });
 
       it('should reject if maxAge is invalid even when maxCount is valid', async () => {
@@ -1642,8 +1636,8 @@ describe('Session Cleanup', () => {
         };
 
         // The validation logic rejects invalid maxAge format even if maxCount is valid
-        const debugSpy = vi
-          .spyOn(console, 'debug')
+        const errorSpy = vi
+          .spyOn(console, 'error')
           .mockImplementation(() => {});
 
         const result = await cleanupExpiredSessions(config, settings);
@@ -1651,11 +1645,11 @@ describe('Session Cleanup', () => {
         // Should reject due to invalid maxAge format
         expect(result.disabled).toBe(true);
         expect(result.scanned).toBe(0);
-        expect(debugSpy).toHaveBeenCalledWith(
+        expect(errorSpy).toHaveBeenCalledWith(
           expect.stringContaining('Invalid retention period format'),
         );
 
-        debugSpy.mockRestore();
+        errorSpy.mockRestore();
       });
     });
 
@@ -1680,9 +1674,7 @@ describe('Session Cleanup', () => {
 
       expect(result).toBeDefined();
       expect(result.disabled).toBe(false);
-      expect(result.errors).toHaveLength(1);
-      expect(result.errors[0].sessionId).toBe('global');
-      expect(result.errors[0].error).toContain('Failed to read directory');
+      expect(result.failed).toBe(1);
     });
 
     it('should delete corrupted session files', async () => {
@@ -1747,9 +1739,7 @@ describe('Session Cleanup', () => {
 
       expect(result).toBeDefined();
       expect(result.disabled).toBe(false);
-      expect(result.errors).toHaveLength(1);
-      expect(result.errors[0].sessionId).toBe('global');
-      expect(result.errors[0].error).toBe('Unknown error');
+      expect(result.failed).toBe(1);
     });
   });
 });
