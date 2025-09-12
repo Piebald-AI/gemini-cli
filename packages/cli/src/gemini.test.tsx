@@ -238,6 +238,7 @@ describe('gemini.tsx main function kitty protocol', () => {
       resume: undefined,
       listSessions: undefined,
       deleteSession: undefined,
+      outputFormat: undefined,
     });
 
     await main();

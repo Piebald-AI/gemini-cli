@@ -11,6 +11,7 @@ import type {
   ConsoleMessageItem,
   ShellConfirmationRequest,
   ConfirmationRequest,
+  LoopDetectionConfirmationRequest,
   HistoryItemWithoutId,
   StreamingState,
 } from '../types.js';
@@ -54,6 +55,7 @@ export interface UIState {
   commandContext: CommandContext;
   shellConfirmationRequest: ShellConfirmationRequest | null;
   confirmationRequest: ConfirmationRequest | null;
+  loopDetectionConfirmationRequest: LoopDetectionConfirmationRequest | null;
   geminiMdFileCount: number;
   streamingState: StreamingState;
   initError: string | null;
@@ -107,6 +109,8 @@ export interface UIState {
   updateInfo: UpdateObject | null;
   showIdeRestartPrompt: boolean;
   isRestarting: boolean;
+  activePtyId: number | undefined;
+  shellFocused: boolean;
 }
 
 export const UIStateContext = createContext<UIState | null>(null);
