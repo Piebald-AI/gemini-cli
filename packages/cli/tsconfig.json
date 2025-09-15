@@ -46,7 +46,6 @@
     "src/ui/commands/restoreCommand.test.ts",
     "src/ui/commands/settingsCommand.test.ts",
     "src/ui/commands/themeCommand.test.ts",
-    "src/ui/commands/chatCommand.test.ts",
     "src/ui/commands/directoryCommand.test.tsx",
     "src/ui/commands/ideCommand.test.ts",
     "src/ui/commands/initCommand.test.ts",
