@@ -21,6 +21,10 @@ Slash commands provide meta-level control over the CLI itself.
     - **Resume:** Select any session to resume and continue the conversation
   - **Note:** All conversations are automatically saved as you chat - no manual saving required. See [Chat Recording](../chat-recording.md) for complete details.
 
+- **`/share`**
+  - **Description:** Writes the current conversation to a provided Markdown or JSON file.
+  - **Usage:** `/share file.md` or `/share file.json`. If no filename is provided, then the CLI will generate one.
+
 - **`/clear`**
   - **Description:** Clear the terminal screen, including the visible session history and scrollback within the CLI. The underlying session data (for history recall) might be preserved depending on the exact implementation, but the visual display is cleared.
   - **Keyboard shortcut:** Press **Ctrl+L** at any time to perform a clear action.
@@ -369,6 +373,16 @@ That's it! You can now run your command in the CLI. First, you might add a file 
 ```
 
 Gemini CLI will then execute the multi-line prompt defined in your TOML file.
+
+## Input Prompt Shortcuts
+
+These shortcuts apply directly to the input prompt for text manipulation.
+
+- **Undo:**
+  - **Keyboard shortcut:** Press **Ctrl+z** to undo the last action in the input prompt.
+
+- **Redo:**
+  - **Keyboard shortcut:** Press **Ctrl+Shift+Z** to redo the last undone action in the input prompt.
 
 ## At commands (`@`)
 

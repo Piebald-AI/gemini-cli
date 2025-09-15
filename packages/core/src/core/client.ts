@@ -12,6 +12,7 @@ import type {
   Tool,
   GenerateContentResponse,
 } from '@google/genai';
+import { createUserContent } from '@google/genai';
 import {
   getDirectoryContextString,
   getEnvironmentContext,
@@ -36,7 +37,10 @@ import type {
 import type { ContentGenerator } from './contentGenerator.js';
 import {
   DEFAULT_GEMINI_FLASH_MODEL,
+  DEFAULT_GEMINI_MODEL,
+  DEFAULT_GEMINI_MODEL_AUTO,
   DEFAULT_THINKING_MODE,
+  getEffectiveModel,
 } from '../config/models.js';
 import { LoopDetectionService } from '../services/loopDetectionService.js';
 import { ideContextStore } from '../ide/ideContext.js';
@@ -55,14 +59,14 @@ import { handleFallback } from '../fallback/handler.js';
 import type { RoutingContext } from '../routing/routingStrategy.js';
 
 export function isThinkingSupported(model: string) {
-  if (model.startsWith('gemini-2.5')) return true;
-  return false;
+  return model.startsWith('gemini-2.5') || model === DEFAULT_GEMINI_MODEL_AUTO;
 }
 
 export function isThinkingDefault(model: string) {
-  if (model.startsWith('gemini-2.5-flash-lite')) return false;
-  if (model.startsWith('gemini-2.5')) return true;
-  return false;
+  if (model.startsWith('gemini-2.5-flash-lite')) {
+    return false;
+  }
+  return model.startsWith('gemini-2.5') || model === DEFAULT_GEMINI_MODEL_AUTO;
 }
 
 /**
@@ -240,23 +244,21 @@ export class GeminiClient {
       const userMemory = this.config.getUserMemory();
       const systemInstruction = getCoreSystemPrompt(userMemory);
       const model = this.config.getModel();
-      const generateContentConfigWithThinking = isThinkingSupported(model)
-        ? {
-            ...this.generateContentConfig,
-            thinkingConfig: {
-              thinkingBudget: -1,
-              includeThoughts: true,
-              ...(!isThinkingDefault(model)
-                ? { thinkingBudget: DEFAULT_THINKING_MODE }
-                : {}),
-            },
-          }
-        : this.generateContentConfig;
+
+      const config: GenerateContentConfig = { ...this.generateContentConfig };
+
+      if (isThinkingSupported(model)) {
+        config.thinkingConfig = {
+          includeThoughts: true,
+          thinkingBudget: DEFAULT_THINKING_MODE,
+        };
+      }
+
       return new GeminiChat(
         this.config,
         {
           systemInstruction,
-          ...generateContentConfigWithThinking,
+          ...config,
           tools,
         },
         history,
@@ -466,7 +468,7 @@ export class GeminiClient {
       return new Turn(this.getChat(), prompt_id);
     }
 
-    const compressed = await this.tryCompressChat(prompt_id);
+    const compressed = await this.tryCompressChat(prompt_id, false, request);
 
     if (compressed.compressionStatus === CompressionStatus.COMPRESSED) {
       yield { type: GeminiEventType.ChatCompressed, value: compressed };
@@ -501,6 +503,9 @@ export class GeminiClient {
 
     const turn = new Turn(this.getChat(), prompt_id);
 
+    const controller = new AbortController();
+    const linkedSignal = AbortSignal.any([signal, controller.signal]);
+
     const loopDetected = await this.loopDetector.turnStarted(signal);
     if (loopDetected) {
       yield { type: GeminiEventType.LoopDetected };
@@ -526,10 +531,11 @@ export class GeminiClient {
       this.currentSequenceModel = modelToUse;
     }
 
-    const resultStream = turn.run(modelToUse, request, signal);
+    const resultStream = turn.run(modelToUse, request, linkedSignal);
     for await (const event of resultStream) {
       if (this.loopDetector.addAndCheck(event)) {
         yield { type: GeminiEventType.LoopDetected };
+        controller.abort();
         return turn;
       }
       yield event;
@@ -803,8 +809,25 @@ export class GeminiClient {
   async tryCompressChat(
     prompt_id: string,
     force: boolean = false,
+    request?: PartListUnion,
   ): Promise<ChatCompressionInfo> {
+    // If the model is 'auto', we will use a placeholder model to check.
+    // Compression occurs before we choose a model, so calling `count_tokens`
+    // before the model is chosen would result in an error.
+    const configModel = this.config.getModel();
+    let model: string =
+      configModel === DEFAULT_GEMINI_MODEL_AUTO
+        ? DEFAULT_GEMINI_MODEL
+        : configModel;
+
+    // Check if the model needs to be a fallback
+    model = getEffectiveModel(this.config.isInFallbackMode(), model);
+
     const curatedHistory = this.getChat().getHistory(true);
+
+    if (request) {
+      curatedHistory.push(createUserContent(request));
+    }
 
     // Regardless of `force`, don't do anything if the history is empty.
     if (
@@ -817,8 +840,6 @@ export class GeminiClient {
         compressionStatus: CompressionStatus.NOOP,
       };
     }
-
-    const model = this.config.getModel();
 
     const { totalTokens: originalTokenCount } =
       await this.getContentGeneratorOrFail().countTokens({

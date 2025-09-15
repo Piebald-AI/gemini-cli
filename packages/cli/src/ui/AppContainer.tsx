@@ -4,7 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
+import {
+  useMemo,
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+  useLayoutEffect,
+} from 'react';
 import { type DOMElement, measureElement } from 'ink';
 import { App } from './App.js';
 import { AppContext } from './contexts/AppContext.js';
@@ -82,6 +89,8 @@ import {
   convertSessionToHistoryFormats,
   useSessionBrowser,
 } from './hooks/useSessionBrowser.js';
+import type { ExtensionUpdateState } from './state/extensions.js';
+import { checkForAllExtensionUpdates } from '../config/extension.js';
 
 const CTRL_EXIT_PROMPT_DURATION_MS = 1000;
 
@@ -142,6 +151,9 @@ export const AppContainer = (props: AppContainerProps) => {
   const [updateInfo, setUpdateInfo] = useState<UpdateObject | null>(null);
   const [isTrustedFolder, setIsTrustedFolder] = useState<boolean | undefined>(
     config.isTrustedFolder(),
+  );
+  const [extensionsUpdateState, setExtensionsUpdateState] = useState(
+    new Map<string, ExtensionUpdateState>(),
   );
 
   // Helper to determine the effective model, considering the fallback state.
@@ -492,6 +504,7 @@ Logging in with Google... Please restart Gemini CLI to continue.
       },
       setDebugMessage,
       toggleCorgiMode: () => setCorgiMode((prev) => !prev),
+      setExtensionsUpdateState,
     }),
     [
       setAuthState,
@@ -503,6 +516,7 @@ Logging in with Google... Please restart Gemini CLI to continue.
       setDebugMessage,
       setShowPrivacyNotice,
       setCorgiMode,
+      setExtensionsUpdateState,
     ],
   );
 
@@ -524,6 +538,7 @@ Logging in with Google... Please restart Gemini CLI to continue.
     setIsProcessing,
     setGeminiMdFileCount,
     slashCommandActions,
+    extensionsUpdateState,
     isConfigInitialized,
   );
 
@@ -688,18 +703,27 @@ Logging in with Google... Please restart Gemini CLI to continue.
       streamingState === StreamingState.Responding) &&
     !proQuotaRequest;
 
-  // Compute available terminal height based on controls measurement
-  const availableTerminalHeight = useMemo(() => {
+  const [controlsHeight, setControlsHeight] = useState(0);
+
+  useLayoutEffect(() => {
     if (mainControlsRef.current) {
       const fullFooterMeasurement = measureElement(mainControlsRef.current);
-      return terminalHeight - fullFooterMeasurement.height - staticExtraHeight;
+      if (fullFooterMeasurement.height > 0) {
+        setControlsHeight(fullFooterMeasurement.height);
+      }
     }
-    return terminalHeight - staticExtraHeight;
-  }, [terminalHeight]);
+  }, [buffer, terminalWidth, terminalHeight]);
+
+  // Compute available terminal height based on controls measurement
+  const availableTerminalHeight =
+    terminalHeight - controlsHeight - staticExtraHeight;
 
   config.setShellExecutionConfig({
     terminalWidth: Math.floor(terminalWidth * SHELL_WIDTH_FRACTION),
-    terminalHeight: Math.floor(availableTerminalHeight - SHELL_HEIGHT_PADDING),
+    terminalHeight: Math.max(
+      Math.floor(availableTerminalHeight - SHELL_HEIGHT_PADDING),
+      1,
+    ),
     pager: settings.merged.tools?.shell?.pager,
     showColor: settings.merged.tools?.shell?.showColor,
   });
@@ -726,16 +750,10 @@ Logging in with Google... Please restart Gemini CLI to continue.
       ShellExecutionService.resizePty(
         activePtyId,
         Math.floor(terminalWidth * SHELL_WIDTH_FRACTION),
-        Math.floor(availableTerminalHeight - SHELL_HEIGHT_PADDING),
+        Math.max(Math.floor(availableTerminalHeight - SHELL_HEIGHT_PADDING), 1),
       );
     }
-  }, [
-    terminalHeight,
-    terminalWidth,
-    availableTerminalHeight,
-    activePtyId,
-    geminiClient,
-  ]);
+  }, [terminalWidth, availableTerminalHeight, activePtyId]);
 
   useEffect(() => {
     if (
@@ -1116,6 +1134,7 @@ Logging in with Google... Please restart Gemini CLI to continue.
       updateInfo,
       showIdeRestartPrompt,
       isRestarting,
+      extensionsUpdateState,
       activePtyId,
       shellFocused,
     }),
@@ -1192,6 +1211,7 @@ Logging in with Google... Please restart Gemini CLI to continue.
       showIdeRestartPrompt,
       isRestarting,
       currentModel,
+      extensionsUpdateState,
       activePtyId,
       shellFocused,
     ],
@@ -1252,6 +1272,11 @@ Logging in with Google... Please restart Gemini CLI to continue.
       handleDeleteSession,
     ],
   );
+
+  const extensions = config.getExtensions();
+  useEffect(() => {
+    checkForAllExtensionUpdates(extensions, setExtensionsUpdateState);
+  }, [extensions, setExtensionsUpdateState]);
 
   return (
     <UIStateContext.Provider value={uiState}>
