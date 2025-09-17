@@ -539,7 +539,13 @@ describe('useSlashCompletion', () => {
 
       await waitFor(() => {
         expect(mockCompletionFn).toHaveBeenCalledWith(
-          mockCommandContext,
+          expect.objectContaining({
+            invocation: {
+              raw: '/mcp my-se',
+              name: 'mcp',
+              args: 'my-se',
+            },
+          }),
           'my-se',
         );
       });
@@ -575,7 +581,16 @@ describe('useSlashCompletion', () => {
       );
 
       await waitFor(() => {
-        expect(mockCompletionFn).toHaveBeenCalledWith(mockCommandContext, '');
+        expect(mockCompletionFn).toHaveBeenCalledWith(
+          expect.objectContaining({
+            invocation: {
+              raw: '/mcp',
+              name: 'mcp',
+              args: '',
+            },
+          }),
+          '',
+        );
       });
 
       await waitFor(() => {
