@@ -37,7 +37,7 @@ export const clearCommand: SlashCommand = {
       chatRecordingService.initialize();
     }
 
-    uiTelemetryService.resetLastPromptTokenCount();
+    uiTelemetryService.setLastPromptTokenCount(0);
     context.ui.clear();
   },
 };
