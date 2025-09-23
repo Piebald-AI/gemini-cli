@@ -114,7 +114,9 @@ export interface OpenDialogActionReturn {
     | 'editor'
     | 'privacy'
     | 'settings'
-    | 'sessionBrowser';
+    | 'sessionBrowser'
+    | 'model'
+    | 'permissions';
 }
 
 /**

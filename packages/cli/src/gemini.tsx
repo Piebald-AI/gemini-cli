@@ -8,15 +8,14 @@ import React from 'react';
 import { render } from 'ink';
 import { AppContainer } from './ui/AppContainer.js';
 import { loadCliConfig, parseArguments } from './config/config.js';
+import * as cliConfig from './config/config.js';
 import { readStdin } from './utils/readStdin.js';
 import { basename } from 'node:path';
 import v8 from 'node:v8';
 import os from 'node:os';
 import dns from 'node:dns';
-import { spawn } from 'node:child_process';
 import { start_sandbox } from './utils/sandbox.js';
 import type { DnsResolutionOrder, LoadedSettings } from './config/settings.js';
-import { RELAUNCH_EXIT_CODE } from './utils/processUtils.js';
 import {
   loadSettings,
   migrateDeprecatedSettings,
@@ -54,17 +53,18 @@ import { detectAndEnableKittyProtocol } from './ui/utils/kittyProtocolDetector.j
 import { checkForUpdates } from './ui/utils/updateCheck.js';
 import { handleAutoUpdate } from './utils/handleAutoUpdate.js';
 import { appEvents, AppEvent } from './utils/events.js';
-import {
-  type SessionInfo,
-  formatRelativeTime,
-  SessionSelector,
-} from './utils/sessionUtils.js';
+import { SessionSelector } from './utils/sessionUtils.js';
 import { SettingsContext } from './ui/contexts/SettingsContext.js';
 
 import { SessionStatsProvider } from './ui/contexts/SessionContext.js';
 import { VimModeProvider } from './ui/contexts/VimModeContext.js';
 import { KeypressProvider } from './ui/contexts/KeypressContext.js';
 import { useKittyKeyboardProtocol } from './ui/hooks/useKittyKeyboardProtocol.js';
+import {
+  relaunchAppInChildProcess,
+  relaunchOnExitCode,
+} from './utils/relaunch.js';
+import { loadSandboxConfig } from './config/sandboxConfig.js';
 
 export function validateDnsResolutionOrder(
   order: string | undefined,
@@ -83,7 +83,7 @@ export function validateDnsResolutionOrder(
   return defaultValue;
 }
 
-function getNodeMemoryArgs(config: Config): string[] {
+function getNodeMemoryArgs(isDebugMode: boolean): string[] {
   const totalMemoryMB = os.totalmem() / (1024 * 1024);
   const heapStats = v8.getHeapStatistics();
   const currentMaxOldSpaceSizeMb = Math.floor(
@@ -92,7 +92,7 @@ function getNodeMemoryArgs(config: Config): string[] {
 
   // Set target to 50% of total memory
   const targetMaxOldSpaceSizeInMB = Math.floor(totalMemoryMB * 0.5);
-  if (config.getDebugMode()) {
+  if (isDebugMode) {
     console.debug(
       `Current heap size ${currentMaxOldSpaceSizeMb.toFixed(2)} MB`,
     );
@@ -103,7 +103,7 @@ function getNodeMemoryArgs(config: Config): string[] {
   }
 
   if (targetMaxOldSpaceSizeInMB > currentMaxOldSpaceSizeMb) {
-    if (config.getDebugMode()) {
+    if (isDebugMode) {
       console.debug(
         `Need to relaunch with more memory: ${targetMaxOldSpaceSizeInMB.toFixed(2)} MB`,
       );
@@ -112,137 +112,6 @@ function getNodeMemoryArgs(config: Config): string[] {
   }
 
   return [];
-}
-
-async function relaunchOnExitCode(runner: () => Promise<number>) {
-  while (true) {
-    try {
-      const exitCode = await runner();
-
-      if (exitCode !== RELAUNCH_EXIT_CODE) {
-        process.exit(exitCode);
-      }
-    } catch (error) {
-      process.stdin.resume();
-      console.error('Fatal error: Failed to relaunch the CLI process.', error);
-      process.exit(1);
-    }
-  }
-}
-
-async function relaunchAppInChildProcess(additionalArgs: string[]) {
-  if (process.env['GEMINI_CLI_NO_RELAUNCH']) {
-    return;
-  }
-
-  const runner = () => {
-    const nodeArgs = [...additionalArgs, ...process.argv.slice(1)];
-    const newEnv = { ...process.env, GEMINI_CLI_NO_RELAUNCH: 'true' };
-
-    // The parent process should not be reading from stdin while the child is running.
-    process.stdin.pause();
-
-    const child = spawn(process.execPath, nodeArgs, {
-      stdio: 'inherit',
-      env: newEnv,
-    });
-
-    return new Promise<number>((resolve, reject) => {
-      child.on('error', reject);
-      child.on('close', (code) => {
-        // Resume stdin before the parent process exits.
-        process.stdin.resume();
-        resolve(code ?? 1);
-      });
-    });
-  };
-
-  await relaunchOnExitCode(runner);
-}
-
-async function listSessions(config: Config): Promise<void> {
-  const sessionSelector = new SessionSelector(config);
-  const sessions = await sessionSelector.listSessions();
-
-  if (sessions.length === 0) {
-    console.log('No previous sessions found for this project.');
-    return;
-  }
-
-  console.log(`\nAvailable sessions for this project (${sessions.length}):\n`);
-
-  sessions
-    .sort(
-      (a, b) =>
-        new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
-    )
-    .forEach((session, index) => {
-      const current = session.isCurrentSession ? ', current' : '';
-      const time = formatRelativeTime(session.lastUpdated);
-      console.log(
-        `  ${index + 1}. ${session.firstUserMessage} (${time}${current}) [${session.id}]`,
-      );
-    });
-}
-
-async function deleteSession(
-  config: Config,
-  sessionIndex: string,
-): Promise<void> {
-  const sessionSelector = new SessionSelector(config);
-  const sessions = await sessionSelector.listSessions();
-
-  if (sessions.length === 0) {
-    console.error('No sessions found for this project.');
-    return;
-  }
-
-  // Sort sessions by start time to match list-sessions ordering
-  const sortedSessions = sessions.sort(
-    (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
-  );
-
-  let sessionToDelete: SessionInfo;
-
-  // Try to find by UUID first
-  const sessionByUuid = sortedSessions.find(
-    (session) => session.id === sessionIndex,
-  );
-  if (sessionByUuid) {
-    sessionToDelete = sessionByUuid;
-  } else {
-    // Parse session index
-    const index = parseInt(sessionIndex, 10);
-    if (isNaN(index) || index < 1 || index > sessions.length) {
-      console.error(
-        `Invalid session identifier "${sessionIndex}". Use --list-sessions to see available sessions.`,
-      );
-      return;
-    }
-    sessionToDelete = sortedSessions[index - 1];
-  }
-
-  // Prevent deleting the current session
-  if (sessionToDelete.isCurrentSession) {
-    console.error('Cannot delete the current active session.');
-    return;
-  }
-
-  try {
-    // Use ChatRecordingService to delete the session
-    const { ChatRecordingService } = await import('@google/gemini-cli-core');
-    const chatRecordingService = new ChatRecordingService(config);
-    chatRecordingService.deleteSession(sessionToDelete.file);
-
-    const time = formatRelativeTime(sessionToDelete.lastUpdated);
-    console.log(
-      `Deleted session ${sessionToDelete.index}: ${sessionToDelete.firstUserMessage} (${time})`,
-    );
-  } catch (error) {
-    console.error(
-      `Failed to delete session: ${error instanceof Error ? error.message : 'Unknown error'}`,
-    );
-  }
 }
 
 export function setupUnhandledRejectionHandler() {
@@ -340,13 +209,6 @@ export async function main() {
   await cleanupCheckpoints();
 
   const argv = await parseArguments(settings.merged);
-  const extensions = loadExtensions();
-  const config = await loadCliConfig(
-    settings.merged,
-    extensions,
-    sessionId,
-    argv,
-  );
 
   // Cleanup sessions after config initialization
   await cleanupExpiredSessions(config, settings.merged);
@@ -359,28 +221,10 @@ export async function main() {
     process.exit(1);
   }
 
-  const wasRaw = process.stdin.isRaw;
-  let kittyProtocolDetectionComplete: Promise<boolean> | undefined;
-  if (config.isInteractive() && !wasRaw && process.stdin.isTTY) {
-    // Set this as early as possible to avoid spurious characters from
-    // input showing up in the output.
-    process.stdin.setRawMode(true);
-
-    // This cleanup isn't strictly needed but may help in certain situations.
-    process.on('SIGTERM', () => {
-      process.stdin.setRawMode(wasRaw);
-    });
-    process.on('SIGINT', () => {
-      process.stdin.setRawMode(wasRaw);
-    });
-
-    // Detect and enable Kitty keyboard protocol once at startup.
-    kittyProtocolDetectionComplete = detectAndEnableKittyProtocol();
-  }
-
+  const isDebugMode = cliConfig.isDebugMode(argv);
   const consolePatcher = new ConsolePatcher({
     stderr: true,
-    debugMode: config.getDebugMode(),
+    debugMode: isDebugMode,
   });
   consolePatcher.patch();
   registerCleanup(consolePatcher.cleanup);
@@ -388,14 +232,6 @@ export async function main() {
   dns.setDefaultResultOrder(
     validateDnsResolutionOrder(settings.merged.advanced?.dnsResolutionOrder),
   );
-
-  if (config.getListExtensions()) {
-    console.log('Installed extensions:');
-    for (const extension of extensions) {
-      console.log(`- ${extension.config.name}`);
-    }
-    process.exit(0);
-  }
 
   // Handle --list-sessions flag
   if (argv.listSessions) {
@@ -420,8 +256,6 @@ export async function main() {
     }
   }
 
-  setMaxSizedBoxDebugging(config.getDebugMode());
-
   // Load custom themes from settings
   themeManager.loadCustomThemes(settings.merged.ui?.customThemes);
 
@@ -433,14 +267,13 @@ export async function main() {
     }
   }
 
-  const initializationResult = await initializeApp(config, settings);
-
   // hop into sandbox if we are outside and sandboxing is enabled
   if (!process.env['SANDBOX']) {
     const memoryArgs = settings.merged.advanced?.autoConfigureMemory
-      ? getNodeMemoryArgs(config)
+      ? getNodeMemoryArgs(isDebugMode)
       : [];
-    const sandboxConfig = config.getSandbox();
+    const sandboxConfig = await loadSandboxConfig(settings.merged, argv);
+
     if (sandboxConfig) {
       if (
         settings.merged.security?.auth?.selectedType &&
@@ -454,7 +287,21 @@ export async function main() {
           if (err) {
             throw new Error(err);
           }
-          await config.refreshAuth(settings.merged.security.auth.selectedType);
+          // We intentially omit the list of extensions here because extensions
+          // should not impact auth.
+          // TODO(jacobr): refactor loadCliConfig so there is a minimal version
+          // that only initializes enough config to enable refreshAuth or find
+          // another way to decouple refreshAuth from requiring a config.
+          const partialConfig = await loadCliConfig(
+            settings.merged,
+            [],
+            sessionId,
+            argv,
+          );
+
+          await partialConfig.refreshAuth(
+            settings.merged.security.auth.selectedType,
+          );
         } catch (err) {
           console.error('Error authenticating:', err);
           process.exit(1);
@@ -497,9 +344,51 @@ export async function main() {
     } else {
       // Relaunch app so we always have a child process that can be internally
       // restarted if needed.
-      await relaunchAppInChildProcess(memoryArgs);
+      await relaunchAppInChildProcess(memoryArgs, []);
     }
   }
+
+  // We are now past the logic handling potentially launching a child process
+  // to run Gemini CLI. It is now safe to perform expensive initialization that
+  // may have side effects.
+  const extensions = loadExtensions();
+  const config = await loadCliConfig(
+    settings.merged,
+    extensions,
+    sessionId,
+    argv,
+  );
+
+  if (config.getListExtensions()) {
+    console.log('Installed extensions:');
+    for (const extension of extensions) {
+      console.log(`- ${extension.config.name}`);
+    }
+    process.exit(0);
+  }
+
+  const wasRaw = process.stdin.isRaw;
+  let kittyProtocolDetectionComplete: Promise<boolean> | undefined;
+  if (config.isInteractive() && !wasRaw && process.stdin.isTTY) {
+    // Set this as early as possible to avoid spurious characters from
+    // input showing up in the output.
+    process.stdin.setRawMode(true);
+
+    // This cleanup isn't strictly needed but may help in certain situations.
+    process.on('SIGTERM', () => {
+      process.stdin.setRawMode(wasRaw);
+    });
+    process.on('SIGINT', () => {
+      process.stdin.setRawMode(wasRaw);
+    });
+
+    // Detect and enable Kitty keyboard protocol once at startup.
+    kittyProtocolDetectionComplete = detectAndEnableKittyProtocol();
+  }
+
+  setMaxSizedBoxDebugging(isDebugMode);
+
+  const initializationResult = await initializeApp(config, settings);
 
   if (
     settings.merged.security?.auth?.selectedType ===
