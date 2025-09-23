@@ -65,6 +65,7 @@ import {
   relaunchOnExitCode,
 } from './utils/relaunch.js';
 import { loadSandboxConfig } from './config/sandboxConfig.js';
+import { deleteSession, listSessions } from './utils/sessions.js';
 
 export function validateDnsResolutionOrder(
   order: string | undefined,
