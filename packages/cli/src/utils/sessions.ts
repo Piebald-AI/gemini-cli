@@ -1,3 +1,9 @@
+/**
+ * @license
+ * Copyright 2025 Google LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import { ChatRecordingService, type Config } from '@google/gemini-cli-core';
 import {
   formatRelativeTime,

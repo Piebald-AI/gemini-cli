@@ -211,9 +211,6 @@ export async function main() {
 
   const argv = await parseArguments(settings.merged);
 
-  // Cleanup sessions after config initialization
-  await cleanupExpiredSessions(config, settings.merged);
-
   // Check for invalid input combinations early to prevent crashes
   if (argv.promptInteractive && !process.stdin.isTTY) {
     console.error(
@@ -233,18 +230,6 @@ export async function main() {
   dns.setDefaultResultOrder(
     validateDnsResolutionOrder(settings.merged.advanced?.dnsResolutionOrder),
   );
-
-  // Handle --list-sessions flag
-  if (argv.listSessions) {
-    await listSessions(config);
-    process.exit(0);
-  }
-
-  // Handle --delete-session flag
-  if (argv.deleteSession) {
-    await deleteSession(config, argv.deleteSession);
-    process.exit(0);
-  }
 
   // Set a default auth type if one isn't set.
   if (!settings.merged.security?.auth?.selectedType) {
@@ -360,11 +345,27 @@ export async function main() {
     argv,
   );
 
+  // Cleanup sessions after config initialization
+  await cleanupExpiredSessions(config, settings.merged);
+
   if (config.getListExtensions()) {
     console.log('Installed extensions:');
     for (const extension of extensions) {
       console.log(`- ${extension.config.name}`);
     }
+    process.exit(0);
+  }
+
+  // Handle --list-sessions flag
+  if (config.getListSessions()) {
+    await listSessions(config);
+    process.exit(0);
+  }
+
+  // Handle --delete-session flag
+  const sessionToDelete = config.getDeleteSession();
+  if (sessionToDelete) {
+    await deleteSession(config, sessionToDelete);
     process.exit(0);
   }
 
