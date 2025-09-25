@@ -303,6 +303,7 @@ export class GeminiChat {
                     attempt,
                     (error as InvalidStreamError).type,
                     INVALID_CONTENT_RETRY_OPTIONS.initialDelayMs,
+                    model,
                   ),
                 );
                 await new Promise((res) =>
@@ -326,6 +327,7 @@ export class GeminiChat {
               new ContentRetryFailureEvent(
                 INVALID_CONTENT_RETRY_OPTIONS.maxAttempts,
                 (lastError as InvalidStreamError).type,
+                model,
               ),
             );
           }
