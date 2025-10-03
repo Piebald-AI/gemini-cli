@@ -437,7 +437,7 @@ export async function loadHierarchicalGeminiMemory(
   folderTrust: boolean,
   memoryImportFormat: 'flat' | 'tree' = 'tree',
   fileFilteringOptions?: FileFilteringOptions,
-): Promise<{ memoryContent: string; fileCount: number }> {
+): Promise<{ memoryContent: string; fileCount: number; filePaths: string[] }> {
   // FIX: Use real, canonical paths for a reliable comparison to handle symlinks.
   const realCwd = fs.realpathSync(path.resolve(currentWorkingDirectory));
   const realHome = fs.realpathSync(path.resolve(homedir()));
@@ -530,19 +530,20 @@ export async function loadCliConfig(
     .concat((argv.includeDirectories || []).map(resolvePath));
 
   // Call the (now wrapper) loadHierarchicalGeminiMemory which calls the server's version
-  const { memoryContent, fileCount } = await loadHierarchicalGeminiMemory(
-    cwd,
-    settings.context?.loadMemoryFromIncludeDirectories
-      ? includeDirectories
-      : [],
-    debugMode,
-    fileService,
-    settings,
-    extensionContextFilePaths,
-    trustedFolder,
-    memoryImportFormat,
-    fileFiltering,
-  );
+  const { memoryContent, fileCount, filePaths } =
+    await loadHierarchicalGeminiMemory(
+      cwd,
+      settings.context?.loadMemoryFromIncludeDirectories
+        ? includeDirectories
+        : [],
+      debugMode,
+      fileService,
+      settings,
+      extensionContextFilePaths,
+      trustedFolder,
+      memoryImportFormat,
+      fileFiltering,
+    );
 
   let mcpServers = mergeMcpServers(settings, activeExtensions);
   const question = argv.promptInteractive || argv.prompt || '';
@@ -694,6 +695,7 @@ export async function loadCliConfig(
     mcpServers,
     userMemory: memoryContent,
     geminiMdFileCount: fileCount,
+    geminiMdFilePaths: filePaths,
     approvalMode,
     showMemoryUsage:
       argv.showMemoryUsage || settings.ui?.showMemoryUsage || false,
@@ -747,6 +749,7 @@ export async function loadCliConfig(
     useModelRouter,
     enableMessageBusIntegration:
       settings.tools?.enableMessageBusIntegration ?? false,
+    enableSubagents: settings.experimental?.enableSubagents ?? false,
   });
 }
 
