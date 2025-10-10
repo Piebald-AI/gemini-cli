@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
 import type { HistoryItem } from '../types.js';
 import type { ChatRecordingService } from '@google/gemini-cli-core/src/services/chatRecordingService.js';
 
@@ -146,11 +146,14 @@ export function useHistory({
     messageIdCounterRef.current = 0;
   }, []);
 
-  return {
-    history,
-    addItem,
-    updateItem,
-    clearItems,
-    loadHistory,
-  };
+  return useMemo(
+    () => ({
+      history,
+      addItem,
+      updateItem,
+      clearItems,
+      loadHistory,
+    }),
+    [history, addItem, updateItem, clearItems, loadHistory],
+  );
 }
