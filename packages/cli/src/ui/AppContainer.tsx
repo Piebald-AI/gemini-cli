@@ -99,6 +99,7 @@ import { useExtensionUpdates } from './hooks/useExtensionUpdates.js';
 import { ShellFocusContext } from './contexts/ShellFocusContext.js';
 
 const CTRL_EXIT_PROMPT_DURATION_MS = 1000;
+const QUEUE_ERROR_DISPLAY_DURATION_MS = 3000;
 
 function isToolExecuting(pendingHistoryItems: HistoryItemWithoutId[]) {
   return pendingHistoryItems.some((item) => {
@@ -159,6 +160,10 @@ export const AppContainer = (props: AppContainerProps) => {
   const [updateInfo, setUpdateInfo] = useState<UpdateObject | null>(null);
   const [isTrustedFolder, setIsTrustedFolder] = useState<boolean | undefined>(
     config.isTrustedFolder(),
+  );
+
+  const [queueErrorMessage, setQueueErrorMessage] = useState<string | null>(
+    null,
   );
 
   const extensions = config.getExtensions();
@@ -690,12 +695,17 @@ Logging in with Google... Please restart Gemini CLI to continue.
     onApprovalModeChange: handleApprovalModeChange,
   });
 
-  const { messageQueue, addMessage, clearQueue, getQueuedMessagesText } =
-    useMessageQueue({
-      isConfigInitialized,
-      streamingState,
-      submitQuery,
-    });
+  const {
+    messageQueue,
+    addMessage,
+    clearQueue,
+    getQueuedMessagesText,
+    popAllMessages,
+  } = useMessageQueue({
+    isConfigInitialized,
+    streamingState,
+    submitQuery,
+  });
 
   cancelHandlerRef.current = useCallback(() => {
     const pendingHistoryItems = [
@@ -755,6 +765,7 @@ Logging in with Google... Please restart Gemini CLI to continue.
   const isInputActive =
     !initError &&
     !isProcessing &&
+    !!slashCommands &&
     (streamingState === StreamingState.Idle ||
       streamingState === StreamingState.Responding) &&
     !proQuotaRequest;
@@ -861,6 +872,7 @@ Logging in with Google... Please restart Gemini CLI to continue.
   const [showErrorDetails, setShowErrorDetails] = useState<boolean>(false);
   const [showToolDescriptions, setShowToolDescriptions] =
     useState<boolean>(false);
+  const [renderMarkdown, setRenderMarkdown] = useState<boolean>(true);
 
   const [ctrlCPressedOnce, setCtrlCPressedOnce] = useState(false);
   const ctrlCTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -887,6 +899,17 @@ Logging in with Google... Please restart Gemini CLI to continue.
       setShowIdeRestartPrompt(true);
     }
   }, [ideNeedsRestart]);
+
+  useEffect(() => {
+    if (queueErrorMessage) {
+      const timer = setTimeout(() => {
+        setQueueErrorMessage(null);
+      }, QUEUE_ERROR_DISPLAY_DURATION_MS);
+
+      return () => clearTimeout(timer);
+    }
+    return undefined;
+  }, [queueErrorMessage, setQueueErrorMessage]);
 
   useEffect(() => {
     if (isInitialMount.current) {
@@ -1030,6 +1053,13 @@ Logging in with Google... Please restart Gemini CLI to continue.
         if (Object.keys(mcpServers || {}).length > 0) {
           handleSlashCommand(newValue ? '/mcp desc' : '/mcp nodesc');
         }
+      } else if (keyMatchers[Command.TOGGLE_MARKDOWN](key)) {
+        setRenderMarkdown((prev) => {
+          const newValue = !prev;
+          // Force re-render of static content
+          refreshStatic();
+          return newValue;
+        });
       } else if (
         keyMatchers[Command.TOGGLE_IDE_CONTEXT_DETAIL](key) &&
         config.getIdeMode() &&
@@ -1068,6 +1098,7 @@ Logging in with Google... Please restart Gemini CLI to continue.
       activePtyId,
       embeddedShellFocused,
       settings.merged.general?.debugKeystrokeLogging,
+      refreshStatic,
     ],
   );
 
@@ -1198,6 +1229,7 @@ Logging in with Google... Please restart Gemini CLI to continue.
       filteredConsoleMessages,
       ideContextState,
       showToolDescriptions,
+      renderMarkdown,
       ctrlCPressedOnce,
       ctrlDPressedOnce,
       showEscapePrompt,
@@ -1206,6 +1238,7 @@ Logging in with Google... Please restart Gemini CLI to continue.
       currentLoadingPhrase,
       historyRemountKey,
       messageQueue,
+      queueErrorMessage,
       showAutoAcceptIndicator,
       showWorkspaceMigrationDialog,
       workspaceExtensions,
@@ -1280,6 +1313,7 @@ Logging in with Google... Please restart Gemini CLI to continue.
       filteredConsoleMessages,
       ideContextState,
       showToolDescriptions,
+      renderMarkdown,
       ctrlCPressedOnce,
       ctrlDPressedOnce,
       showEscapePrompt,
@@ -1288,6 +1322,7 @@ Logging in with Google... Please restart Gemini CLI to continue.
       currentLoadingPhrase,
       historyRemountKey,
       messageQueue,
+      queueErrorMessage,
       showAutoAcceptIndicator,
       showWorkspaceMigrationDialog,
       workspaceExtensions,
@@ -1356,6 +1391,8 @@ Logging in with Google... Please restart Gemini CLI to continue.
       closeSessionBrowser,
       handleResumeSession,
       handleDeleteSession,
+      setQueueErrorMessage,
+      popAllMessages,
     }),
     [
       handleThemeSelect,
@@ -1385,6 +1422,8 @@ Logging in with Google... Please restart Gemini CLI to continue.
       closeSessionBrowser,
       handleResumeSession,
       handleDeleteSession,
+      setQueueErrorMessage,
+      popAllMessages,
     ],
   );
 
