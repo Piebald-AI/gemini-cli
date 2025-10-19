@@ -1,32 +1,46 @@
 # Chat Recording
 
-The Gemini CLI includes comprehensive **automatic chat recording** that saves every conversation to disk without any manual intervention. This powerful feature allows you to review, resume, search, and manage your chat history across different sessions with zero effort on your part.
+The Gemini CLI includes comprehensive **automatic chat recording** that saves
+every conversation to disk without any manual intervention. This powerful
+feature allows you to review, resume, search, and manage your chat history
+across different sessions with zero effort on your part.
 
 ## How It Works
 
-**Chat recording is enabled by default and completely automatic.** Starting with your first user message, every conversation is immediately saved to JSON files in your project's temporary directory at `~/.gemini/tmp/<project_hash>/chats`.
+**Chat recording is enabled by default and completely automatic.** Starting with
+your first user message, every conversation is immediately saved to JSON files
+in your project's temporary directory at `~/.gemini/tmp/<project_hash>/chats`.
 
 ### What Gets Recorded
 
 Each conversation file contains a complete record of your session:
 
-- **Session Information:** Unique session ID, project hash, start time, and last updated timestamp
-- **All Messages:** User prompts and Gemini responses with timestamps, UUIDs, and model information
-- **Tool Calls:** Complete tool execution history including inputs, outputs, states, and timestamps
-- **Thoughts:** Gemini's internal reasoning with subjects, descriptions, and timestamps
-- **Token Usage:** Detailed token consumption (input, output, cached, thoughts, tools)
+- **Session Information:** Unique session ID, project hash, start time, and last
+  updated timestamp
+- **All Messages:** User prompts and Gemini responses with timestamps, UUIDs,
+  and model information
+- **Tool Calls:** Complete tool execution history including inputs, outputs,
+  states, and timestamps
+- **Thoughts:** Gemini's internal reasoning with subjects, descriptions, and
+  timestamps
+- **Token Usage:** Detailed token consumption (input, output, cached, thoughts,
+  tools)
 - **API Events:** Error messages and system notifications
 
-**Important:** Messages are saved immediately as they occur, so no data is lost even if the CLI crashes or is terminated unexpectedly.
+**Important:** Messages are saved immediately as they occur, so no data is lost
+even if the CLI crashes or is terminated unexpectedly.
 
 ## Interactive Session Browser (`/resume`)
 
-The **interactive session browser** provides a comprehensive interface for managing saved conversations. Type `/resume` to open it.
+The **interactive session browser** provides a comprehensive interface for
+managing saved conversations. Type `/resume` to open it.
 
 ### Features
 
-- **Session List:** View all saved conversations with timestamps, message counts, and preview of first user message
-- **Search:** Press `/` to search through conversation content across all sessions
+- **Session List:** View all saved conversations with timestamps, message
+  counts, and preview of first user message
+- **Search:** Press `/` to search through conversation content across all
+  sessions
 - **Sorting:** Sort sessions by date or message count
 - **Delete:** Remove unwanted sessions directly from the browser
 - **Resume:** Select any session to duplicate and continue the conversation
@@ -71,7 +85,8 @@ gemini --resume latest -p "Continue working on the API"
 gemini --list-sessions
 ```
 
-Output shows session indices, dates, message counts, and first user message preview.
+Output shows session indices, dates, message counts, and first user message
+preview.
 
 ### Delete Sessions
 
@@ -105,7 +120,8 @@ Configure automatic cleanup of old sessions via `settings.json`:
 - **`maxAge`:** Maximum age (e.g., "1h", "7d", "30d"). Minimum: "1h"
 - **`maxCount`:** Maximum number of sessions to keep. Minimum: 1
 
-Both settings can be used together - sessions are deleted if they exceed **either** limit.
+Both settings can be used together - sessions are deleted if they exceed
+**either** limit.
 
 ## Session File Format
 
@@ -172,4 +188,7 @@ Sessions are stored as JSON files with this structure:
 
 ## Migration from Old System
 
-The previous manual `/chat save|resume|list` system has been **completely replaced**. All conversations are now automatically saved, eliminating the need for manual management while providing far more comprehensive features and data capture.
+The previous manual `/chat save|resume|list` system has been **completely
+replaced**. All conversations are now automatically saved, eliminating the need
+for manual management while providing far more comprehensive features and data
+capture.
