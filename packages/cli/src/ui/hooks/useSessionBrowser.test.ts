@@ -4,7 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { renderHook, act } from '@testing-library/react';
+import { renderHook } from '../../test-utils/render.js';
+import { act } from 'react';
 import {
   useSessionBrowser,
   convertSessionToHistoryFormats,

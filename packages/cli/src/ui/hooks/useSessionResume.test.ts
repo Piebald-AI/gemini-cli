@@ -4,7 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { renderHook, act, waitFor } from '@testing-library/react';
+import { renderHook } from '../../test-utils/render.js';
+import { act } from 'react';
 import { useSessionResume } from './useSessionResume.js';
 import type {
   Config,
@@ -319,7 +320,7 @@ describe('useSessionResume', () => {
         }),
       );
 
-      await waitFor(() => {
+      await vi.waitFor(() => {
         expect(mockHistoryManager.clearItems).toHaveBeenCalled();
       });
 
@@ -370,7 +371,7 @@ describe('useSessionResume', () => {
         },
       );
 
-      await waitFor(() => {
+      await vi.waitFor(() => {
         expect(mockHistoryManager.clearItems).toHaveBeenCalled();
       });
 
@@ -420,7 +421,7 @@ describe('useSessionResume', () => {
         }),
       );
 
-      await waitFor(() => {
+      await vi.waitFor(() => {
         expect(mockGeminiClient.resumeChat).toHaveBeenCalled();
       });
 
