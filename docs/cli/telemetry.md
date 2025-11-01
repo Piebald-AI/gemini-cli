@@ -281,6 +281,8 @@ Captures tool executions, output truncation, and Smart Edit behavior.
     - `prompt_id` (string)
     - `tool_type` ("native" or "mcp")
     - `mcp_server_name` (string, if applicable)
+    - `extension_name` (string, if applicable)
+    - `extension_id` (string, if applicable)
     - `content_length` (int, if applicable)
     - `metadata` (if applicable)
 
@@ -542,10 +544,6 @@ Measures tool usage and latency.
     - `decision` (string: "accept", "reject", "modify", or "auto_accept", if
       applicable)
     - `tool_type` (string: "mcp" or "native", if applicable)
-    - `model_added_lines` (Int, optional)
-    - `model_removed_lines` (Int, optional)
-    - `user_added_lines` (Int, optional)
-    - `user_removed_lines` (Int, optional)
 
 - `gemini_cli.tool.call.latency` (Histogram, ms): Measures tool call latency.
   - **Attributes**:
@@ -588,6 +586,12 @@ Counts file operations with basic context.
     - `mimetype` (string, optional)
     - `extension` (string, optional)
     - `programming_language` (string, optional)
+
+- `gemini_cli.lines.changed` (Counter, Int): Number of lines changed (from file
+  diffs).
+  - **Attributes**:
+    - `function_name`
+    - `type` ("added" or "removed")
 
 ##### Chat and Streaming
 
