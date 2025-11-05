@@ -8,6 +8,7 @@ import path from 'node:path';
 import { promises as fs } from 'node:fs';
 import type { Storage } from '../config/storage.js';
 import { debugLogger } from '../utils/debugLogger.js';
+import { coreEvents } from '../utils/events.js';
 
 const LOG_FILE_NAME = 'logs.json';
 
@@ -157,7 +158,7 @@ export class Logger {
           : 0;
       this.initialized = true;
     } catch (err) {
-      console.error('Failed to initialize logger:', err);
+      coreEvents.emitFeedback('error', 'Failed to initialize logger:', err);
       this.initialized = false;
     }
   }
