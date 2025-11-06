@@ -5,7 +5,10 @@
  */
 
 import { useState, useCallback } from 'react';
-import type { LoadedSettings, SettingScope } from '../../config/settings.js';
+import type {
+  LoadableSettingScope,
+  LoadedSettings,
+} from '../../config/settings.js';
 import { MessageType } from '../types.js';
 import type { EditorType } from '@google/gemini-cli-core';
 import {
@@ -19,7 +22,7 @@ interface UseEditorSettingsReturn {
   openEditorDialog: () => void;
   handleEditorSelect: (
     editorType: EditorType | undefined,
-    scope: SettingScope,
+    scope: LoadableSettingScope,
   ) => void;
   exitEditorDialog: () => void;
 }
@@ -36,7 +39,7 @@ export const useEditorSettings = (
   }, []);
 
   const handleEditorSelect = useCallback(
-    (editorType: EditorType | undefined, scope: SettingScope) => {
+    (editorType: EditorType | undefined, scope: LoadableSettingScope) => {
       if (
         editorType &&
         (!checkHasEditorType(editorType) ||
