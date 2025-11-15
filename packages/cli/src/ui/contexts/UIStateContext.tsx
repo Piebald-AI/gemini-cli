@@ -124,6 +124,7 @@ export interface UIState {
   embeddedShellFocused: boolean;
   showDebugProfiler: boolean;
   showFullTodos: boolean;
+  copyModeEnabled: boolean;
 }
 
 export const UIStateContext = createContext<UIState | null>(null);

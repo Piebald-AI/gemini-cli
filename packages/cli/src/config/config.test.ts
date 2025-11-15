@@ -37,7 +37,7 @@ vi.mock('./sandboxConfig.js', () => ({
 vi.mock('fs', async (importOriginal) => {
   const actualFs = await importOriginal<typeof import('fs')>();
   const pathMod = await import('node:path');
-  const mockHome = '/mock/home/user';
+  const mockHome = pathMod.resolve(pathMod.sep, 'mock', 'home', 'user');
   const MOCK_CWD1 = process.cwd();
   const MOCK_CWD2 = pathMod.resolve(pathMod.sep, 'home', 'user', 'project');
 
@@ -70,7 +70,7 @@ vi.mock('os', async (importOriginal) => {
   const actualOs = await importOriginal<typeof os>();
   return {
     ...actualOs,
-    homedir: vi.fn(() => '/mock/home/user'),
+    homedir: vi.fn(() => path.resolve(path.sep, 'mock', 'home', 'user')),
   };
 });
 
@@ -797,11 +797,11 @@ describe('mergeMcpServers', () => {
 });
 
 describe('mergeExcludeTools', () => {
-  const defaultExcludes = [
+  const defaultExcludes = new Set([
     SHELL_TOOL_NAME,
     EDIT_TOOL_NAME,
     WRITE_FILE_TOOL_NAME,
-  ];
+  ]);
   const originalIsTTY = process.stdin.isTTY;
 
   beforeEach(() => {
@@ -844,7 +844,7 @@ describe('mergeExcludeTools', () => {
       argv,
     );
     expect(config.getExcludeTools()).toEqual(
-      expect.arrayContaining(['tool1', 'tool2', 'tool3', 'tool4', 'tool5']),
+      new Set(['tool1', 'tool2', 'tool3', 'tool4', 'tool5']),
     );
     expect(config.getExcludeTools()).toHaveLength(5);
   });
@@ -866,7 +866,7 @@ describe('mergeExcludeTools', () => {
     const argv = await parseArguments({} as Settings);
     const config = await loadCliConfig(settings, 'test-session', argv);
     expect(config.getExcludeTools()).toEqual(
-      expect.arrayContaining(['tool1', 'tool2', 'tool3']),
+      new Set(['tool1', 'tool2', 'tool3']),
     );
     expect(config.getExcludeTools()).toHaveLength(3);
   });
@@ -897,7 +897,7 @@ describe('mergeExcludeTools', () => {
     const argv = await parseArguments({} as Settings);
     const config = await loadCliConfig(settings, 'test-session', argv);
     expect(config.getExcludeTools()).toEqual(
-      expect.arrayContaining(['tool1', 'tool2', 'tool3', 'tool4']),
+      new Set(['tool1', 'tool2', 'tool3', 'tool4']),
     );
     expect(config.getExcludeTools()).toHaveLength(4);
   });
@@ -908,7 +908,7 @@ describe('mergeExcludeTools', () => {
     process.argv = ['node', 'script.js'];
     const argv = await parseArguments({} as Settings);
     const config = await loadCliConfig(settings, 'test-session', argv);
-    expect(config.getExcludeTools()).toEqual([]);
+    expect(config.getExcludeTools()).toEqual(new Set([]));
   });
 
   it('should return default excludes when no excludeTools are specified and it is not interactive', async () => {
@@ -926,9 +926,7 @@ describe('mergeExcludeTools', () => {
     const settings: Settings = { tools: { exclude: ['tool1', 'tool2'] } };
     vi.spyOn(ExtensionManager.prototype, 'getExtensions').mockReturnValue([]);
     const config = await loadCliConfig(settings, 'test-session', argv);
-    expect(config.getExcludeTools()).toEqual(
-      expect.arrayContaining(['tool1', 'tool2']),
-    );
+    expect(config.getExcludeTools()).toEqual(new Set(['tool1', 'tool2']));
     expect(config.getExcludeTools()).toHaveLength(2);
   });
 
@@ -948,9 +946,7 @@ describe('mergeExcludeTools', () => {
     process.argv = ['node', 'script.js'];
     const argv = await parseArguments({} as Settings);
     const config = await loadCliConfig(settings, 'test-session', argv);
-    expect(config.getExcludeTools()).toEqual(
-      expect.arrayContaining(['tool1', 'tool2']),
-    );
+    expect(config.getExcludeTools()).toEqual(new Set(['tool1', 'tool2']));
     expect(config.getExcludeTools()).toHaveLength(2);
   });
 
@@ -1525,7 +1521,9 @@ describe('loadCliConfig folderTrust', () => {
 describe('loadCliConfig with includeDirectories', () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    vi.mocked(os.homedir).mockReturnValue('/mock/home/user');
+    vi.mocked(os.homedir).mockReturnValue(
+      path.resolve(path.sep, 'mock', 'home', 'user'),
+    );
     vi.stubEnv('GEMINI_API_KEY', 'test-api-key');
     vi.spyOn(process, 'cwd').mockReturnValue(
       path.resolve(path.sep, 'home', 'user', 'project'),

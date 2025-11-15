@@ -4,8 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { renderHook } from '../../test-utils/render.js';
 import { act } from 'react';
+import { renderHook } from '../../test-utils/render.js';
+import { waitFor } from '../../test-utils/async.js';
 import { useSessionResume } from './useSessionResume.js';
 import type {
   Config,
@@ -193,7 +194,7 @@ describe('useSessionResume', () => {
 
     it('should update callback when config changes', () => {
       const { result, rerender } = renderHook(
-        ({ config }) =>
+        ({ config }: { config: Config }) =>
           useSessionResume({
             ...getDefaultProps(),
             config,
@@ -320,7 +321,7 @@ describe('useSessionResume', () => {
         }),
       );
 
-      await vi.waitFor(() => {
+      await waitFor(() => {
         expect(mockHistoryManager.clearItems).toHaveBeenCalled();
       });
 
@@ -357,7 +358,7 @@ describe('useSessionResume', () => {
       };
 
       const { rerender } = renderHook(
-        ({ refreshStatic }) =>
+        ({ refreshStatic }: { refreshStatic: () => void }) =>
           useSessionResume({
             ...getDefaultProps(),
             refreshStatic,
@@ -371,7 +372,7 @@ describe('useSessionResume', () => {
         },
       );
 
-      await vi.waitFor(() => {
+      await waitFor(() => {
         expect(mockHistoryManager.clearItems).toHaveBeenCalled();
       });
 
@@ -421,7 +422,7 @@ describe('useSessionResume', () => {
         }),
       );
 
-      await vi.waitFor(() => {
+      await waitFor(() => {
         expect(mockGeminiClient.resumeChat).toHaveBeenCalled();
       });
 

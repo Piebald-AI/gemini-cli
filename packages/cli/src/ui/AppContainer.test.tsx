@@ -18,11 +18,13 @@ import { render } from '../test-utils/render.js';
 import { cleanup } from 'ink-testing-library';
 import { act, useContext } from 'react';
 import { AppContainer } from './AppContainer.js';
+import { SettingsContext } from './contexts/SettingsContext.js';
 import {
   type Config,
   makeFakeConfig,
   CoreEvent,
   type UserFeedbackPayload,
+  type ResumedSessionData,
 } from '@google/gemini-cli-core';
 
 // Mock coreEvents
@@ -145,6 +147,37 @@ describe('AppContainer State Management', () => {
   let mockSettings: LoadedSettings;
   let mockInitResult: InitializationResult;
   let mockExtensionManager: MockedObject<ExtensionManager>;
+
+  // Helper to generate the AppContainer JSX for render and rerender
+  const getAppContainer = ({
+    settings = mockSettings,
+    config = mockConfig,
+    version = '1.0.0',
+    initResult = mockInitResult,
+    startupWarnings,
+    resumedSessionData,
+  }: {
+    settings?: LoadedSettings;
+    config?: Config;
+    version?: string;
+    initResult?: InitializationResult;
+    startupWarnings?: string[];
+    resumedSessionData?: ResumedSessionData;
+  } = {}) => (
+    <SettingsContext.Provider value={settings}>
+      <AppContainer
+        config={config}
+        version={version}
+        initializationResult={initResult}
+        startupWarnings={startupWarnings}
+        resumedSessionData={resumedSessionData}
+      />
+    </SettingsContext.Provider>
+  );
+
+  // Helper to render the AppContainer
+  const renderAppContainer = (props?: Parameters<typeof getAppContainer>[0]) =>
+    render(getAppContainer(props));
 
   // Create typed mocks for all hooks
   const mockedUseQuotaAndFallback = useQuotaAndFallback as Mock;
@@ -313,6 +346,7 @@ describe('AppContainer State Management', () => {
           showStatusInTitle: false,
           hideWindowTitle: false,
         },
+        useAlternateBuffer: false,
       },
     } as unknown as LoadedSettings;
 
@@ -331,14 +365,7 @@ describe('AppContainer State Management', () => {
 
   describe('Basic Rendering', () => {
     it('renders without crashing with minimal props', async () => {
-      const { unmount } = render(
-        <AppContainer
-          config={mockConfig}
-          settings={mockSettings}
-          version="1.0.0"
-          initializationResult={mockInitResult}
-        />,
-      );
+      const { unmount } = renderAppContainer();
       await act(async () => {
         await new Promise((resolve) => setTimeout(resolve, 0));
       });
@@ -348,15 +375,7 @@ describe('AppContainer State Management', () => {
     it('renders with startup warnings', async () => {
       const startupWarnings = ['Warning 1', 'Warning 2'];
 
-      const { unmount } = render(
-        <AppContainer
-          config={mockConfig}
-          settings={mockSettings}
-          startupWarnings={startupWarnings}
-          version="1.0.0"
-          initializationResult={mockInitResult}
-        />,
-      );
+      const { unmount } = renderAppContainer({ startupWarnings });
       await act(async () => {
         await new Promise((resolve) => setTimeout(resolve, 0));
       });
@@ -371,14 +390,9 @@ describe('AppContainer State Management', () => {
         themeError: 'Failed to load theme',
       };
 
-      const { unmount } = render(
-        <AppContainer
-          config={mockConfig}
-          settings={mockSettings}
-          version="1.0.0"
-          initializationResult={initResultWithError}
-        />,
-      );
+      const { unmount } = renderAppContainer({
+        initResult: initResultWithError,
+      });
       await act(async () => {
         await new Promise((resolve) => setTimeout(resolve, 0));
       });
@@ -390,28 +404,14 @@ describe('AppContainer State Management', () => {
       vi.spyOn(debugConfig, 'getDebugMode').mockReturnValue(true);
 
       expect(() => {
-        render(
-          <AppContainer
-            config={debugConfig}
-            settings={mockSettings}
-            version="1.0.0"
-            initializationResult={mockInitResult}
-          />,
-        );
+        renderAppContainer({ config: debugConfig });
       }).not.toThrow();
     });
   });
 
   describe('Context Providers', () => {
     it('provides AppContext with correct values', async () => {
-      const { unmount } = render(
-        <AppContainer
-          config={mockConfig}
-          settings={mockSettings}
-          version="2.0.0"
-          initializationResult={mockInitResult}
-        />,
-      );
+      const { unmount } = renderAppContainer({ version: '2.0.0' });
       await act(async () => {
         await new Promise((resolve) => setTimeout(resolve, 0));
       });
@@ -421,14 +421,7 @@ describe('AppContainer State Management', () => {
     });
 
     it('provides UIStateContext with state management', async () => {
-      const { unmount } = render(
-        <AppContainer
-          config={mockConfig}
-          settings={mockSettings}
-          version="1.0.0"
-          initializationResult={mockInitResult}
-        />,
-      );
+      const { unmount } = renderAppContainer();
       await act(async () => {
         await new Promise((resolve) => setTimeout(resolve, 0));
       });
@@ -436,14 +429,7 @@ describe('AppContainer State Management', () => {
     });
 
     it('provides UIActionsContext with action handlers', async () => {
-      const { unmount } = render(
-        <AppContainer
-          config={mockConfig}
-          settings={mockSettings}
-          version="1.0.0"
-          initializationResult={mockInitResult}
-        />,
-      );
+      const { unmount } = renderAppContainer();
       await act(async () => {
         await new Promise((resolve) => setTimeout(resolve, 0));
       });
@@ -451,14 +437,7 @@ describe('AppContainer State Management', () => {
     });
 
     it('provides ConfigContext with config object', async () => {
-      const { unmount } = render(
-        <AppContainer
-          config={mockConfig}
-          settings={mockSettings}
-          version="1.0.0"
-          initializationResult={mockInitResult}
-        />,
-      );
+      const { unmount } = renderAppContainer();
       await act(async () => {
         await new Promise((resolve) => setTimeout(resolve, 0));
       });
@@ -477,14 +456,7 @@ describe('AppContainer State Management', () => {
         },
       } as unknown as LoadedSettings;
 
-      const { unmount } = render(
-        <AppContainer
-          config={mockConfig}
-          settings={settingsAllHidden}
-          version="1.0.0"
-          initializationResult={mockInitResult}
-        />,
-      );
+      const { unmount } = renderAppContainer({ settings: settingsAllHidden });
       await act(async () => {
         await new Promise((resolve) => setTimeout(resolve, 0));
       });
@@ -501,14 +473,7 @@ describe('AppContainer State Management', () => {
         },
       } as unknown as LoadedSettings;
 
-      const { unmount } = render(
-        <AppContainer
-          config={mockConfig}
-          settings={settingsWithMemory}
-          version="1.0.0"
-          initializationResult={mockInitResult}
-        />,
-      );
+      const { unmount } = renderAppContainer({ settings: settingsWithMemory });
       await act(async () => {
         await new Promise((resolve) => setTimeout(resolve, 0));
       });
@@ -520,14 +485,7 @@ describe('AppContainer State Management', () => {
     it.each(['1.0.0', '2.1.3-beta', '3.0.0-nightly'])(
       'handles version format: %s',
       async (version) => {
-        const { unmount } = render(
-          <AppContainer
-            config={mockConfig}
-            settings={mockSettings}
-            version={version}
-            initializationResult={mockInitResult}
-          />,
-        );
+        const { unmount } = renderAppContainer({ version });
         await act(async () => {
           await new Promise((resolve) => setTimeout(resolve, 0));
         });
@@ -544,14 +502,7 @@ describe('AppContainer State Management', () => {
       });
 
       // Should still render without crashing - errors should be handled internally
-      const { unmount } = render(
-        <AppContainer
-          config={errorConfig}
-          settings={mockSettings}
-          version="1.0.0"
-          initializationResult={mockInitResult}
-        />,
-      );
+      const { unmount } = renderAppContainer({ config: errorConfig });
       await act(async () => {
         await new Promise((resolve) => setTimeout(resolve, 0));
       });
@@ -563,14 +514,7 @@ describe('AppContainer State Management', () => {
         merged: {},
       } as LoadedSettings;
 
-      const { unmount } = render(
-        <AppContainer
-          config={mockConfig}
-          settings={undefinedSettings}
-          version="1.0.0"
-          initializationResult={mockInitResult}
-        />,
-      );
+      const { unmount } = renderAppContainer({ settings: undefinedSettings });
       await act(async () => {
         await new Promise((resolve) => setTimeout(resolve, 0));
       });
@@ -582,14 +526,7 @@ describe('AppContainer State Management', () => {
     it('establishes correct provider nesting order', () => {
       // This tests that all the context providers are properly nested
       // and that the component tree can be built without circular dependencies
-      const { unmount } = render(
-        <AppContainer
-          config={mockConfig}
-          settings={mockSettings}
-          version="1.0.0"
-          initializationResult={mockInitResult}
-        />,
-      );
+      const { unmount } = renderAppContainer();
 
       expect(() => unmount()).not.toThrow();
     });
@@ -623,35 +560,37 @@ describe('AppContainer State Management', () => {
         filePath: '/tmp/test-session.json',
       };
 
-      const { unmount } = render(
-        <AppContainer
-          config={mockConfig}
-          settings={mockSettings}
-          version="1.0.0"
-          initializationResult={mockInitResult}
-          resumedSessionData={mockResumedSessionData}
-        />,
-      );
+      let unmount: () => void;
       await act(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 0));
+        const result = renderAppContainer({
+          config: mockConfig,
+          settings: mockSettings,
+          version: '1.0.0',
+          initResult: mockInitResult,
+          resumedSessionData: mockResumedSessionData,
+        });
+        unmount = result.unmount;
       });
-      unmount();
+      await act(async () => {
+        unmount();
+      });
     });
 
     it('renders without resumed session data', async () => {
-      const { unmount } = render(
-        <AppContainer
-          config={mockConfig}
-          settings={mockSettings}
-          version="1.0.0"
-          initializationResult={mockInitResult}
-          resumedSessionData={undefined}
-        />,
-      );
+      let unmount: () => void;
       await act(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 0));
+        const result = renderAppContainer({
+          config: mockConfig,
+          settings: mockSettings,
+          version: '1.0.0',
+          initResult: mockInitResult,
+          resumedSessionData: undefined,
+        });
+        unmount = result.unmount;
       });
-      unmount();
+      await act(async () => {
+        unmount();
+      });
     });
 
     it('initializes chat recording service when config has it', () => {
@@ -675,37 +614,15 @@ describe('AppContainer State Management', () => {
       } as unknown as Config;
 
       expect(() => {
-        render(
-          <AppContainer
-            config={configWithRecording}
-            settings={mockSettings}
-            version="1.0.0"
-            initializationResult={mockInitResult}
-          />,
-        );
+        renderAppContainer({
+          config: configWithRecording,
+          settings: mockSettings,
+          version: '1.0.0',
+          initResult: mockInitResult,
+        });
       }).not.toThrow();
     });
   });
-
-  describe('Session Browser Integration', () => {
-    it('provides session browser actions in UIActions context', async () => {
-      // This test verifies that openSessionBrowser is included in the UIActions
-      // The actual functionality is tested through integration tests
-      const { unmount } = render(
-        <AppContainer
-          config={mockConfig}
-          settings={mockSettings}
-          version="1.0.0"
-          initializationResult={mockInitResult}
-        />,
-      );
-      await act(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 0));
-      });
-      unmount();
-    });
-  });
-
   describe('Session Recording Integration', () => {
     it('provides chat recording service configuration', () => {
       const mockChatRecordingService = {
@@ -732,14 +649,12 @@ describe('AppContainer State Management', () => {
       } as unknown as Config;
 
       expect(() => {
-        render(
-          <AppContainer
-            config={configWithRecording}
-            settings={mockSettings}
-            version="1.0.0"
-            initializationResult={mockInitResult}
-          />,
-        );
+        renderAppContainer({
+          config: configWithRecording,
+          settings: mockSettings,
+          version: '1.0.0',
+          initResult: mockInitResult,
+        });
       }).not.toThrow();
 
       // Verify the recording service structure is correct
@@ -772,14 +687,12 @@ describe('AppContainer State Management', () => {
         getGeminiClient: vi.fn(() => mockGeminiClient),
       } as unknown as Config;
 
-      render(
-        <AppContainer
-          config={configWithRecording}
-          settings={mockSettings}
-          version="1.0.0"
-          initializationResult={mockInitResult}
-        />,
-      );
+      renderAppContainer({
+        config: configWithRecording,
+        settings: mockSettings,
+        version: '1.0.0',
+        initResult: mockInitResult,
+      });
 
       // The actual recording happens through the useHistory hook
       // which would be triggered by user interactions
@@ -836,15 +749,13 @@ describe('AppContainer State Management', () => {
       };
 
       expect(() => {
-        render(
-          <AppContainer
-            config={configWithClient}
-            settings={mockSettings}
-            version="1.0.0"
-            initializationResult={mockInitResult}
-            resumedSessionData={resumedData}
-          />,
-        );
+        renderAppContainer({
+          config: configWithClient,
+          settings: mockSettings,
+          version: '1.0.0',
+          initResult: mockInitResult,
+          resumedSessionData: resumedData,
+        });
       }).not.toThrow();
 
       // Verify the resume functionality structure is in place
@@ -877,15 +788,13 @@ describe('AppContainer State Management', () => {
         filePath: '/tmp/session.json',
       };
 
-      render(
-        <AppContainer
-          config={configWithClient}
-          settings={mockSettings}
-          version="1.0.0"
-          initializationResult={mockInitResult}
-          resumedSessionData={resumedData}
-        />,
-      );
+      renderAppContainer({
+        config: configWithClient,
+        settings: mockSettings,
+        version: '1.0.0',
+        initResult: mockInitResult,
+        resumedSessionData: resumedData,
+      });
 
       // Should not call resumeChat when client is not initialized
       expect(mockResumeChat).not.toHaveBeenCalled();
@@ -921,14 +830,12 @@ describe('AppContainer State Management', () => {
         getGeminiClient: vi.fn(() => mockGeminiClient),
       } as unknown as Config;
 
-      render(
-        <AppContainer
-          config={configWithRecording}
-          settings={mockSettings}
-          version="1.0.0"
-          initializationResult={mockInitResult}
-        />,
-      );
+      renderAppContainer({
+        config: configWithRecording,
+        settings: mockSettings,
+        version: '1.0.0',
+        initResult: mockInitResult,
+      });
 
       // In the actual app, these stats would be displayed in components
       // and updated as messages are processed through the recording service
@@ -940,14 +847,7 @@ describe('AppContainer State Management', () => {
   describe('Quota and Fallback Integration', () => {
     it('passes a null proQuotaRequest to UIStateContext by default', async () => {
       // The default mock from beforeEach already sets proQuotaRequest to null
-      const { unmount } = render(
-        <AppContainer
-          config={mockConfig}
-          settings={mockSettings}
-          version="1.0.0"
-          initializationResult={mockInitResult}
-        />,
-      );
+      const { unmount } = renderAppContainer();
       await act(async () => {
         await new Promise((resolve) => setTimeout(resolve, 0));
       });
@@ -970,14 +870,7 @@ describe('AppContainer State Management', () => {
       });
 
       // Act: Render the container
-      const { unmount } = render(
-        <AppContainer
-          config={mockConfig}
-          settings={mockSettings}
-          version="1.0.0"
-          initializationResult={mockInitResult}
-        />,
-      );
+      const { unmount } = renderAppContainer();
       await act(async () => {
         await new Promise((resolve) => setTimeout(resolve, 0));
       });
@@ -996,14 +889,7 @@ describe('AppContainer State Management', () => {
       });
 
       // Act: Render the container
-      const { unmount } = render(
-        <AppContainer
-          config={mockConfig}
-          settings={mockSettings}
-          version="1.0.0"
-          initializationResult={mockInitResult}
-        />,
-      );
+      const { unmount } = renderAppContainer();
       await act(async () => {
         await new Promise((resolve) => setTimeout(resolve, 0));
       });
@@ -1013,9 +899,9 @@ describe('AppContainer State Management', () => {
 
       // You can even verify that the plumbed function is callable
       act(() => {
-        capturedUIActions.handleProQuotaChoice('auth');
+        capturedUIActions.handleProQuotaChoice('retry_later');
       });
-      expect(mockHandler).toHaveBeenCalledWith('auth');
+      expect(mockHandler).toHaveBeenCalledWith('retry_later');
       unmount();
     });
   });
@@ -1041,14 +927,9 @@ describe('AppContainer State Management', () => {
       } as unknown as LoadedSettings;
 
       // Act: Render the container
-      const { unmount } = render(
-        <AppContainer
-          config={mockConfig}
-          settings={mockSettingsWithShowStatusFalse}
-          version="1.0.0"
-          initializationResult={mockInitResult}
-        />,
-      );
+      const { unmount } = renderAppContainer({
+        settings: mockSettingsWithShowStatusFalse,
+      });
 
       // Assert: Check that no title-related writes occurred
       const titleWrites = mockStdout.write.mock.calls.filter((call) =>
@@ -1073,14 +954,9 @@ describe('AppContainer State Management', () => {
       } as unknown as LoadedSettings;
 
       // Act: Render the container
-      const { unmount } = render(
-        <AppContainer
-          config={mockConfig}
-          settings={mockSettingsWithHideTitleTrue}
-          version="1.0.0"
-          initializationResult={mockInitResult}
-        />,
-      );
+      const { unmount } = renderAppContainer({
+        settings: mockSettingsWithHideTitleTrue,
+      });
 
       // Assert: Check that no title-related writes occurred
       const titleWrites = mockStdout.write.mock.calls.filter((call) =>
@@ -1116,14 +992,9 @@ describe('AppContainer State Management', () => {
       });
 
       // Act: Render the container
-      const { unmount } = render(
-        <AppContainer
-          config={mockConfig}
-          settings={mockSettingsWithTitleEnabled}
-          version="1.0.0"
-          initializationResult={mockInitResult}
-        />,
-      );
+      const { unmount } = renderAppContainer({
+        settings: mockSettingsWithTitleEnabled,
+      });
 
       // Assert: Check that title was updated with thought subject
       const titleWrites = mockStdout.write.mock.calls.filter((call) =>
@@ -1161,14 +1032,9 @@ describe('AppContainer State Management', () => {
       });
 
       // Act: Render the container
-      const { unmount } = render(
-        <AppContainer
-          config={mockConfig}
-          settings={mockSettingsWithTitleEnabled}
-          version="1.0.0"
-          initializationResult={mockInitResult}
-        />,
-      );
+      const { unmount } = renderAppContainer({
+        settings: mockSettingsWithTitleEnabled,
+      });
 
       // Assert: Check that title was updated with default Idle text
       const titleWrites = mockStdout.write.mock.calls.filter((call) =>
@@ -1207,14 +1073,9 @@ describe('AppContainer State Management', () => {
       });
 
       // Act: Render the container
-      const { unmount } = render(
-        <AppContainer
-          config={mockConfig}
-          settings={mockSettingsWithTitleEnabled}
-          version="1.0.0"
-          initializationResult={mockInitResult}
-        />,
-      );
+      const { unmount } = renderAppContainer({
+        settings: mockSettingsWithTitleEnabled,
+      });
 
       // Assert: Check that title was updated with confirmation text
       const titleWrites = mockStdout.write.mock.calls.filter((call) =>
@@ -1253,14 +1114,9 @@ describe('AppContainer State Management', () => {
       });
 
       // Act: Render the container
-      const { unmount } = render(
-        <AppContainer
-          config={mockConfig}
-          settings={mockSettingsWithTitleEnabled}
-          version="1.0.0"
-          initializationResult={mockInitResult}
-        />,
-      );
+      const { unmount } = renderAppContainer({
+        settings: mockSettingsWithTitleEnabled,
+      });
 
       // Assert: Check that title is padded to exactly 80 characters
       const titleWrites = mockStdout.write.mock.calls.filter((call) =>
@@ -1303,14 +1159,9 @@ describe('AppContainer State Management', () => {
       });
 
       // Act: Render the container
-      const { unmount } = render(
-        <AppContainer
-          config={mockConfig}
-          settings={mockSettingsWithTitleEnabled}
-          version="1.0.0"
-          initializationResult={mockInitResult}
-        />,
-      );
+      const { unmount } = renderAppContainer({
+        settings: mockSettingsWithTitleEnabled,
+      });
 
       // Assert: Check that the correct ANSI escape sequence is used
       const titleWrites = mockStdout.write.mock.calls.filter((call) =>
@@ -1350,14 +1201,9 @@ describe('AppContainer State Management', () => {
       });
 
       // Act: Render the container
-      const { unmount } = render(
-        <AppContainer
-          config={mockConfig}
-          settings={mockSettingsWithTitleEnabled}
-          version="1.0.0"
-          initializationResult={mockInitResult}
-        />,
-      );
+      const { unmount } = renderAppContainer({
+        settings: mockSettingsWithTitleEnabled,
+      });
 
       // Assert: Check that title was updated with CLI_TITLE value
       const titleWrites = mockStdout.write.mock.calls.filter((call) =>
@@ -1381,14 +1227,7 @@ describe('AppContainer State Management', () => {
     });
 
     it('should set and clear the queue error message after a timeout', async () => {
-      const { rerender, unmount } = render(
-        <AppContainer
-          config={mockConfig}
-          settings={mockSettings}
-          version="1.0.0"
-          initializationResult={mockInitResult}
-        />,
-      );
+      const { rerender, unmount } = renderAppContainer();
       await act(async () => {
         vi.advanceTimersByTime(0);
       });
@@ -1398,40 +1237,19 @@ describe('AppContainer State Management', () => {
       act(() => {
         capturedUIActions.setQueueErrorMessage('Test error');
       });
-      rerender(
-        <AppContainer
-          config={mockConfig}
-          settings={mockSettings}
-          version="1.0.0"
-          initializationResult={mockInitResult}
-        />,
-      );
+      rerender(getAppContainer());
       expect(capturedUIState.queueErrorMessage).toBe('Test error');
 
       act(() => {
         vi.advanceTimersByTime(3000);
       });
-      rerender(
-        <AppContainer
-          config={mockConfig}
-          settings={mockSettings}
-          version="1.0.0"
-          initializationResult={mockInitResult}
-        />,
-      );
+      rerender(getAppContainer());
       expect(capturedUIState.queueErrorMessage).toBeNull();
       unmount();
     });
 
     it('should reset the timer if a new error message is set', async () => {
-      const { rerender, unmount } = render(
-        <AppContainer
-          config={mockConfig}
-          settings={mockSettings}
-          version="1.0.0"
-          initializationResult={mockInitResult}
-        />,
-      );
+      const { rerender, unmount } = renderAppContainer();
       await act(async () => {
         vi.advanceTimersByTime(0);
       });
@@ -1439,14 +1257,7 @@ describe('AppContainer State Management', () => {
       act(() => {
         capturedUIActions.setQueueErrorMessage('First error');
       });
-      rerender(
-        <AppContainer
-          config={mockConfig}
-          settings={mockSettings}
-          version="1.0.0"
-          initializationResult={mockInitResult}
-        />,
-      );
+      rerender(getAppContainer());
       expect(capturedUIState.queueErrorMessage).toBe('First error');
 
       act(() => {
@@ -1456,41 +1267,20 @@ describe('AppContainer State Management', () => {
       act(() => {
         capturedUIActions.setQueueErrorMessage('Second error');
       });
-      rerender(
-        <AppContainer
-          config={mockConfig}
-          settings={mockSettings}
-          version="1.0.0"
-          initializationResult={mockInitResult}
-        />,
-      );
+      rerender(getAppContainer());
       expect(capturedUIState.queueErrorMessage).toBe('Second error');
 
       act(() => {
         vi.advanceTimersByTime(2000);
       });
-      rerender(
-        <AppContainer
-          config={mockConfig}
-          settings={mockSettings}
-          version="1.0.0"
-          initializationResult={mockInitResult}
-        />,
-      );
+      rerender(getAppContainer());
       expect(capturedUIState.queueErrorMessage).toBe('Second error');
 
       // 5. Advance time past the 3 second timeout from the second message
       act(() => {
         vi.advanceTimersByTime(1000);
       });
-      rerender(
-        <AppContainer
-          config={mockConfig}
-          settings={mockSettings}
-          version="1.0.0"
-          initializationResult={mockInitResult}
-        />,
-      );
+      rerender(getAppContainer());
       expect(capturedUIState.queueErrorMessage).toBeNull();
       unmount();
     });
@@ -1516,14 +1306,7 @@ describe('AppContainer State Management', () => {
         activePtyId: 'some-id',
       });
 
-      const { unmount } = render(
-        <AppContainer
-          config={mockConfig}
-          settings={mockSettings}
-          version="1.0.0"
-          initializationResult={mockInitResult}
-        />,
-      );
+      const { unmount } = renderAppContainer();
       await act(async () => {
         await new Promise((resolve) => setTimeout(resolve, 0));
       });
@@ -1548,27 +1331,12 @@ describe('AppContainer State Management', () => {
 
     // Helper function to reduce boilerplate in tests
     const setupKeypressTest = async () => {
-      const renderResult = render(
-        <AppContainer
-          config={mockConfig}
-          settings={mockSettings}
-          version="1.0.0"
-          initializationResult={mockInitResult}
-        />,
-      );
+      const renderResult = renderAppContainer();
       await act(async () => {
         vi.advanceTimersByTime(0);
       });
 
-      rerender = () =>
-        renderResult.rerender(
-          <AppContainer
-            config={mockConfig}
-            settings={mockSettings}
-            version="1.0.0"
-            initializationResult={mockInitResult}
-          />,
-        );
+      rerender = () => renderResult.rerender(getAppContainer());
       unmount = renderResult.unmount;
     };
 
@@ -1733,27 +1501,13 @@ describe('AppContainer State Management', () => {
         },
       } as unknown as LoadedSettings;
 
-      const renderResult = render(
-        <AppContainer
-          config={mockConfig}
-          settings={testSettings}
-          version="1.0.0"
-          initializationResult={mockInitResult}
-        />,
-      );
+      const renderResult = renderAppContainer({ settings: testSettings });
       await act(async () => {
         vi.advanceTimersByTime(0);
       });
 
       rerender = () =>
-        renderResult.rerender(
-          <AppContainer
-            config={mockConfig}
-            settings={testSettings}
-            version="1.0.0"
-            initializationResult={mockInitResult}
-          />,
-        );
+        renderResult.rerender(getAppContainer({ settings: testSettings }));
       unmount = renderResult.unmount;
     };
 
@@ -1792,6 +1546,7 @@ describe('AppContainer State Management', () => {
             meta: false,
             shift: false,
             paste: false,
+            insertable: false,
             sequence: '\x13',
           });
         });
@@ -1818,6 +1573,7 @@ describe('AppContainer State Management', () => {
               meta: false,
               shift: false,
               paste: false,
+              insertable: false,
               sequence: '\x13',
             });
           });
@@ -1832,6 +1588,7 @@ describe('AppContainer State Management', () => {
               meta: false,
               shift: false,
               paste: false,
+              insertable: true,
               sequence: 'a',
             });
           });
@@ -1852,6 +1609,7 @@ describe('AppContainer State Management', () => {
               meta: false,
               shift: false,
               paste: false,
+              insertable: false,
               sequence: '\x13',
             });
           });
@@ -1867,6 +1625,7 @@ describe('AppContainer State Management', () => {
               meta: false,
               shift: false,
               paste: false,
+              insertable: true,
               sequence: 'a',
             });
           });
@@ -1888,14 +1647,7 @@ describe('AppContainer State Management', () => {
         closeModelDialog: vi.fn(),
       });
 
-      const { unmount } = render(
-        <AppContainer
-          config={mockConfig}
-          settings={mockSettings}
-          version="1.0.0"
-          initializationResult={mockInitResult}
-        />,
-      );
+      const { unmount } = renderAppContainer();
       await act(async () => {
         await new Promise((resolve) => setTimeout(resolve, 0));
       });
@@ -1913,14 +1665,7 @@ describe('AppContainer State Management', () => {
         closeModelDialog: mockCloseModelDialog,
       });
 
-      const { unmount } = render(
-        <AppContainer
-          config={mockConfig}
-          settings={mockSettings}
-          version="1.0.0"
-          initializationResult={mockInitResult}
-        />,
-      );
+      const { unmount } = renderAppContainer();
       await act(async () => {
         await new Promise((resolve) => setTimeout(resolve, 0));
       });
@@ -1936,14 +1681,7 @@ describe('AppContainer State Management', () => {
 
   describe('CoreEvents Integration', () => {
     it('subscribes to UserFeedback and drains backlog on mount', async () => {
-      const { unmount } = render(
-        <AppContainer
-          config={mockConfig}
-          settings={mockSettings}
-          version="1.0.0"
-          initializationResult={mockInitResult}
-        />,
-      );
+      const { unmount } = renderAppContainer();
       await act(async () => {
         await new Promise((resolve) => setTimeout(resolve, 0));
       });
@@ -1957,14 +1695,7 @@ describe('AppContainer State Management', () => {
     });
 
     it('unsubscribes from UserFeedback on unmount', async () => {
-      const { unmount } = render(
-        <AppContainer
-          config={mockConfig}
-          settings={mockSettings}
-          version="1.0.0"
-          initializationResult={mockInitResult}
-        />,
-      );
+      const { unmount } = renderAppContainer();
       await act(async () => {
         await new Promise((resolve) => setTimeout(resolve, 0));
       });
@@ -1978,14 +1709,7 @@ describe('AppContainer State Management', () => {
     });
 
     it('adds history item when UserFeedback event is received', async () => {
-      const { unmount } = render(
-        <AppContainer
-          config={mockConfig}
-          settings={mockSettings}
-          version="1.0.0"
-          initializationResult={mockInitResult}
-        />,
-      );
+      const { unmount } = renderAppContainer();
       await act(async () => {
         await new Promise((resolve) => setTimeout(resolve, 0));
       });
@@ -2019,16 +1743,7 @@ describe('AppContainer State Management', () => {
       // Arrange: Mock initial model
       vi.spyOn(mockConfig, 'getModel').mockReturnValue('initial-model');
 
-      const { unmount } = render(
-        <AppContainer
-          config={mockConfig}
-          settings={mockSettings}
-          version="1.0.0"
-          initializationResult={mockInitResult}
-        />,
-      );
-
-      // Verify initial model
+      const { unmount } = renderAppContainer();
       await act(async () => {
         await vi.waitFor(() => {
           expect(capturedUIState?.currentModel).toBe('initial-model');
@@ -2071,14 +1786,7 @@ describe('AppContainer State Management', () => {
       });
 
       // The main assertion is that the render does not throw.
-      const { unmount } = render(
-        <AppContainer
-          config={mockConfig}
-          settings={mockSettings}
-          version="1.0.0"
-          initializationResult={mockInitResult}
-        />,
-      );
+      const { unmount } = renderAppContainer();
 
       await act(async () => {
         await new Promise((resolve) => setTimeout(resolve, 0));

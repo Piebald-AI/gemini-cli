@@ -40,7 +40,7 @@ export interface UIActions {
   refreshStatic: () => void;
   handleFinalSubmit: (value: string) => void;
   handleClearScreen: () => void;
-  handleProQuotaChoice: (choice: 'auth' | 'continue') => void;
+  handleProQuotaChoice: (choice: 'retry_later' | 'retry') => void;
   openSessionBrowser: () => void;
   closeSessionBrowser: () => void;
   handleResumeSession: (sessionId: string) => Promise<void>;
