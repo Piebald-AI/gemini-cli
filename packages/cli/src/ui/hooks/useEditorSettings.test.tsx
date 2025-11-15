@@ -29,6 +29,8 @@ import {
 } from '@google/gemini-cli-core';
 import type { UseHistoryManagerReturn } from './useHistoryManager.js';
 
+import { SettingPaths } from '../../config/settingPaths.js';
+
 vi.mock('@google/gemini-cli-core', async () => {
   const actual = await vi.importActual('@google/gemini-cli-core');
   return {
@@ -113,7 +115,7 @@ describe('useEditorSettings', () => {
 
     expect(mockLoadedSettings.setValue).toHaveBeenCalledWith(
       scope,
-      'preferredEditor',
+      SettingPaths.General.PreferredEditor,
       editorType,
     );
 
@@ -141,7 +143,7 @@ describe('useEditorSettings', () => {
 
     expect(mockLoadedSettings.setValue).toHaveBeenCalledWith(
       scope,
-      'preferredEditor',
+      SettingPaths.General.PreferredEditor,
       undefined,
     );
 
@@ -170,7 +172,7 @@ describe('useEditorSettings', () => {
 
       expect(mockLoadedSettings.setValue).toHaveBeenCalledWith(
         scope,
-        'preferredEditor',
+        SettingPaths.General.PreferredEditor,
         editorType,
       );
 
@@ -200,7 +202,7 @@ describe('useEditorSettings', () => {
 
       expect(mockLoadedSettings.setValue).toHaveBeenCalledWith(
         scope,
-        'preferredEditor',
+        SettingPaths.General.PreferredEditor,
         editorType,
       );
 
