@@ -342,10 +342,8 @@ export const AppContainer = (props: AppContainerProps) => {
   });
 
   useEffect(() => {
-    let isMounted = true;
     const fetchUserMessages = async () => {
       const pastMessagesRaw = (await logger?.getPreviousUserMessages()) || [];
-      if (!isMounted) return;
       const currentSessionUserMessages = historyManager.history
         .filter(
           (item): item is HistoryItem & { type: 'user'; text: string } =>
@@ -371,9 +369,6 @@ export const AppContainer = (props: AppContainerProps) => {
       setUserMessages(deduplicatedMessages.reverse());
     };
     fetchUserMessages();
-    return () => {
-      isMounted = false;
-    };
   }, [historyManager.history, logger]);
 
   const refreshStatic = useCallback(() => {
@@ -902,17 +897,12 @@ Logging in with Google... Please restart Gemini CLI to continue.
   const [currentIDE, setCurrentIDE] = useState<IdeInfo | null>(null);
 
   useEffect(() => {
-    let isMounted = true;
     const getIde = async () => {
       const ideClient = await IdeClient.getInstance();
-      if (!isMounted) return;
       const currentIde = ideClient.getCurrentIde();
       setCurrentIDE(currentIde || null);
     };
     getIde();
-    return () => {
-      isMounted = false;
-    };
   }, []);
   const shouldShowIdePrompt = Boolean(
     currentIDE &&
