@@ -42,7 +42,9 @@ export interface UIActions {
   refreshStatic: () => void;
   handleFinalSubmit: (value: string) => void;
   handleClearScreen: () => void;
-  handleProQuotaChoice: (choice: 'retry_later' | 'retry') => void;
+  handleProQuotaChoice: (
+    choice: 'retry_later' | 'retry_once' | 'retry_always' | 'upgrade',
+  ) => void;
   openSessionBrowser: () => void;
   closeSessionBrowser: () => void;
   handleResumeSession: (sessionId: string) => Promise<void>;
@@ -51,6 +53,7 @@ export interface UIActions {
   popAllMessages: (onPop: (messages: string | undefined) => void) => void;
   handleApiKeySubmit: (apiKey: string) => Promise<void>;
   handleApiKeyCancel: () => void;
+  setBannerVisible: (visible: boolean) => void;
 }
 
 export const UIActionsContext = createContext<UIActions | null>(null);
