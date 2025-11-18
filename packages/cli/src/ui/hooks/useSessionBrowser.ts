@@ -130,6 +130,9 @@ export function convertSessionToHistoryFormats(
         case 'error':
           messageType = MessageType.ERROR;
           break;
+        case 'warning':
+          messageType = MessageType.WARNING;
+          break;
         default:
           messageType = MessageType.GEMINI;
           break;

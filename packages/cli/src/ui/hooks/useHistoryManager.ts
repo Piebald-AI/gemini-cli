@@ -32,8 +32,7 @@ export interface UseHistoryManagerReturn {
  * Custom hook to manage the chat history state.
  *
  * Encapsulates the history array, message ID generation, adding items,
- * updating items, clearing the history, and recording the chat history
- * to disk.
+ * updating items, and clearing the history.
  */
 export function useHistory({
   chatRecordingService,
@@ -87,6 +86,13 @@ export function useHistory({
             chatRecordingService?.recordMessage({
               model: undefined,
               type: 'system',
+              content: itemData.text ?? '',
+            });
+            break;
+          case 'warning':
+            chatRecordingService?.recordMessage({
+              model: undefined,
+              type: 'warning',
               content: itemData.text ?? '',
             });
             break;
