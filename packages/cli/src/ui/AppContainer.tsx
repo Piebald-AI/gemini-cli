@@ -1037,7 +1037,7 @@ Logging in with Google... Please restart Gemini CLI to continue.
       recordExitFail(config);
     }
     if (ctrlCPressCount > 1) {
-      handleSlashCommand('/quit');
+      handleSlashCommand('/quit', undefined, undefined, false);
     } else {
       ctrlCTimerRef.current = setTimeout(() => {
         setCtrlCPressCount(0);
@@ -1055,7 +1055,7 @@ Logging in with Google... Please restart Gemini CLI to continue.
       recordExitFail(config);
     }
     if (ctrlDPressCount > 1) {
-      handleSlashCommand('/quit');
+      handleSlashCommand('/quit', undefined, undefined, false);
     } else {
       ctrlDTimerRef.current = setTimeout(() => {
         setCtrlDPressCount(0);
