@@ -263,7 +263,7 @@ describe('useSessionBrowser', () => {
             id: 'msg-3',
             timestamp: '2025-01-01T00:03:00Z',
             content: '   ',
-            type: 'system',
+            type: 'info',
           },
           {
             id: 'msg-4',
@@ -481,7 +481,7 @@ describe('convertSessionToHistoryFormats', () => {
         id: 'msg-1',
         timestamp: '2025-01-01T00:01:00Z',
         content: 'System message',
-        type: 'system',
+        type: 'info',
       },
       {
         id: 'msg-2',

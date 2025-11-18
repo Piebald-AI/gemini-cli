@@ -85,7 +85,7 @@ export function useHistory({
           case 'info':
             chatRecordingService?.recordMessage({
               model: undefined,
-              type: 'system',
+              type: 'info',
               content: itemData.text ?? '',
             });
             break;
