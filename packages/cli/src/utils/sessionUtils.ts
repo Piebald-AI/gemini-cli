@@ -23,6 +23,20 @@ import path from 'node:path';
 export const RESUME_LATEST = 'latest';
 
 /**
+ * Represents a text match found during search with surrounding context.
+ */
+export interface TextMatch {
+  /** Text content before the match (with ellipsis if truncated) */
+  before: string;
+  /** The exact matched text */
+  match: string;
+  /** Text content after the match (with ellipsis if truncated) */
+  after: string;
+  /** Role of the message author where the match was found */
+  role: 'user' | 'assistant';
+}
+
+/**
  * Session information for display and selection purposes.
  */
 export interface SessionInfo {
@@ -46,6 +60,14 @@ export interface SessionInfo {
   isCurrentSession: boolean;
   /** Display index in the list */
   index: number;
+  /** Full concatenated content (only loaded when needed for search) */
+  fullContent?: string;
+  /** Processed messages with normalized roles (only loaded when needed) */
+  messages?: Array<{ role: 'user' | 'assistant'; content: string }>;
+  /** Search result snippets when filtering */
+  matchSnippets?: TextMatch[];
+  /** Total number of matches found in this session */
+  matchCount?: number;
 }
 
 /**
@@ -68,27 +90,60 @@ export interface SessionSelectionResult {
 }
 
 /**
+ * Cleans and sanitizes message content for display by:
+ * - Converting newlines to spaces
+ * - Collapsing multiple whitespace to single spaces
+ * - Removing non-printable characters (keeping only ASCII 32-126)
+ * - Trimming leading/trailing whitespace
+ * @param message - The raw message content to clean
+ * @returns Sanitized message suitable for display
+ */
+export const cleanMessage = (message: string): string =>
+  message
+    .replace(/\n+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .replace(/[^\x20-\x7E]+/g, '') // Non-printable.
+    .trim();
+
+/**
  * Extracts the first meaningful user message from conversation messages.
  */
 export const extractFirstUserMessage = (messages: MessageRecord[]): string => {
-  const userMessage = messages.find((msg) => {
-    const content = partListUnionToString(msg.content);
-    return msg.type === 'user' && content?.trim() && content !== '/resume';
-  });
+  const userMessage = messages
+    // First try filtering out slash commands.
+    .filter((msg) => {
+      const content = partListUnionToString(msg.content);
+      return (
+        !content.startsWith('/') &&
+        !content.startsWith('?') &&
+        content.trim().length > 0
+      );
+    })
+    .find((msg) => msg.type === 'user');
+
+  let content: string;
 
   if (!userMessage) {
-    return 'Empty conversation';
+    // Fallback to first user message even if it's a slash command
+    const firstMsg = messages.find((msg) => msg.type === 'user');
+    if (!firstMsg) return 'Empty conversation';
+    content = cleanMessage(partListUnionToString(firstMsg.content));
+  } else {
+    content = cleanMessage(partListUnionToString(userMessage.content));
   }
 
-  // Truncate long messages for display
-  const content = partListUnionToString(userMessage.content).trim();
   return content.length > 100 ? content.slice(0, 97) + '...' : content;
 };
 
 /**
- * Formats a timestamp as relative time (e.g., "2 hours ago", "3 days ago").
+ * Formats a timestamp as relative time.
+ * @param timestamp - The timestamp to format
+ * @param style - 'long' (e.g. "2 hours ago") or 'short' (e.g. "2h")
  */
-export const formatRelativeTime = (timestamp: string): string => {
+export const formatRelativeTime = (
+  timestamp: string,
+  style: 'long' | 'short' = 'long',
+): string => {
   const now = new Date();
   const time = new Date(timestamp);
   const diffMs = now.getTime() - time.getTime();
@@ -97,16 +152,33 @@ export const formatRelativeTime = (timestamp: string): string => {
   const diffHours = Math.floor(diffMinutes / 60);
   const diffDays = Math.floor(diffHours / 24);
 
-  if (diffDays > 0) {
-    return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
-  } else if (diffHours > 0) {
-    return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
-  } else if (diffMinutes > 0) {
-    return `${diffMinutes} minute${diffMinutes === 1 ? '' : 's'} ago`;
+  if (style === 'short') {
+    if (diffSeconds < 1) return 'now';
+    if (diffSeconds < 60) return `${diffSeconds}s`;
+    if (diffMinutes < 60) return `${diffMinutes}m`;
+    if (diffHours < 24) return `${diffHours}h`;
+    if (diffDays < 30) return `${diffDays}d`;
+    const diffMonths = Math.floor(diffDays / 30);
+    return diffMonths < 12
+      ? `${diffMonths}mo`
+      : `${Math.floor(diffMonths / 12)}y`;
   } else {
-    return 'Just now';
+    if (diffDays > 0) {
+      return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+    } else if (diffHours > 0) {
+      return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
+    } else if (diffMinutes > 0) {
+      return `${diffMinutes} minute${diffMinutes === 1 ? '' : 's'} ago`;
+    } else {
+      return 'Just now';
+    }
   }
 };
+
+export interface GetSessionOptions {
+  /** Whether to load full message content (needed for search) */
+  includeFullContent?: boolean;
+}
 
 /**
  * Loads all session files (including corrupted ones) from the chats directory.
@@ -115,6 +187,7 @@ export const formatRelativeTime = (timestamp: string): string => {
 export const getAllSessionFiles = async (
   chatsDir: string,
   currentSessionId?: string,
+  options: GetSessionOptions = {},
 ): Promise<SessionFileEntry[]> => {
   try {
     const files = await fs.readdir(chatsDir);
@@ -147,6 +220,24 @@ export const getAllSessionFiles = async (
             ? file.includes(currentSessionId.slice(0, 8))
             : false;
 
+          let fullContent: string | undefined;
+          let messages:
+            | Array<{ role: 'user' | 'assistant'; content: string }>
+            | undefined;
+
+          if (options.includeFullContent) {
+            fullContent = content.messages
+              .map((msg) => partListUnionToString(msg.content))
+              .join(' ');
+            messages = content.messages.map((msg) => ({
+              role:
+                msg.type === 'user'
+                  ? ('user' as const)
+                  : ('assistant' as const),
+              content: partListUnionToString(msg.content),
+            }));
+          }
+
           const sessionInfo: SessionInfo = {
             id: content.sessionId,
             file: file.replace('.json', ''),
@@ -158,6 +249,8 @@ export const getAllSessionFiles = async (
             firstUserMessage,
             isCurrentSession,
             index: 0, // Will be set after sorting valid sessions
+            fullContent,
+            messages,
           };
 
           return { fileName: file, sessionInfo };
@@ -186,8 +279,13 @@ export const getAllSessionFiles = async (
 export const getSessionFiles = async (
   chatsDir: string,
   currentSessionId?: string,
+  options: GetSessionOptions = {},
 ): Promise<SessionInfo[]> => {
-  const allFiles = await getAllSessionFiles(chatsDir, currentSessionId);
+  const allFiles = await getAllSessionFiles(
+    chatsDir,
+    currentSessionId,
+    options,
+  );
 
   // Filter out corrupted files and extract SessionInfo
   const validSessions = allFiles
@@ -197,17 +295,31 @@ export const getSessionFiles = async (
     )
     .map((entry) => entry.sessionInfo);
 
+  // Deduplicate sessions by ID
+  const uniqueSessionsMap = new Map<string, SessionInfo>();
+  for (const session of validSessions) {
+    // If duplicate exists, keep the one with the later lastUpdated timestamp
+    if (
+      !uniqueSessionsMap.has(session.id) ||
+      new Date(session.lastUpdated).getTime() >
+        new Date(uniqueSessionsMap.get(session.id)!.lastUpdated).getTime()
+    ) {
+      uniqueSessionsMap.set(session.id, session);
+    }
+  }
+  const uniqueSessions = Array.from(uniqueSessionsMap.values());
+
   // Sort by startTime (oldest first) for stable session numbering
-  validSessions.sort(
+  uniqueSessions.sort(
     (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
   );
 
   // Set the correct 1-based indexes after sorting
-  validSessions.forEach((session, index) => {
+  uniqueSessions.forEach((session, index) => {
     session.index = index + 1;
   });
 
-  return validSessions;
+  return uniqueSessions;
 };
 
 /**

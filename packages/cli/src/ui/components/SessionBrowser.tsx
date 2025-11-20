@@ -10,52 +10,19 @@ import { Box, Text } from 'ink';
 import { Colors } from '../colors.js';
 import { useTerminalSize } from '../hooks/useTerminalSize.js';
 import { useKeypress } from '../hooks/useKeypress.js';
-import * as fs from 'node:fs/promises';
 import path from 'node:path';
-import type { Config, ConversationRecord } from '@google/gemini-cli-core';
+import type { Config } from '@google/gemini-cli-core';
+import type { SessionInfo, TextMatch } from '../../utils/sessionUtils.js';
 import {
-  partListUnionToString,
-  SESSION_FILE_PREFIX,
-} from '@google/gemini-cli-core';
-
-/**
- * Processed session information used for display and interaction.
- */
-interface SessionInfo {
-  /** Unique session identifier (filename without .json) */
-  id: string;
-  /** Filename without extension */
-  file: string;
-  /** Full filename including .json extension */
-  fileName: string;
-  /** ISO timestamp when session started */
-  startTime: string;
-  /** Total number of messages in the session */
-  messageCount: number;
-  /** ISO timestamp when session was last updated */
-  lastUpdated: string;
-  /** Display name for the session (typically first user message) */
-  displayName: string;
-  /** Cleaned first user message content */
-  firstUserMessage: string;
-  /** Whether this is the currently active session */
-  isCurrentSession: boolean;
-  /** Full concatenated content (only loaded when needed for search) */
-  fullContent?: string;
-  /** Processed messages with normalized roles (only loaded when needed) */
-  messages?: Array<{ role: 'user' | 'assistant'; content: string }>;
-  /** Search result snippets when filtering */
-  matchSnippets?: TextMatch[];
-  /** Total number of matches found in this session */
-  matchCount?: number;
-  /** Display index in the list */
-  index: number;
-}
+  cleanMessage,
+  formatRelativeTime,
+  getSessionFiles,
+} from '../../utils/sessionUtils.js';
 
 /**
  * Props for the main SessionBrowser component.
  */
-interface SessionBrowserProps {
+export interface SessionBrowserProps {
   /** Application configuration object */
   config: Config;
   /** Callback when user selects a session to resume */
@@ -70,7 +37,7 @@ interface SessionBrowserProps {
  * Centralized state interface for SessionBrowser component.
  * Eliminates prop drilling by providing all state in a single object.
  */
-interface SessionBrowserState {
+export interface SessionBrowserState {
   // Data state
   /** All loaded sessions */
   sessions: SessionInfo[];
@@ -138,129 +105,10 @@ interface SessionBrowserState {
 }
 
 const SESSIONS_PER_PAGE = 20;
-
-/**
- * Extracts the session ID from a session filename by removing the .json extension.
- * @param fileName - The filename (e.g., "session-12345.json")
- * @returns The session ID without the .json extension
- */
-const extractSessionId = (fileName: string): string =>
-  fileName.replace('.json', '');
-
-/**
- * Cleans and sanitizes message content for display by:
- * - Converting newlines to spaces
- * - Collapsing multiple whitespace to single spaces
- * - Removing non-printable characters (keeping only ASCII 32-126)
- * - Trimming leading/trailing whitespace
- * @param message - The raw message content to clean
- * @returns Sanitized message suitable for display
- */
-const cleanMessage = (message: string): string =>
-  message
-    .replace(/\n+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .replace(/[^\x20-\x7E]+/g, '') // Non-printable.
-    .trim();
-
-/**
- * Extracts and cleans the first user message from a conversation.
- * Used to create a display name/preview for each session.
- * @param messages - Array of conversation messages
- * @returns Cleaned first user message content, or empty string if none found
- */
-const extractFirstUserMessage = (
-  messages: ConversationRecord['messages'],
-): string => {
-  const firstUserMsg =
-    messages
-      // First try filtering out slash commands.
-      .filter((msg) => {
-        const content = partListUnionToString(msg.content);
-        return !content.startsWith('/') && !content.startsWith('?');
-      })
-      .find((msg) => msg.type === 'user') ??
-    // Then just default to the first message, even though it be a slash command, if there aren't
-    // any non-slash commands.
-    messages.find((msg) => msg.type === 'user');
-  return firstUserMsg
-    ? cleanMessage(partListUnionToString(firstUserMsg.content))
-    : '';
-};
-
-/**
- * Loads session files from the chats directory and processes them into SessionInfo objects.
- * Can optionally load full message content for search functionality.
- * @param chatsDir - Path to the directory containing session JSON files
- * @param loadFullContent - Whether to load full message content (needed for search)
- * @returns Promise resolving to array of SessionInfo objects, sorted by filename
- */
-const getSessionFiles = async (
-  chatsDir: string,
-  loadFullContent: boolean = false,
-  currentSessionId?: string,
-): Promise<SessionInfo[]> => {
-  try {
-    const files = await fs.readdir(chatsDir);
-
-    const sessionFiles = files
-      .filter((f) => f.startsWith(SESSION_FILE_PREFIX) && f.endsWith('.json'))
-      .sort(); // Initial sort by filename, which includes timestamp
-
-    const sessionPromises = sessionFiles.map(async (file) => {
-      const filePath = path.join(chatsDir, file);
-      try {
-        const content: ConversationRecord = JSON.parse(
-          await fs.readFile(filePath, 'utf8'),
-        );
-
-        const firstUserMessage = extractFirstUserMessage(content.messages);
-
-        const fullContent = loadFullContent
-          ? content.messages.map((msg) => msg.content).join(' ')
-          : undefined;
-        const messages = loadFullContent
-          ? content.messages.map((msg) => ({
-              role:
-                msg.type === 'user'
-                  ? ('user' as const)
-                  : ('assistant' as const),
-              content: msg.content,
-            }))
-          : undefined;
-
-        const sessionId = extractSessionId(file);
-        const isCurrentSession = currentSessionId
-          ? file.includes(currentSessionId.slice(0, 8))
-          : false;
-
-        return {
-          id: sessionId,
-          file: file.replace('.json', ''),
-          fileName: file,
-          startTime: content.startTime,
-          lastUpdated: content.lastUpdated,
-          messageCount: content.messages.length,
-          displayName: firstUserMessage, // This could be changed to a conversation title, if we choose to generate one in the future.
-          firstUserMessage,
-          isCurrentSession,
-          fullContent,
-          messages,
-          index: sessionFiles.length - sessionFiles.indexOf(file),
-        } as SessionInfo;
-      } catch {
-        return null;
-      }
-    });
-
-    const results = await Promise.all(sessionPromises);
-    return results.filter(
-      (session): session is SessionInfo => session !== null,
-    );
-  } catch {
-    return [];
-  }
-};
+// Approximate total width reserved for non-message columns and separators
+// (prefix, index, message count, age, pipes, and padding) in a session row.
+// If the SessionItem layout changes, update this accordingly.
+const FIXED_SESSION_COLUMNS_WIDTH = 30;
 
 const Kbd = ({ name, shortcut }: { name: string; shortcut: string }) => (
   <>
@@ -330,20 +178,6 @@ const sortSessions = (
 
   return reverse ? sorted.reverse() : sorted;
 };
-
-/**
- * Represents a text match found during search with surrounding context.
- */
-interface TextMatch {
-  /** Text content before the match (with ellipsis if truncated) */
-  before: string;
-  /** The exact matched text */
-  match: string;
-  /** Text content after the match (with ellipsis if truncated) */
-  after: string;
-  /** Role of the message author where the match was found */
-  role: 'user' | 'assistant';
-}
 
 /**
  * Finds all text matches for a search query within conversation messages.
@@ -592,7 +426,7 @@ const SessionItem = ({
   session: SessionInfo;
   state: SessionBrowserState;
   terminalWidth: number;
-  formatRelativeTime: (dateString: string) => string;
+  formatRelativeTime: (dateString: string, style: 'short' | 'long') => string;
 }): React.JSX.Element => {
   const originalIndex =
     state.startIndex + state.visibleSessions.indexOf(session);
@@ -629,8 +463,10 @@ const SessionItem = ({
     }
   }
 
-  // I don't exactly understand why magic constant is 30...
-  const availableMessageWidth = Math.max(20, terminalWidth - 30);
+  const availableMessageWidth = Math.max(
+    20,
+    terminalWidth - FIXED_SESSION_COLUMNS_WIDTH,
+  );
 
   const truncatedMessage =
     matchDisplay ||
@@ -645,13 +481,13 @@ const SessionItem = ({
     ));
 
   return (
-    <Box key={session.id} flexDirection="row">
+    <Box flexDirection="row">
       <Text color={textColor()} dimColor={isDisabled}>
         {prefix}
       </Text>
       <Box width={5}>
         <Text color={textColor()} dimColor={isDisabled}>
-          #{state.totalSessions - originalIndex}
+          #{originalIndex + 1}
         </Text>
       </Box>
       <Text color={textColor(Colors.Gray)} dimColor={isDisabled}>
@@ -669,7 +505,7 @@ const SessionItem = ({
       </Text>
       <Box width={4}>
         <Text color={textColor()} dimColor={isDisabled}>
-          {formatRelativeTime(session.lastUpdated)}
+          {formatRelativeTime(session.lastUpdated, 'short')}
         </Text>
       </Box>
       <Text color={textColor(Colors.Gray)} dimColor={isDisabled}>
@@ -698,7 +534,7 @@ const SessionList = ({
   formatRelativeTime,
 }: {
   state: SessionBrowserState;
-  formatRelativeTime: (dateString: string) => string;
+  formatRelativeTime: (dateString: string, style: 'short' | 'long') => string;
 }): React.JSX.Element => (
   <Box flexDirection="column">
     {/* Table Header */}
@@ -724,45 +560,17 @@ const SessionList = ({
 );
 
 /**
- * Formats a date string into human-readable relative time.
- * @param dateString - ISO date string to format
- * @returns Relative time string (e.g., "2h", "3d", "1mo")
- */
-const formatRelativeTime = (dateString: string): string => {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffSeconds = Math.floor(diffMs / 1000);
-  const diffMinutes = Math.floor(diffSeconds / 60);
-  const diffHours = Math.floor(diffMinutes / 60);
-  const diffDays = Math.floor(diffHours / 24);
-
-  if (diffSeconds < 1) {
-    return 'now';
-  } else if (diffSeconds < 60) {
-    return `${diffSeconds}s`;
-  } else if (diffMinutes < 60) {
-    return `${diffMinutes}m`;
-  } else if (diffHours < 24) {
-    return `${diffHours}h`;
-  } else if (diffDays < 30) {
-    return `${diffDays}d`;
-  } else {
-    const diffMonths = Math.floor(diffDays / 30);
-    return diffMonths < 12
-      ? `${diffMonths}mo`
-      : `${Math.floor(diffMonths / 12)}y`;
-  }
-};
-
-/**
  * Hook to manage all SessionBrowser state.
  */
-const useSessionBrowserState = (): SessionBrowserState => {
+export const useSessionBrowserState = (
+  initialSessions: SessionInfo[] = [],
+  initialLoading = true,
+  initialError: string | null = null,
+): SessionBrowserState => {
   const { columns: terminalWidth } = useTerminalSize();
-  const [sessions, setSessions] = useState<SessionInfo[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [sessions, setSessions] = useState<SessionInfo[]>(initialSessions);
+  const [loading, setLoading] = useState(initialLoading);
+  const [error, setError] = useState<string | null>(initialError);
   const [activeIndex, setActiveIndex] = useState(0);
   const [scrollOffset, setScrollOffset] = useState(0);
   const [sortOrder, setSortOrder] = useState<'date' | 'messages' | 'name'>(
@@ -777,8 +585,7 @@ const useSessionBrowserState = (): SessionBrowserState => {
   const filteredAndSortedSessions = useMemo(() => {
     const filtered = filterSessions(sessions, searchQuery);
     return sortSessions(filtered, sortOrder, sortReverse);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessions.length, searchQuery, sortOrder, sortReverse]);
+  }, [sessions, searchQuery, sortOrder, sortReverse]);
 
   // Reset full content flag when search is cleared
   useEffect(() => {
@@ -829,70 +636,84 @@ const useSessionBrowserState = (): SessionBrowserState => {
  * Hook to load sessions on mount.
  */
 const useLoadSessions = (config: Config, state: SessionBrowserState) => {
+  const { setSessions, setLoading, setError } = state;
+
   useEffect(() => {
     const loadSessions = async () => {
       try {
         const chatsDir = path.join(config.storage.getProjectTempDir(), 'chats');
         const sessionData = await getSessionFiles(
           chatsDir,
-          true,
           config.getSessionId(),
+          { includeFullContent: true },
         );
-        state.setSessions(sessionData);
-        state.setLoading(false);
+        setSessions(sessionData);
+        setLoading(false);
       } catch (err) {
-        state.setError(
+        setError(
           err instanceof Error ? err.message : 'Failed to load sessions',
         );
-        state.setLoading(false);
+        setLoading(false);
       }
     };
 
     loadSessions();
-  }, [config, state]);
+  }, [config, setSessions, setLoading, setError]);
 };
 
 /**
  * Hook to handle selection movement.
  */
-const useMoveSelection = (state: SessionBrowserState) =>
-  useCallback(
+export const useMoveSelection = (state: SessionBrowserState) => {
+  const {
+    totalSessions,
+    activeIndex,
+    scrollOffset,
+    setActiveIndex,
+    setScrollOffset,
+  } = state;
+
+  return useCallback(
     (delta: number) => {
       const newIndex = Math.max(
         0,
-        Math.min(state.totalSessions - 1, state.activeIndex + delta),
+        Math.min(totalSessions - 1, activeIndex + delta),
       );
-      state.setActiveIndex(newIndex);
+      setActiveIndex(newIndex);
 
       // Adjust scroll offset if needed
-      if (newIndex < state.scrollOffset) {
-        state.setScrollOffset(newIndex);
-      } else if (newIndex >= state.scrollOffset + SESSIONS_PER_PAGE) {
-        state.setScrollOffset(newIndex - SESSIONS_PER_PAGE + 1);
+      if (newIndex < scrollOffset) {
+        setScrollOffset(newIndex);
+      } else if (newIndex >= scrollOffset + SESSIONS_PER_PAGE) {
+        setScrollOffset(newIndex - SESSIONS_PER_PAGE + 1);
       }
     },
-    [state],
+    [totalSessions, activeIndex, scrollOffset, setActiveIndex, setScrollOffset],
   );
+};
 
 /**
  * Hook to handle sort order cycling.
  */
-const useCycleSortOrder = (state: SessionBrowserState) =>
-  useCallback(() => {
+export const useCycleSortOrder = (state: SessionBrowserState) => {
+  const { sortOrder, setSortOrder } = state;
+
+  return useCallback(() => {
     const orders: Array<'date' | 'messages' | 'name'> = [
       'date',
       'messages',
       'name',
     ];
-    const currentIndex = orders.indexOf(state.sortOrder);
+    const currentIndex = orders.indexOf(sortOrder);
     const nextIndex = (currentIndex + 1) % orders.length;
-    state.setSortOrder(orders[nextIndex]);
-  }, [state]);
+    setSortOrder(orders[nextIndex]);
+  }, [sortOrder, setSortOrder]);
+};
 
 /**
  * Hook to handle SessionBrowser input.
  */
-const useSessionBrowserInput = (
+export const useSessionBrowserInput = (
   state: SessionBrowserState,
   moveSelection: (delta: number) => void,
   cycleSortOrder: () => void,
@@ -1016,28 +837,11 @@ const useSessionBrowserInput = (
   );
 };
 
-export function SessionBrowser({
-  config,
-  onResumeSession,
-  onDeleteSession,
-  onExit,
-}: SessionBrowserProps): React.JSX.Element {
-  // Use all our custom hooks
-  const state = useSessionBrowserState();
-  useLoadSessions(config, state);
-  const moveSelection = useMoveSelection(state);
-  const cycleSortOrder = useCycleSortOrder(state);
-  useSessionBrowserInput(
-    state,
-    moveSelection,
-    cycleSortOrder,
-    onResumeSession,
-    onDeleteSession,
-    onExit,
-  );
-
-  // Early returns for different states.
-
+export function SessionBrowserView({
+  state,
+}: {
+  state: SessionBrowserState;
+}): React.JSX.Element {
   if (state.loading) {
     return <SessionBrowserLoading />;
   }
@@ -1062,4 +866,27 @@ export function SessionBrowser({
       )}
     </Box>
   );
+}
+
+export function SessionBrowser({
+  config,
+  onResumeSession,
+  onDeleteSession,
+  onExit,
+}: SessionBrowserProps): React.JSX.Element {
+  // Use all our custom hooks
+  const state = useSessionBrowserState();
+  useLoadSessions(config, state);
+  const moveSelection = useMoveSelection(state);
+  const cycleSortOrder = useCycleSortOrder(state);
+  useSessionBrowserInput(
+    state,
+    moveSelection,
+    cycleSortOrder,
+    onResumeSession,
+    onDeleteSession,
+    onExit,
+  );
+
+  return <SessionBrowserView state={state} />;
 }

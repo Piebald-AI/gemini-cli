@@ -15,6 +15,7 @@ import type {
 } from '@google/gemini-cli-core';
 import type { Part } from '@google/genai';
 import { partListUnionToString } from '@google/gemini-cli-core';
+import { getSessionFiles } from '../../utils/sessionUtils.js';
 import { MessageType, ToolCallStatus } from '../types.js';
 
 export const useSessionBrowser = (
@@ -48,7 +49,19 @@ export const useSessionBrowser = (
             config.storage.getProjectTempDir(),
             'chats',
           );
-          const originalFilePath = path.join(chatsDir, `${sessionId}.json`);
+
+          // Find the session file name from the session ID.
+          const sessions = await getSessionFiles(
+            chatsDir,
+            config.getSessionId(),
+          );
+          const sessionInfo = sessions.find((s) => s.id === sessionId);
+
+          if (!sessionInfo) {
+            throw new Error(`Could not find session with ID: ${sessionId}`);
+          }
+
+          const originalFilePath = path.join(chatsDir, sessionInfo.fileName);
 
           // Load up the conversation.
           const conversation: ConversationRecord = JSON.parse(
