@@ -93,6 +93,7 @@ import { type UpdateObject } from './utils/updateCheck.js';
 import { setUpdateHandler } from '../utils/handleAutoUpdate.js';
 import { ConsolePatcher } from './utils/ConsolePatcher.js';
 import { registerCleanup, runExitCleanup } from '../utils/cleanup.js';
+import type { SessionInfo } from '../utils/sessionUtils.js';
 import { useMessageQueue } from './hooks/useMessageQueue.js';
 import { useAutoAcceptIndicator } from './hooks/useAutoAcceptIndicator.js';
 import { useSessionStats } from './contexts/SessionContext.js';
@@ -444,8 +445,8 @@ export const AppContainer = (props: AppContainerProps) => {
 
   // Wrap handleDeleteSession to return a Promise for UIActions interface
   const handleDeleteSession = useCallback(
-    async (sessionId: string): Promise<void> => {
-      handleDeleteSessionSync(sessionId);
+    async (session: SessionInfo): Promise<void> => {
+      handleDeleteSessionSync(session);
     },
     [handleDeleteSessionSync],
   );

@@ -12,6 +12,7 @@ import { type AuthType, type EditorType } from '@google/gemini-cli-core';
 import { type LoadableSettingScope } from '../../config/settings.js';
 import type { AuthState } from '../types.js';
 import { type PermissionsDialogProps } from '../components/PermissionsModifyTrustDialog.js';
+import type { SessionInfo } from '../../utils/sessionUtils.js';
 
 export interface UIActions {
   handleThemeSelect: (themeName: string, scope: LoadableSettingScope) => void;
@@ -47,8 +48,8 @@ export interface UIActions {
   ) => void;
   openSessionBrowser: () => void;
   closeSessionBrowser: () => void;
-  handleResumeSession: (sessionId: string) => Promise<void>;
-  handleDeleteSession: (sessionId: string) => Promise<void>;
+  handleResumeSession: (session: SessionInfo) => Promise<void>;
+  handleDeleteSession: (session: SessionInfo) => Promise<void>;
   setQueueErrorMessage: (message: string | null) => void;
   popAllMessages: (onPop: (messages: string | undefined) => void) => void;
   handleApiKeySubmit: (apiKey: string) => Promise<void>;
