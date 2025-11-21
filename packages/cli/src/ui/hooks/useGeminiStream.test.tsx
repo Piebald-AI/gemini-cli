@@ -222,7 +222,6 @@ describe('useGeminiStream', () => {
         .fn()
         .mockReturnValue(contentGeneratorConfig),
       getUseSmartEdit: () => false,
-      getUseModelRouter: () => false,
       isInteractive: () => false,
     } as unknown as Config;
     mockOnDebugMessage = vi.fn();
@@ -347,7 +346,6 @@ describe('useGeminiStream', () => {
           () => {},
           () => {},
           () => {},
-          () => {},
           80,
           24,
         );
@@ -419,7 +417,6 @@ describe('useGeminiStream', () => {
       setShellInputFocused?: (focused: boolean) => void;
       performMemoryRefresh?: () => Promise<void>;
       onAuthError?: () => void;
-      onEditorClose?: () => void;
       setModelSwitched?: Mock;
       modelSwitched?: boolean;
     } = {},
@@ -430,7 +427,6 @@ describe('useGeminiStream', () => {
       setShellInputFocused = () => {},
       performMemoryRefresh = () => Promise.resolve(),
       onAuthError = () => {},
-      onEditorClose = () => {},
       setModelSwitched = vi.fn(),
       modelSwitched = false,
     } = options;
@@ -450,7 +446,6 @@ describe('useGeminiStream', () => {
         performMemoryRefresh,
         modelSwitched,
         setModelSwitched,
-        onEditorClose,
         onCancelSubmit,
         setShellInputFocused,
         80,
@@ -594,7 +589,6 @@ describe('useGeminiStream', () => {
         () => {},
         () => {},
         () => {},
-        () => {},
         80,
         24,
       ),
@@ -674,7 +668,6 @@ describe('useGeminiStream', () => {
         () => {},
         () => Promise.resolve(),
         false,
-        () => {},
         () => {},
         () => {},
         () => {},
@@ -789,7 +782,6 @@ describe('useGeminiStream', () => {
         () => {},
         () => {},
         () => {},
-        () => {},
         80,
         24,
       ),
@@ -900,7 +892,6 @@ describe('useGeminiStream', () => {
         () => {},
         () => Promise.resolve(),
         false,
-        () => {},
         () => {},
         () => {},
         () => {},
@@ -1035,7 +1026,6 @@ describe('useGeminiStream', () => {
           () => Promise.resolve(),
           false,
           () => {},
-          () => {},
           cancelSubmitSpy,
           () => {},
           80,
@@ -1075,7 +1065,6 @@ describe('useGeminiStream', () => {
           () => {},
           () => Promise.resolve(),
           false,
-          () => {},
           () => {},
           vi.fn(),
           setShellInputFocusedSpy, // Pass the spy here
@@ -1413,7 +1402,6 @@ describe('useGeminiStream', () => {
           () => {},
           () => {},
           () => {},
-          () => {},
           80,
           24,
         ),
@@ -1487,7 +1475,6 @@ describe('useGeminiStream', () => {
           () => {},
           () => {},
           () => {},
-          () => {},
           80,
           24,
         ),
@@ -1541,7 +1528,6 @@ describe('useGeminiStream', () => {
           () => {},
           () => Promise.resolve(),
           false,
-          () => {},
           () => {},
           () => {},
           () => {},
@@ -1846,7 +1832,6 @@ describe('useGeminiStream', () => {
           () => {},
           () => {},
           () => {},
-          () => {},
           80,
           24,
         ),
@@ -1952,7 +1937,6 @@ describe('useGeminiStream', () => {
           () => {},
           () => Promise.resolve(),
           false,
-          () => {},
           () => {},
           onCancelSubmitSpy,
           () => {},
@@ -2098,7 +2082,6 @@ describe('useGeminiStream', () => {
         vi.fn(), // performMemoryRefresh
         false, // modelSwitched
         vi.fn(), // setModelSwitched
-        vi.fn(), // onEditorClose
         vi.fn(), // onCancelSubmit
         vi.fn(), // setShellInputFocused
         80, // terminalWidth
@@ -2168,7 +2151,6 @@ describe('useGeminiStream', () => {
           () => {},
           () => Promise.resolve(),
           false,
-          () => {},
           () => {},
           () => {},
           () => {},
@@ -2252,7 +2234,6 @@ describe('useGeminiStream', () => {
           () => {},
           () => {},
           () => {},
-          () => {},
           80,
           24,
         ),
@@ -2322,7 +2303,6 @@ describe('useGeminiStream', () => {
           () => {},
           () => {},
           () => {},
-          () => {},
           80,
           24,
         ),
@@ -2377,7 +2357,6 @@ describe('useGeminiStream', () => {
           () => {},
           () => Promise.resolve(),
           false,
-          () => {},
           () => {},
           () => {},
           () => {},

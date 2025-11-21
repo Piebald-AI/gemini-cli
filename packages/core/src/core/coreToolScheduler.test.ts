@@ -248,7 +248,6 @@ function createMockConfig(overrides: Partial<Config> = {}): Config {
     getTruncateToolOutputLines: () => DEFAULT_TRUNCATE_TOOL_OUTPUT_LINES,
     getToolRegistry: () => defaultToolRegistry,
     getUseSmartEdit: () => false,
-    getUseModelRouter: () => false,
     getGeminiClient: () => null,
     getEnableMessageBusIntegration: () => false,
     getMessageBus: () => null,
@@ -292,7 +291,6 @@ describe('CoreToolScheduler', () => {
       onAllToolCallsComplete,
       onToolCallsUpdate,
       getPreferredEditor: () => 'vscode',
-      onEditorClose: vi.fn(),
     });
 
     const abortController = new AbortController();
@@ -358,7 +356,6 @@ describe('CoreToolScheduler', () => {
       onAllToolCallsComplete,
       onToolCallsUpdate,
       getPreferredEditor: () => 'vscode',
-      onEditorClose: vi.fn(),
     });
 
     const abortController = new AbortController();
@@ -460,7 +457,6 @@ describe('CoreToolScheduler', () => {
       onAllToolCallsComplete,
       onToolCallsUpdate,
       getPreferredEditor: () => 'vscode',
-      onEditorClose: vi.fn(),
     });
 
     const abortController = new AbortController();
@@ -557,7 +553,6 @@ describe('CoreToolScheduler', () => {
       onAllToolCallsComplete,
       onToolCallsUpdate,
       getPreferredEditor: () => 'vscode',
-      onEditorClose: vi.fn(),
     });
 
     const request = {
@@ -595,7 +590,6 @@ describe('CoreToolScheduler', () => {
       const scheduler = new CoreToolScheduler({
         config: mockConfig,
         getPreferredEditor: () => 'vscode',
-        onEditorClose: vi.fn(),
       });
 
       // Test that the right tool is selected, with only 1 result, for typos
@@ -650,7 +644,6 @@ describe('CoreToolScheduler with payload', () => {
       onAllToolCallsComplete,
       onToolCallsUpdate,
       getPreferredEditor: () => 'vscode',
-      onEditorClose: vi.fn(),
     });
 
     const abortController = new AbortController();
@@ -952,7 +945,6 @@ describe('CoreToolScheduler edit cancellation', () => {
       onAllToolCallsComplete,
       onToolCallsUpdate,
       getPreferredEditor: () => 'vscode',
-      onEditorClose: vi.fn(),
     });
 
     const abortController = new AbortController();
@@ -1038,7 +1030,6 @@ describe('CoreToolScheduler YOLO mode', () => {
       onAllToolCallsComplete,
       onToolCallsUpdate,
       getPreferredEditor: () => 'vscode',
-      onEditorClose: vi.fn(),
     });
 
     const abortController = new AbortController();
@@ -1125,7 +1116,6 @@ describe('CoreToolScheduler request queueing', () => {
       onAllToolCallsComplete,
       onToolCallsUpdate,
       getPreferredEditor: () => 'vscode',
-      onEditorClose: vi.fn(),
     });
 
     const abortController = new AbortController();
@@ -1239,7 +1229,6 @@ describe('CoreToolScheduler request queueing', () => {
       onAllToolCallsComplete,
       onToolCallsUpdate,
       getPreferredEditor: () => 'vscode',
-      onEditorClose: vi.fn(),
     });
 
     const abortController = new AbortController();
@@ -1347,7 +1336,6 @@ describe('CoreToolScheduler request queueing', () => {
       onAllToolCallsComplete,
       onToolCallsUpdate,
       getPreferredEditor: () => 'vscode',
-      onEditorClose: vi.fn(),
     });
 
     const abortController = new AbortController();
@@ -1404,7 +1392,6 @@ describe('CoreToolScheduler request queueing', () => {
       onAllToolCallsComplete,
       onToolCallsUpdate,
       getPreferredEditor: () => 'vscode',
-      onEditorClose: vi.fn(),
     });
 
     const abortController = new AbortController();
@@ -1508,7 +1495,6 @@ describe('CoreToolScheduler request queueing', () => {
         });
       },
       getPreferredEditor: () => 'vscode',
-      onEditorClose: vi.fn(),
     });
 
     const abortController = new AbortController();
@@ -1632,7 +1618,6 @@ describe('CoreToolScheduler Sequential Execution', () => {
       onAllToolCallsComplete,
       onToolCallsUpdate,
       getPreferredEditor: () => 'vscode',
-      onEditorClose: vi.fn(),
     });
 
     const abortController = new AbortController();
@@ -1732,7 +1717,6 @@ describe('CoreToolScheduler Sequential Execution', () => {
       onAllToolCallsComplete,
       onToolCallsUpdate,
       getPreferredEditor: () => 'vscode',
-      onEditorClose: vi.fn(),
     });
 
     const requests = [
@@ -1831,7 +1815,6 @@ describe('CoreToolScheduler Sequential Execution', () => {
       onAllToolCallsComplete,
       onToolCallsUpdate,
       getPreferredEditor: () => 'vscode',
-      onEditorClose: vi.fn(),
     });
 
     const abortController = new AbortController();
@@ -1865,7 +1848,7 @@ describe('CoreToolScheduler Sequential Execution', () => {
     const overrides =
       modifyWithEditorSpy.mock.calls[
         modifyWithEditorSpy.mock.calls.length - 1
-      ][5];
+      ][4];
     expect(overrides).toEqual({
       currentContent: 'originalContent',
       proposedContent: 'newContent',

@@ -74,7 +74,6 @@ const mockConfig = {
     authType: 'oauth-personal',
   }),
   getUseSmartEdit: () => false,
-  getUseModelRouter: () => false,
   getGeminiClient: () => null, // No client needed for these tests
   getShellExecutionConfig: () => ({ terminalWidth: 80, terminalHeight: 24 }),
   getEnableMessageBusIntegration: () => false,
@@ -135,7 +134,6 @@ describe('useReactToolScheduler in YOLO Mode', () => {
         onComplete,
         mockConfig as unknown as Config,
         () => undefined,
-        () => {},
       ),
     );
 
@@ -264,7 +262,6 @@ describe('useReactToolScheduler', () => {
         onComplete,
         mockConfig as unknown as Config,
         () => undefined,
-        () => {},
       ),
     );
 
